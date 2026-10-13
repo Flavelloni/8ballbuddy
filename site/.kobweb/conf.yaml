@@ -1,0 +1,14 @@
+site:
+  title: "8BallPatterns"
+
+server:
+  files:
+    dev:
+      contentRoot: "build/processedResources/js/main/public"
+      script: "build/kotlin-webpack/js/developmentExecutable/eighballpatterns.js"
+      api: "build/libs/eighballpatterns.jar"
+    prod:
+      script: "build/kotlin-webpack/js/productionExecutable/eighballpatterns.js"
+      siteRoot: ".kobweb/site"
+
+  port: 8080
