@@ -18,6 +18,13 @@ kobweb run
 
 Open http://localhost:8080. The server port is configured in `site/.kobweb/conf.yaml`.
 
+## Branding
+
+The original 8-ball and prediction-arrow mark is in
+`site/src/jsMain/resources/public/images/pool-ball-icon.svg`. The opening reel
+and browser favicon share this asset. It uses flat colors and outlined artwork
+so it stays sharp without external fonts or image services.
+
 ## Shot Data
 
 Shots live under `site/src/jsMain/resources/public/8ball/<match>/<shot>/`.
@@ -71,3 +78,44 @@ media behavior.
 ## Static Export
 
 From `site`, run `kobweb export --layout static`.
+
+## GitHub Pages
+
+`.github/workflows/deploy-pages.yml` builds and deploys the static site on pushes
+to `master`, or manually from the Actions tab. It uses the checked-in Gradle
+wrapper and Java 25; installing the Kobweb CLI in CI is not necessary.
+
+One-time setup:
+
+1. Open the repository's **Settings > Pages**.
+2. Under **Build and deployment**, select **GitHub Actions** as the source.
+3. Commit and push these changes to `master`. Watch **Actions > Deploy GitHub Pages**
+   for the deployment result and published URL.
+
+For the current `Flavelloni/8ballbuddy` repository, the default address is
+https://flavelloni.github.io/8ballbuddy/. No personal access token, `gh-pages`
+branch, or separately purchased domain is required. The repository must be
+eligible for GitHub Pages on your GitHub plan; public repositories can use it
+on GitHub Free.
+
+The workflow reads the actual Pages base path and applies it only in the CI
+checkout before exporting. Local development stays at `/`; repository sites
+use `/8ballbuddy/`. If you later configure a custom domain in Settings > Pages,
+rerun the workflow so the generated paths match the new address. The uploaded
+artifact is `site/.kobweb/site`, not the Kotlin source or the dev build.
+
+To test a repository-path export locally, temporarily add `basePath: "8ballbuddy"`
+under `site` in `site/.kobweb/conf.yaml`, then export and run:
+
+```powershell
+cd site
+kobweb stop
+kobweb export --layout static
+kobweb run --env prod --layout static
+```
+
+Open http://localhost:8080/8ballbuddy/. Stop the server and remove the temporary
+`basePath` before returning to normal development.
+
+Before publishing publicly, clear the reuse rights for player portraits and
+match footage, or replace them with content licensed for your site.
