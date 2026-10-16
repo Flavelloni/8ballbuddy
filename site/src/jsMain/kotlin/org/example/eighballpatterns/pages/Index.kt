@@ -1,143 +1,237 @@
 package org.example.eighballpatterns.pages
 
 import androidx.compose.runtime.Composable
-import com.varabyte.kobweb.compose.css.StyleVariable
-import com.varabyte.kobweb.compose.foundation.layout.Box
-import com.varabyte.kobweb.compose.foundation.layout.Column
-import com.varabyte.kobweb.compose.foundation.layout.Row
-import com.varabyte.kobweb.compose.ui.Modifier
-import com.varabyte.kobweb.compose.ui.graphics.Color
-import com.varabyte.kobweb.compose.ui.graphics.Colors
-import com.varabyte.kobweb.compose.ui.modifiers.*
-import com.varabyte.kobweb.compose.ui.toAttrs
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import com.varabyte.kobweb.core.Page
-import com.varabyte.kobweb.core.data.add
-import com.varabyte.kobweb.core.init.InitRoute
-import com.varabyte.kobweb.core.init.InitRouteContext
-import com.varabyte.kobweb.core.layout.Layout
-import com.varabyte.kobweb.core.rememberPageContext
-import com.varabyte.kobweb.silk.components.forms.Button
-import com.varabyte.kobweb.silk.components.navigation.Link
-import com.varabyte.kobweb.silk.components.text.SpanText
-import com.varabyte.kobweb.silk.style.CssStyle
-import com.varabyte.kobweb.silk.style.base
-import com.varabyte.kobweb.silk.style.breakpoint.Breakpoint
-import com.varabyte.kobweb.silk.style.breakpoint.displayIfAtLeast
-import com.varabyte.kobweb.silk.style.toAttrs
-import com.varabyte.kobweb.silk.style.toModifier
-import com.varabyte.kobweb.silk.theme.colors.ColorMode
-import com.varabyte.kobweb.silk.theme.colors.ColorPalettes
-import org.jetbrains.compose.web.css.cssRem
-import org.jetbrains.compose.web.css.fr
-import org.jetbrains.compose.web.css.px
-import org.jetbrains.compose.web.css.vh
-import org.jetbrains.compose.web.dom.Div
-import org.jetbrains.compose.web.dom.Text
-import org.example.eighballpatterns.HeadlineTextStyle
-import org.example.eighballpatterns.SubheadlineTextStyle
-import org.example.eighballpatterns.components.layouts.PageLayoutData
-import org.example.eighballpatterns.toSitePalette
+import kotlinx.browser.window
+import org.example.eighballpatterns.browser.copyEightBallShareUrl
+import org.example.eighballpatterns.browser.currentEightBallReelsShotId
+import org.example.eighballpatterns.browser.currentEightBallReelsPlayerIntro
+import org.example.eighballpatterns.browser.shareEightBallShotNative
+import org.example.eighballpatterns.browser.updateEightBallReelsUrl
+import org.example.eighballpatterns.components.reels.EightBallFullscreenImage
+import org.example.eighballpatterns.components.reels.EightBallPlayerIntro
+import org.example.eighballpatterns.components.reels.EightBallReelIntro
+import org.example.eighballpatterns.components.reels.EightBallReelMessage
+import org.example.eighballpatterns.components.reels.EightBallReelShot
+import org.example.eighballpatterns.components.reels.EightBallReelsShell
+import org.example.eighballpatterns.components.reels.EightBallShareSheet
+import org.example.eighballpatterns.components.reels.eightBallReelLikeLabel
+import org.example.eighballpatterns.components.reels.ensureEightBallReelsStyles
+import org.example.eighballpatterns.data.loadEightBallShots
+import org.example.eighballpatterns.data.loadPlayerProfiles
+import org.example.eighballpatterns.model.EightBallReelStats
+import org.example.eighballpatterns.model.EightBallShot
+import org.example.eighballpatterns.model.PlayerProfile
+import org.example.eighballpatterns.model.ReelPosition
+import org.example.eighballpatterns.model.ReelStage
+import org.example.eighballpatterns.model.buildEightBallReelFeedback
+import org.w3c.dom.HTMLVideoElement
 
-// Container that has a tagline and grid on desktop, and just the tagline on mobile
-val HeroContainerStyle = CssStyle {
-    base { Modifier.fillMaxWidth().gap(2.cssRem) }
-    Breakpoint.MD { Modifier.margin { top(20.vh) } }
-}
+private const val EIGHT_BALL_SLIDE_DURATION_MS = 320
+private const val EIGHT_BALL_REEL_TOUCH_THRESHOLD = 64.0
 
-// A demo grid that appears on the homepage because it looks good
-val HomeGridStyle = CssStyle.base {
-    Modifier
-        .gap(0.5.cssRem)
-        .width(70.cssRem)
-        .height(18.cssRem)
-}
-
-private val GridCellColorVar by StyleVariable<Color>()
-val HomeGridCellStyle = CssStyle.base {
-    Modifier
-        .backgroundColor(GridCellColorVar.value())
-        .boxShadow(blurRadius = 0.6.cssRem, color = GridCellColorVar.value())
-        .borderRadius(1.cssRem)
-}
-
+@Page("/")
 @Composable
-private fun GridCell(color: Color, row: Int, column: Int, width: Int? = null, height: Int? = null) {
-    Div(
-        HomeGridCellStyle.toModifier()
-            .setVariable(GridCellColorVar, color)
-            .gridItem(row, column, width, height)
-            .toAttrs()
-    )
-}
+fun ShotPredictionPage() {
+    val initialShotId = remember { currentEightBallReelsShotId() }
+    val initialPlayerIntro = remember { currentEightBallReelsPlayerIntro() }
+    var shots by remember { mutableStateOf<List<EightBallShot>?>(null) }
+    var players by remember { mutableStateOf(emptyMap<String, PlayerProfile>()) }
+    var loadError by remember { mutableStateOf<String?>(null) }
+    var position by remember { mutableStateOf(ReelPosition()) }
+    var selectedBall by remember { mutableStateOf<Int?>(null) }
+    var feedback by remember { mutableStateOf<String?>(null) }
+    var videoEnded by remember { mutableStateOf(false) }
+    var videoPaused by remember { mutableStateOf(false) }
+    var videoElement by remember { mutableStateOf<HTMLVideoElement?>(null) }
+    var touchStartY by remember { mutableStateOf<Double?>(null) }
+    var isAdvancing by remember { mutableStateOf(false) }
+    var imageFullscreen by remember { mutableStateOf(false) }
+    var likedShotIds by remember { mutableStateOf(emptySet<String>()) }
+    var shareShot by remember { mutableStateOf<EightBallShot?>(null) }
+    var shareCopied by remember { mutableStateOf(false) }
+    var stats by remember { mutableStateOf(EightBallReelStats()) }
 
-
-@InitRoute
-fun initHomePage(ctx: InitRouteContext) {
-    ctx.data.add(PageLayoutData("Home"))
-}
-
-@Page
-@Layout(".components.layouts.PageLayout")
-@Composable
-fun HomePage() {
-    Row(HeroContainerStyle.toModifier()) {
-        Box {
-            val sitePalette = ColorMode.current.toSitePalette()
-
-            Column(Modifier.gap(2.cssRem)) {
-                Div(HeadlineTextStyle.toAttrs()) {
-                    SpanText(
-                        "Use this template as your starting point for ", Modifier.color(
-                            when (ColorMode.current) {
-                                ColorMode.LIGHT -> Colors.Black
-                                ColorMode.DARK -> Colors.White
-                            }
-                        )
-                    )
-                    SpanText(
-                        "Kobweb",
-                        Modifier
-                            .color(sitePalette.brand.accent)
-                            // Use a shadow so this light-colored word is more visible in light mode
-                            .textShadow(0.px, 0.px, blurRadius = 0.5.cssRem, color = Colors.Gray)
+    LaunchedEffect(Unit) {
+        ensureEightBallReelsStyles()
+        loadPlayerProfiles { players = it }
+        loadEightBallShots(
+            onLoaded = {
+                shots = it
+                val requestedIndex = it.indexOfFirst { shot -> shot.entry.id == initialShotId }
+                if (requestedIndex >= 0) {
+                    position = ReelPosition(
+                        if (initialPlayerIntro) ReelStage.Player else ReelStage.Shot,
+                        requestedIndex,
                     )
                 }
+                loadError = null
+            },
+            onError = { loadError = it },
+        )
+    }
 
-                Div(SubheadlineTextStyle.toAttrs()) {
-                    SpanText("You can read the ")
-                    Link("/about", "About")
-                    SpanText(" page for more information.")
+    val loadedShots = shots
+    val currentShot = loadedShots?.getOrNull(position.shotIndex)
+
+    LaunchedEffect(position, loadedShots) {
+        if (loadedShots == null) return@LaunchedEffect
+        val shot = if (position.stage == ReelStage.Welcome) null else currentShot
+        updateEightBallReelsUrl(shot?.entry?.id, position.stage == ReelStage.Player)
+    }
+
+    fun resetPrediction() {
+        videoElement?.let { video ->
+            video.pause()
+            video.currentTime = 0.0
+        }
+        selectedBall = null
+        feedback = null
+        videoEnded = false
+        videoPaused = false
+        touchStartY = null
+    }
+
+    fun moveReel(delta: Int) {
+        val shotCount = loadedShots?.size ?: return
+        if (shotCount == 0 || isAdvancing || imageFullscreen || shareShot != null) return
+        isAdvancing = true
+        resetPrediction()
+        position = if (delta > 0) position.next(shotCount) else position.previous()
+        window.setTimeout({ isAdvancing = false }, EIGHT_BALL_SLIDE_DURATION_MS)
+    }
+
+    LaunchedEffect(position, selectedBall, videoElement) {
+        if (selectedBall != null) {
+            videoElement?.let { video ->
+                video.currentTime = 0.0
+                videoPaused = false
+                video.play()
+            }
+        }
+    }
+
+    fun toggleVideoPlayback() {
+        val video = videoElement ?: return
+        if (videoEnded) {
+            video.currentTime = 0.0
+            videoEnded = false
+            videoPaused = false
+            video.play()
+        } else if (video.paused) {
+            videoPaused = false
+            video.play()
+        } else {
+            videoPaused = true
+            video.pause()
+        }
+    }
+
+    EightBallReelsShell(
+        onNext = { moveReel(1) },
+        onPrevious = { moveReel(-1) },
+        onTouchStart = { y -> touchStartY = y },
+        onTouchCancel = { touchStartY = null },
+        onTouchEnd = { y ->
+            val startY = touchStartY
+            touchStartY = null
+            if (startY != null) {
+                val deltaY = y - startY
+                when {
+                    deltaY <= -EIGHT_BALL_REEL_TOUCH_THRESHOLD -> moveReel(1)
+                    deltaY >= EIGHT_BALL_REEL_TOUCH_THRESHOLD -> moveReel(-1)
                 }
+            }
+        },
+    ) {
+        when {
+            loadError != null -> EightBallReelMessage(loadError ?: "Could not load shots.")
+            loadedShots == null -> EightBallReelMessage("Loading...")
+            loadedShots.isEmpty() -> EightBallReelMessage("No shots.")
+            position.stage == ReelStage.Welcome -> EightBallReelIntro(onStart = { moveReel(1) })
+            position.stage == ReelStage.Player && currentShot != null -> EightBallPlayerIntro(
+                shot = currentShot,
+                player = players[currentShot.meta.player.trim().lowercase()],
+            )
+            currentShot != null -> {
+                EightBallReelShot(
+                    shot = currentShot,
+                    selectedBall = selectedBall,
+                    feedback = feedback,
+                    videoEnded = videoEnded,
+                    videoPaused = videoPaused,
+                    stats = stats,
+                    liked = currentShot.entry.id in likedShotIds,
+                    likesLabel = eightBallReelLikeLabel(currentShot.entry.id),
+                    onImageFullscreen = { imageFullscreen = true },
+                    onLike = {
+                        likedShotIds = if (currentShot.entry.id in likedShotIds) {
+                            likedShotIds - currentShot.entry.id
+                        } else {
+                            likedShotIds + currentShot.entry.id
+                        }
+                    },
+                    onShare = {
+                        if (!shareEightBallShotNative(currentShot)) {
+                            shareShot = currentShot
+                            shareCopied = false
+                        }
+                    },
+                    onBallSelected = { ball ->
+                        if (selectedBall != null) return@EightBallReelShot
+                        val correct = ball == currentShot.meta.ball
+                        selectedBall = ball
+                        videoEnded = false
+                        videoPaused = false
+                        feedback = buildEightBallReelFeedback(correct)
+                        stats = stats.next(correct)
+                        videoElement?.let { video ->
+                            video.currentTime = 0.0
+                            video.play()
+                        }
+                    },
+                    onVideoElement = { videoElement = it },
+                    onVideoEnded = {
+                        videoEnded = true
+                        videoPaused = false
+                    },
+                    onVideoPlay = {
+                        videoEnded = false
+                        videoPaused = false
+                    },
+                    onVideoPause = {
+                        if (!videoEnded) videoPaused = true
+                    },
+                    onVideoToggle = { toggleVideoPlayback() },
+                )
 
-                val ctx = rememberPageContext()
-                Button(onClick = {
-                    // Change this click handler with your call-to-action behavior
-                    // here. Link to an order page? Open a calendar UI? Play a movie?
-                    // Up to you!
-                    ctx.router.tryRoutingTo("/about")
-                }, colorPalette = ColorPalettes.Blue) {
-                    Text("This could be your CTA")
+                if (imageFullscreen) {
+                    EightBallFullscreenImage(
+                        shot = currentShot,
+                        onClose = { imageFullscreen = false }
+                    )
                 }
             }
         }
 
-        Div(
-            HomeGridStyle
-            .toModifier()
-            .displayIfAtLeast(Breakpoint.MD)
-            .grid {
-                rows { repeat(3) { size(1.fr) } }
-                columns { repeat(5) { size(1.fr) } }
-            }
-            .toAttrs()
-        ) {
-            val sitePalette = ColorMode.current.toSitePalette()
-            GridCell(sitePalette.brand.primary, 1, 1, 2, 2)
-            GridCell(ColorPalettes.Monochrome._600, 1, 3)
-            GridCell(ColorPalettes.Monochrome._100, 1, 4, width = 2)
-            GridCell(sitePalette.brand.accent, 2, 3, width = 2)
-            GridCell(ColorPalettes.Monochrome._300, 2, 5)
-            GridCell(ColorPalettes.Monochrome._800, 3, 1, width = 5)
+        shareShot?.let { shot ->
+            EightBallShareSheet(
+                shot = shot,
+                copied = shareCopied,
+                onCopy = {
+                    copyEightBallShareUrl(shot)
+                    shareCopied = true
+                },
+                onClose = {
+                    shareShot = null
+                    shareCopied = false
+                },
+            )
         }
     }
 }
