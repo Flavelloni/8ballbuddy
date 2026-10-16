@@ -23,6 +23,7 @@ import com.varabyte.kobweb.compose.ui.modifiers.position
 import com.varabyte.kobweb.compose.ui.modifiers.width
 import com.varabyte.kobweb.compose.ui.styleModifier
 import com.varabyte.kobweb.compose.ui.toAttrs
+import com.varabyte.kobweb.navigation.BasePath
 import com.varabyte.kobweb.silk.components.icons.fa.FaAnglesUp
 import kotlinx.browser.document
 import org.jetbrains.compose.web.css.LineStyle
@@ -32,6 +33,7 @@ import org.jetbrains.compose.web.css.percent
 import org.jetbrains.compose.web.css.px
 import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.H1
+import org.jetbrains.compose.web.dom.Img
 import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.dom.Span
 import org.jetbrains.compose.web.dom.Text
@@ -48,12 +50,25 @@ internal fun ensureEightBallReelsStyles() {
           0%, 100% { opacity: .42; transform: translateY(7px); }
           50% { opacity: 1; transform: translateY(-7px); }
         }
+        .eight-ball-reel-intro { gap: 24px; padding: 32px; }
+        .eight-ball-reel-brand { gap: 16px; }
+        .eight-ball-reel-logo { width: 128px; height: 128px; flex-shrink: 0; }
+        @media (max-height: 650px) {
+          .eight-ball-reel-intro { gap: 16px; padding: 20px; }
+          .eight-ball-reel-brand { gap: 12px; }
+          .eight-ball-reel-logo { width: 80px; height: 80px; }
+        }
+        @media (max-height: 440px) {
+          .eight-ball-reel-intro { gap: 10px; padding: 12px; }
+          .eight-ball-reel-brand { flex-direction: row; align-items: center; }
+          .eight-ball-reel-logo { width: 48px; height: 48px; }
+        }
     """.trimIndent()
     document.head?.appendChild(style)
 }
 
 @Composable
-internal fun EightBallReelIntro(onStart: () -> Unit) {
+internal fun EightBallReelIntro(onStart: () -> Unit, canStart: Boolean = true) {
     Column(
         Modifier
             .width(100.percent)
@@ -61,24 +76,38 @@ internal fun EightBallReelIntro(onStart: () -> Unit) {
             .styleModifier {
                 property("min-height", "100dvh")
                 property("justify-content", "center")
-                property("gap", "26px")
-                property("padding", "34px")
                 property("box-sizing", "border-box")
                 property("color", "rgba(246,250,246,.9)")
                 property("text-align", "center")
-            },
+            }
+            .attrsModifier { classes("eight-ball-reel-intro") },
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        H1(
-            attrs = Modifier
-                .margin(0.px)
-                .fontSize(2.05.cssRem)
-                .lineHeight(1.05)
-                .fontWeight(FontWeight.Bold)
-                .color(Colors.White)
-                .toAttrs()
+        Column(
+            Modifier.attrsModifier { classes("eight-ball-reel-brand") },
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Text("8-Ball Buddy")
+            Img(
+                src = BasePath.prependTo("/images/pool-ball-icon.svg"),
+                alt = "8-Ball Buddy logo",
+                attrs = {
+                    classes("eight-ball-reel-logo")
+                    attr("width", "128")
+                    attr("height", "128")
+                    attr("draggable", "false")
+                },
+            )
+            H1(
+                attrs = Modifier
+                    .margin(0.px)
+                    .fontSize(2.05.cssRem)
+                    .lineHeight(1.05)
+                    .fontWeight(FontWeight.Bold)
+                    .color(Colors.White)
+                    .toAttrs()
+            ) {
+                Text("8-Ball Buddy")
+            }
         }
         P(
             attrs = Modifier
@@ -116,8 +145,14 @@ internal fun EightBallReelIntro(onStart: () -> Unit) {
                 .color(Colors.White)
                 .padding(leftRight = 1.15.cssRem, topBottom = 0.72.cssRem)
                 .fontWeight(FontWeight.Bold)
-                .styleModifier { property("cursor", "pointer") }
-                .toAttrs { onClick { onStart() } }
+                .styleModifier {
+                    property("cursor", if (canStart) "pointer" else "wait")
+                    property("opacity", if (canStart) "1" else ".5")
+                }
+                .toAttrs {
+                    if (!canStart) attr("disabled", "")
+                    onClick { onStart() }
+                }
         ) {
             Text("Start")
         }

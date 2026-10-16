@@ -151,9 +151,12 @@ fun ShotPredictionPage() {
     ) {
         when {
             loadError != null -> EightBallReelMessage(loadError ?: "Could not load shots.")
+            loadedShots?.isEmpty() == true -> EightBallReelMessage("No shots.")
+            position.stage == ReelStage.Welcome && (initialShotId == null || loadedShots != null) -> EightBallReelIntro(
+                onStart = { moveReel(1) },
+                canStart = loadedShots != null,
+            )
             loadedShots == null -> EightBallReelMessage("Loading...")
-            loadedShots.isEmpty() -> EightBallReelMessage("No shots.")
-            position.stage == ReelStage.Welcome -> EightBallReelIntro(onStart = { moveReel(1) })
             position.stage == ReelStage.Player && currentShot != null -> EightBallPlayerIntro(
                 shot = currentShot,
                 player = players[currentShot.meta.player.trim().lowercase()],
