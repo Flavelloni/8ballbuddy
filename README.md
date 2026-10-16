@@ -20,7 +20,7 @@ Open http://localhost:8080. The server port is configured in `site/.kobweb/conf.
 
 ## Branding
 
-The original 8-ball and prediction-arrow mark is in
+The 8-ball logo with its mint ring and dots is in
 `site/src/jsMain/resources/public/images/pool-ball-icon.svg`. The opening reel
 and browser favicon share this asset. It uses flat colors and outlined artwork
 so it stays sharp without external fonts or image services.
