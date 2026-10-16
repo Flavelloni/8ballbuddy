@@ -1,6 +1,7 @@
 package org.example.eighballpatterns.components.reels
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -36,6 +37,7 @@ import com.varabyte.kobweb.silk.components.layout.SimpleGrid
 import com.varabyte.kobweb.silk.components.layout.numColumns
 import org.example.eighballpatterns.components.widgets.PoolBall
 import org.example.eighballpatterns.model.EightBallReelStats
+import org.example.eighballpatterns.model.AnswerClock
 import org.example.eighballpatterns.model.EightBallShot
 import org.example.eighballpatterns.model.ballLabel
 import org.example.eighballpatterns.model.eightBallReelPickerBalls
@@ -66,12 +68,23 @@ internal fun EightBallReelShot(
     onImageFullscreen: () -> Unit,
     onLike: () -> Unit,
     onShare: () -> Unit,
+    onChooseMode: (() -> Unit)?,
     onBallSelected: (Int) -> Unit,
     onVideoElement: (HTMLVideoElement?) -> Unit,
     onVideoEnded: () -> Unit,
     onVideoPlay: () -> Unit,
     onVideoPause: () -> Unit,
     onVideoToggle: () -> Unit,
+    answerClock: AnswerClock? = null,
+    onElapsed: (Int) -> Unit = {},
+    onChallengeNext: (() -> Unit)? = null,
+    challengeLastShot: Boolean = false,
+    inputEnabled: Boolean = true,
+    clockRunning: Boolean = true,
+    onLayoutReady: () -> Unit = {},
+    requestError: String? = null,
+    requestBusy: Boolean = false,
+    onRetry: () -> Unit = {},
 ) {
     val hasPrediction = selectedBall != null
     val correct = selectedBall == shot.meta.ball
@@ -101,6 +114,8 @@ internal fun EightBallReelShot(
             onVideoPlay = onVideoPlay,
             onVideoPause = onVideoPause,
             onVideoToggle = onVideoToggle,
+            onChallengeNext = onChallengeNext,
+            challengeLastShot = challengeLastShot,
         )
 
         if (!hasPrediction) {
@@ -108,6 +123,14 @@ internal fun EightBallReelShot(
                 shot = shot,
                 onImageFullscreen = onImageFullscreen,
                 onBallSelected = onBallSelected,
+                answerClock = answerClock,
+                onElapsed = onElapsed,
+                inputEnabled = inputEnabled,
+                clockRunning = clockRunning,
+                onLayoutReady = onLayoutReady,
+                requestError = requestError,
+                requestBusy = requestBusy,
+                onRetry = onRetry,
             )
         }
 
@@ -117,6 +140,7 @@ internal fun EightBallReelShot(
             likesLabel = likesLabel,
             onLike = onLike,
             onShare = onShare,
+            onChooseMode = onChooseMode,
         )
     }
 }
@@ -126,8 +150,19 @@ private fun EightBallReelLayoutOverlay(
     shot: EightBallShot,
     onImageFullscreen: () -> Unit,
     onBallSelected: (Int) -> Unit,
+    answerClock: AnswerClock?,
+    onElapsed: (Int) -> Unit,
+    inputEnabled: Boolean,
+    clockRunning: Boolean,
+    onLayoutReady: () -> Unit,
+    requestError: String?,
+    requestBusy: Boolean,
+    onRetry: () -> Unit,
 ) {
     var layoutReady by remember(shot.entry.id) { mutableStateOf(false) }
+    LaunchedEffect(layoutReady) {
+        if (layoutReady) onLayoutReady()
+    }
 
     SimpleGrid(
         numColumns = numColumns(1),
@@ -151,7 +186,7 @@ private fun EightBallReelLayoutOverlay(
                     property("align-items", "center")
                     property("justify-content", "center")
                     property("min-height", "84px")
-                    property("padding", "max(12px, env(safe-area-inset-top)) 64px 8px")
+                    property("padding", if (answerClock != null) "calc(52px + env(safe-area-inset-top)) 64px 8px" else "max(12px, env(safe-area-inset-top)) 64px 8px")
                     property("box-sizing", "border-box")
                 }
         ) {
@@ -159,7 +194,7 @@ private fun EightBallReelLayoutOverlay(
                 Modifier.gap(4.px),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                ShotClock(shot.entry.id, running = layoutReady)
+                ShotClock(shot.entry.id, running = layoutReady && clockRunning, answerClock = answerClock, onElapsed = onElapsed)
                 P(
                     attrs = Modifier.margin(0.px)
                         .styleModifier {
@@ -173,6 +208,9 @@ private fun EightBallReelLayoutOverlay(
                 ) {
                     Text(eightBallReelTitle(shot.meta))
                 }
+                if (requestBusy || requestError != null) {
+                    EightBallChallengeRequestStatus(requestBusy, requestError, onRetry)
+                }
             }
 
             Button(
@@ -180,7 +218,7 @@ private fun EightBallReelLayoutOverlay(
                     .position(Position.Absolute)
                     .zIndex(4)
                     .styleModifier {
-                        property("top", "max(10px, env(safe-area-inset-top))")
+                        property("top", if (answerClock != null) "calc(50px + env(safe-area-inset-top))" else "max(10px, env(safe-area-inset-top))")
                         property("right", "14px")
                         property("width", "40px")
                         property("height", "40px")
@@ -247,6 +285,10 @@ private fun EightBallReelLayoutOverlay(
                             attr("alt", "Initial 8-ball layout")
                             attr("draggable", "false")
                             addEventListener("load") { layoutReady = true }
+                            ref { image ->
+                                if (image.complete && image.naturalWidth > 0) layoutReady = true
+                                onDispose {}
+                            }
                         }
                 )
             }
@@ -255,12 +297,13 @@ private fun EightBallReelLayoutOverlay(
         EightBallReelBallTray(
             balls = eightBallReelPickerBalls(shot),
             onBallSelected = onBallSelected,
+            enabled = layoutReady && inputEnabled,
         )
     }
 }
 
 @Composable
-private fun EightBallReelBallTray(balls: List<Int>, onBallSelected: (Int) -> Unit) {
+private fun EightBallReelBallTray(balls: List<Int>, onBallSelected: (Int) -> Unit, enabled: Boolean) {
     Column(
         Modifier
             .fillMaxWidth()
@@ -307,6 +350,7 @@ private fun EightBallReelBallTray(balls: List<Int>, onBallSelected: (Int) -> Uni
                         .toAttrs {
                             title("${ballLabel(ball)} ball")
                             attr("aria-label", "${ballLabel(ball)} ball")
+                            if (!enabled) attr("disabled", "")
                             onClick { onBallSelected(ball) }
                         }
                 ) {

@@ -1,5 +1,7 @@
 import com.varabyte.kobweb.gradle.application.util.configAsKobwebApplication
 import groovy.json.JsonOutput
+import org.jetbrains.kotlin.gradle.targets.js.nodejs.NodeJsEnvSpec
+import org.jetbrains.kotlin.gradle.targets.js.nodejs.NodeJsPlugin
 
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
@@ -9,6 +11,13 @@ plugins {
 
 group = "org.example.eighballpatterns"
 version = "1.0-SNAPSHOT"
+
+// Firebase 13's npm packages require Node 24.12 or newer.
+rootProject.allprojects {
+    plugins.withType<NodeJsPlugin> {
+        project.extensions.configure<NodeJsEnvSpec> { version.set("24.13.0") }
+    }
+}
 
 val generatedShotResources = layout.buildDirectory.dir("generated/shotResources")
 
@@ -73,6 +82,11 @@ kotlin {
             implementation(libs.kobweb.core)
             implementation(libs.kobweb.silk)
             implementation(libs.silk.icons.fa)
+            implementation(npm("firebase", "13.0.0"))
+        }
+
+        jsTest.dependencies {
+            implementation(kotlin("test"))
         }
 
     }

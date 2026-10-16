@@ -49,6 +49,8 @@ internal fun EightBallReelVideoLayer(
     onVideoPlay: () -> Unit,
     onVideoPause: () -> Unit,
     onVideoToggle: () -> Unit,
+    onChallengeNext: (() -> Unit)? = null,
+    challengeLastShot: Boolean = false,
 ) {
     SimpleGrid(
         numColumns = numColumns(1),
@@ -59,7 +61,7 @@ internal fun EightBallReelVideoLayer(
             .styleModifier {
                 property("inset", "0")
                 property("display", "grid")
-                property("grid-template-rows", "112px minmax(0, 1fr) 112px")
+                property("grid-template-rows", if (onChallengeNext != null) "156px minmax(0, 1fr) 112px" else "112px minmax(0, 1fr) 112px")
                 property("background", "#020303")
             }
     ) {
@@ -141,7 +143,7 @@ internal fun EightBallReelVideoLayer(
                 modifier = Modifier
                     .position(Position.Relative)
                     .styleModifier {
-                        property("width", eightBallReelVideoFrameWidth())
+                        property("width", eightBallReelVideoFrameWidth(onChallengeNext != null))
                         property("aspect-ratio", eightBallReelVideoFrameAspect().toString())
                         property("overflow", "hidden")
                         property("background", "#020303")
@@ -193,11 +195,15 @@ internal fun EightBallReelVideoLayer(
                     property("align-items", "start")
                     property("justify-content", "center")
                     property("padding", "12px 18px max(18px, env(safe-area-inset-bottom))")
-                    property("opacity", if (showSwipeHint) "1" else "0")
-                    property("pointer-events", "none")
+                    property("opacity", if (showSwipeHint || (showFeedback && onChallengeNext != null)) "1" else "0")
+                    property("pointer-events", if (showFeedback && onChallengeNext != null) "auto" else "none")
                 }
         ) {
-            EightBallReelSwipeHint("Swipe next")
+            if (onChallengeNext != null && showFeedback) {
+                EightBallChallengeNext(challengeLastShot, onChallengeNext)
+            } else {
+                EightBallReelSwipeHint("Swipe next")
+            }
         }
     }
 }
@@ -254,9 +260,9 @@ private fun eightBallReelVideoFrameAspect(): Double {
     return EIGHT_BALL_REEL_VIDEO_SOURCE_ASPECT * EIGHT_BALL_REEL_VIDEO_ZOOM * visibleWidth
 }
 
-private fun eightBallReelVideoFrameWidth(): String {
+private fun eightBallReelVideoFrameWidth(challenge: Boolean): String {
     val aspect = eightBallReelVideoFrameAspect()
     val heightLimitedDvh = aspect * 100.0
-    val heightLimitedPx = aspect * EIGHT_BALL_REEL_VIDEO_AVAILABLE_HEIGHT_PX
+    val heightLimitedPx = aspect * (EIGHT_BALL_REEL_VIDEO_AVAILABLE_HEIGHT_PX + if (challenge) 44.0 else 0.0)
     return "min(calc(100% - 28px), calc(${heightLimitedDvh}dvh - ${heightLimitedPx}px), 460px)"
 }

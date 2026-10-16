@@ -1,0 +1,11 @@
+{
+  "indexes": [{
+    "collectionGroup": "results",
+    "queryScope": "COLLECTION",
+    "fields": [
+      { "fieldPath": "correctCount", "order": "DESCENDING" },
+      { "fieldPath": "totalElapsedMs", "order": "ASCENDING" }
+    ]
+  }],
+  "fieldOverrides": []
+}

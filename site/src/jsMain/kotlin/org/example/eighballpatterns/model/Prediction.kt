@@ -57,19 +57,7 @@ internal fun eightBallReelPickerBalls(shot: EightBallShot): List<Int> {
     return when (shot.meta.group) {
         1 -> (1..7).toList()
         2 -> (9..15).toList()
-        0 -> {
-            val actualBall = shot.meta.ball.takeIf { it in 1..15 && it != 8 }
-            val seed = shot.entry.id.fold(shot.meta.ball * 97) { acc, char ->
-                acc * 31 + char.code
-            }
-            val filler = (1..15)
-                .filter { it != 8 && it != actualBall }
-                .shuffled(Random(seed))
-                .take(if (actualBall == null) 7 else 6)
-
-            (if (actualBall == null) filler else filler + actualBall)
-                .shuffled(Random(seed * 31 + 17))
-        }
+        0 -> (1..15).filter { it != 8 }
         else -> (8..10).toList()
     }
 }

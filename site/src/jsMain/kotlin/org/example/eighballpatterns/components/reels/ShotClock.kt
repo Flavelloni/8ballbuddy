@@ -5,6 +5,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import com.varabyte.kobweb.compose.foundation.layout.Row
 import com.varabyte.kobweb.compose.ui.Alignment
@@ -23,37 +24,47 @@ import kotlinx.browser.document
 import kotlinx.browser.window
 import org.jetbrains.compose.web.css.cssRem
 import org.jetbrains.compose.web.css.px
+import org.example.eighballpatterns.model.AnswerClock
 import org.w3c.dom.events.Event
 
 @Composable
-internal fun ShotClock(shotId: String, running: Boolean) {
-    var seconds by remember(shotId) { mutableStateOf(0) }
+internal fun ShotClock(shotId: String, running: Boolean, answerClock: AnswerClock? = null, onElapsed: (Int) -> Unit = {}) {
+    val clock = answerClock ?: remember(shotId) { AnswerClock({ window.performance.now() }) }
+    var seconds by remember(clock) { mutableStateOf(clock.elapsedMs / 1000) }
+    val reportElapsed by rememberUpdatedState(onElapsed)
 
-    DisposableEffect(shotId, running) {
+    DisposableEffect(clock, running) {
         if (!running) return@DisposableEffect onDispose {}
-
-        var accumulatedMs = 0.0
-        var visibleSince: Double? = if (document.asDynamic().hidden == true) null else window.performance.now()
+        var savedSecond = -1
 
         fun updateClock() {
-            val currentMs = visibleSince?.let { window.performance.now() - it } ?: 0.0
-            seconds = ((accumulatedMs + currentMs) / 1000).toInt()
+            seconds = clock.elapsedMs / 1000
+            if (seconds != savedSecond) {
+                savedSecond = seconds
+                reportElapsed(clock.elapsedMs)
+            }
         }
 
         val onVisibilityChange: (Event) -> Unit = {
             if (document.asDynamic().hidden == true) {
-                visibleSince?.let { accumulatedMs += window.performance.now() - it }
-                visibleSince = null
-            } else if (visibleSince == null) {
-                visibleSince = window.performance.now()
+                if (!clock.continuous) clock.pause()
+                reportElapsed(clock.elapsedMs)
+            } else {
+                clock.start()
             }
             updateClock()
         }
+        if (clock.continuous || document.asDynamic().hidden != true) clock.start()
         val interval = window.setInterval({ updateClock() }, 250)
+        val onPageHide: (Event) -> Unit = { if (!clock.continuous) clock.pause(); reportElapsed(clock.elapsedMs) }
         document.addEventListener("visibilitychange", onVisibilityChange)
+        window.addEventListener("pagehide", onPageHide)
         onDispose {
+            clock.pause()
+            reportElapsed(clock.elapsedMs)
             window.clearInterval(interval)
             document.removeEventListener("visibilitychange", onVisibilityChange)
+            window.removeEventListener("pagehide", onPageHide)
         }
     }
 

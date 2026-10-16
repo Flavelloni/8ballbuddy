@@ -5,6 +5,7 @@ import com.varabyte.kobweb.compose.css.FontWeight
 import com.varabyte.kobweb.compose.foundation.layout.Column
 import com.varabyte.kobweb.compose.ui.Alignment
 import com.varabyte.kobweb.compose.ui.Modifier
+import com.varabyte.kobweb.compose.ui.attrsModifier
 import com.varabyte.kobweb.compose.ui.graphics.Color
 import com.varabyte.kobweb.compose.ui.modifiers.backgroundColor
 import com.varabyte.kobweb.compose.ui.modifiers.border
@@ -19,6 +20,7 @@ import com.varabyte.kobweb.compose.ui.modifiers.zIndex
 import com.varabyte.kobweb.compose.ui.styleModifier
 import com.varabyte.kobweb.compose.ui.toAttrs
 import com.varabyte.kobweb.silk.components.icons.fa.FaHeart
+import com.varabyte.kobweb.silk.components.icons.fa.FaHouse
 import com.varabyte.kobweb.silk.components.icons.fa.FaShare
 import com.varabyte.kobweb.silk.components.icons.fa.IconStyle
 import org.example.eighballpatterns.model.EightBallReelStats
@@ -37,6 +39,7 @@ internal fun EightBallReelActions(
     likesLabel: String,
     onLike: () -> Unit,
     onShare: () -> Unit,
+    onChooseMode: (() -> Unit)?,
 ) {
     Column(
         Modifier
@@ -49,7 +52,8 @@ internal fun EightBallReelActions(
                 property("gap", "18px")
                 property("align-items", "center")
                 property("pointer-events", "auto")
-            },
+            }
+            .attrsModifier { classes("eight-ball-reel-actions") },
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         EightBallReelStatsBadge(stats)
@@ -68,6 +72,16 @@ internal fun EightBallReelActions(
             onClick = onShare,
         ) {
             FaShare()
+        }
+        if (onChooseMode != null) {
+            EightBallReelActionButton(
+                label = "Home",
+                color = "rgba(255,255,255,.94)",
+                ariaLabel = "Choose browse or daily challenge",
+                onClick = onChooseMode,
+            ) {
+                FaHouse()
+            }
         }
     }
 }

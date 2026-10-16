@@ -14,3 +14,9 @@ kotlin-js-store
 
 # Kotlin ignores
 .kotlin
+
+# Firebase
+node_modules/
+functions/generated/
+*-debug.log
+.firebase/

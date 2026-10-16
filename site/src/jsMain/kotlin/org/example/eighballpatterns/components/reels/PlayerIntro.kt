@@ -44,7 +44,7 @@ import org.jetbrains.compose.web.dom.Img
 import org.jetbrains.compose.web.dom.Text
 
 @Composable
-internal fun EightBallPlayerIntro(shot: EightBallShot, player: PlayerProfile?) {
+internal fun EightBallPlayerIntro(shot: EightBallShot, player: PlayerProfile?, challenge: Boolean = false) {
     val imageUrl = player?.imageUrl?.takeIf { it.isNotBlank() }?.let { url ->
         if (url.startsWith("https://") || url.startsWith("http://")) url else BasePath.prependTo(url)
     }
@@ -68,7 +68,7 @@ internal fun EightBallPlayerIntro(shot: EightBallShot, player: PlayerProfile?) {
             .styleModifier {
                 property("grid-template-rows", "minmax(0, 1fr) auto")
                 property("box-sizing", "border-box")
-                property("padding-top", "max(16px, env(safe-area-inset-top))")
+                property("padding-top", if (challenge) "calc(52px + env(safe-area-inset-top))" else "max(16px, env(safe-area-inset-top))")
                 property("padding-bottom", "max(18px, env(safe-area-inset-bottom))")
             }
             .attrsModifier {
