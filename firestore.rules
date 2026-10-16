@@ -1,0 +1,9 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Challenge data and standings are accessed through authenticated callable functions.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

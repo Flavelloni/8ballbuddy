@@ -62,8 +62,10 @@ internal fun ensureEightBallReelsStyles() {
           .eight-ball-reel-intro { gap: 10px; padding: 12px; }
           .eight-ball-reel-brand { flex-direction: row; align-items: center; }
           .eight-ball-reel-logo { width: 48px; height: 48px; }
+          .eight-ball-reel-actions { gap: 8px !important; }
+          .eight-ball-reel-actions button { width: 42px !important; height: 42px !important; }
         }
-    """.trimIndent()
+    """.trimIndent() + "\n" + dailyChallengeStyles
     document.head?.appendChild(style)
 }
 
@@ -167,6 +169,7 @@ internal fun EightBallReelsShell(
     onTouchStart: (Double) -> Unit,
     onTouchEnd: (Double) -> Unit,
     onTouchCancel: () -> Unit,
+    allowContentScroll: Boolean = false,
     content: @Composable () -> Unit,
 ) {
     Box(
@@ -179,10 +182,11 @@ internal fun EightBallReelsShell(
                 property("min-height", "100dvh")
                 property("background", "radial-gradient(circle at 50% 18%, rgba(32,64,49,.32), transparent 36%), #050606")
                 property("overflow", "hidden")
-                property("touch-action", "none")
+                property("touch-action", if (allowContentScroll) "pan-y" else "none")
             }
             .attrsModifier {
                 onWheel { event ->
+                    if (allowContentScroll) return@onWheel
                     if (event.deltaY >= EIGHT_BALL_WHEEL_THRESHOLD) {
                         event.preventDefault()
                         onNext()
@@ -192,10 +196,12 @@ internal fun EightBallReelsShell(
                     }
                 }
                 onTouchStart { event ->
+                    if (allowContentScroll) return@onTouchStart
                     val touch = event.touches.item(0) ?: return@onTouchStart
                     onTouchStart(touch.clientY.toDouble())
                 }
                 onTouchEnd { event ->
+                    if (allowContentScroll) return@onTouchEnd
                     val touch = event.changedTouches.item(0) ?: return@onTouchEnd
                     onTouchEnd(touch.clientY.toDouble())
                 }

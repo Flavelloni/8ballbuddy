@@ -69,10 +69,46 @@ Layout containers use Kobweb Compose wrappers. Native HTML elements remain for
 headings, paragraphs, buttons, images, and video to preserve their semantics and
 media behavior.
 
+## Daily Challenge
+
+After the welcome reel, choose **Daily challenge** or **Just browse**. Browsing
+does not require an account. The Home button beside Like and Share returns to
+the choice reel. Enter a leaderboard alias to start a daily challenge. Firebase
+silently creates an anonymous identity; no Google account or password is needed.
+Complete the one-time setup in [FIREBASE.md](FIREBASE.md) before trying a ranked round.
+
+Each UTC date gets a server-defined set of up to ten distinct shots, frozen when
+the first participant starts. The current catalog has three shots, so the round
+has three. Every player ID has one attempt per date, resumable in the same browser.
+Duplicate aliases are allowed. Names are remembered and fixed for each started
+daily attempt. A new browser or cleared site data creates a different identity;
+entering the same alias cannot restore the original account or progress.
+Results from the older browser-only prototype are not uploaded or ranked.
+
+The server starts each shot clock when the layout is ready. Time runs until the
+answer reaches the server, including hidden tabs and interruptions after that
+shot starts. Introductions and reveals between shots do not count. The clock
+cannot be reset by reloading. The displayed clock is approximate; the result
+uses server time. Challenge shots cannot be skipped or answered twice.
+
+Completed rounds are published automatically. The results reel shows your rank,
+all finishers (50 per page), and an answer breakdown. Ranking uses correct
+answers descending and total answer time ascending; exact ties share a rank.
+Chosen aliases are public, with your own row marked **(you)**. There are no tags
+or email addresses in standings. Aliases have 3 to 20 characters, using letters,
+numbers, spaces, underscores, or hyphens.
+Use Refresh standings to update the table as other players finish.
+
+The server rejects forged scores and enforces answer order, but public browse
+metadata and video URLs can reveal answers. This is a casual leaderboard, not
+an anti-cheat competition. A competitive release needs separate unrevealed
+challenge assets and controlled access to the reveals.
+
 ## Verification
 
 ```powershell
 .\gradlew.bat :site:jsBrowserDevelopmentWebpack
+.\gradlew.bat :site:jsBrowserTest
 ```
 
 ## Static Export

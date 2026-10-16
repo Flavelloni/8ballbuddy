@@ -13,6 +13,15 @@ internal fun currentEightBallReelsPlayerIntro(): Boolean {
     return js("new URLSearchParams(window.location.search).get('view') === 'player'") as Boolean
 }
 
+internal fun currentEightBallDailyChallenge(): Boolean {
+    return js("new URLSearchParams(window.location.search).has('challenge')") as Boolean
+}
+
+internal fun updateEightBallChallengeUrl(date: String) {
+    val nextUrl = "${window.location.origin}${BasePath.prependTo("/")}?challenge=$date"
+    js("window.history.replaceState(null, '', nextUrl)")
+}
+
 internal fun updateEightBallReelsUrl(shotId: String?, playerIntro: Boolean) {
     val baseUrl = "${window.location.origin}${BasePath.prependTo("/")}"
     val view = if (playerIntro) "&view=player" else ""
