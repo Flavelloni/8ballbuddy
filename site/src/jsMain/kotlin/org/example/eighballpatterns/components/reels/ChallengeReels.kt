@@ -87,13 +87,13 @@ internal fun EightBallModeChoice(
                             aliasError = null
                             onDailyChallenge(chosenAlias)
                         } else {
-                            aliasError = "Your leaderboard name must have 3 to 20 characters."
+                            aliasError = "Your nickname name must have 3 to 20 characters."
                         }
                     }
                 }
             }) {
                 Column(Modifier.attrsModifier { classes("daily-alias-field") }) {
-                    Label(forId = "daily-player-alias") { Text("Leaderboard name") }
+                    Label(forId = "daily-player-alias") { Text("Nickname") }
                     Input(InputType.Text, attrs = {
                         id("daily-player-alias")
                         value(aliasDraft)
