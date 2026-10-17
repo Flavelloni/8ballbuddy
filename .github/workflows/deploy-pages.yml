@@ -31,21 +31,9 @@ jobs:
           cache: gradle
 
       - name: Configure GitHub Pages
-        id: pages
         uses: actions/configure-pages@v5
         with:
           enablement: true
-
-      - name: Set the deployment base path
-        env:
-          PAGES_BASE_PATH: ${{ steps.pages.outputs.base_path }}
-        run: |
-          ruby -ryaml <<'RUBY'
-          path = 'site/.kobweb/conf.yaml'
-          config = YAML.load_file(path)
-          config.fetch('site')['basePath'] = ENV.fetch('PAGES_BASE_PATH').sub(%r{^/}, '')
-          File.write(path, YAML.dump(config))
-          RUBY
 
       - name: Use the runner's Chrome for static export
         run: |
