@@ -64,7 +64,8 @@ again. New player profiles are created automatically; no database reset is neede
 
 ## Player Aliases
 
-On the choice reel, enter a **Leaderboard name** and start the daily challenge.
+On the choice reel, choose **Daily challenge**. The next reel asks for a
+**Nickname** and lets you start the challenge or return to the two choices.
 The first start silently creates a Firebase anonymous account. Names use 3 to 20
 characters: letters, numbers, spaces, underscores, or hyphens. The server
 normalizes and validates the alias before saving it. There is no name reservation

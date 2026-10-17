@@ -43,9 +43,47 @@ import org.jetbrains.compose.web.dom.Table
 
 @Composable
 internal fun EightBallModeChoice(
+    onDailyChallenge: () -> Unit,
+    onBrowse: () -> Unit,
+) {
+    Column(
+        Modifier.attrsModifier { classes("daily-challenge-page", "daily-choice") },
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Img(src = BasePath.prependTo("/images/pool-ball-icon.svg"), alt = "8-Ball Buddy", attrs = {
+            classes("daily-brand")
+            attr("width", "80")
+            attr("height", "80")
+        })
+        H2 { Text("Your next move") }
+        Column(Modifier.attrsModifier { classes("daily-options") }) {
+            Button(attrs = {
+                classes("daily-option", "daily-option-primary")
+                attr("aria-label", "Daily challenge")
+                onClick { onDailyChallenge() }
+            }) {
+                FaTrophy(Modifier.attrsModifier { classes("daily-option-icon") })
+                SpanText("Daily challenge", Modifier.attrsModifier { classes("daily-option-label") })
+                FaArrowRight()
+            }
+            P(attrs = { classes("daily-muted"); style { property("align-self", "center") } }) { Text("or") }
+            Button(attrs = {
+                classes("daily-option")
+                attr("aria-label", "Just browse")
+                onClick { onBrowse() }
+            }) {
+                FaPlay(Modifier.attrsModifier { classes("daily-option-icon") })
+                SpanText("Just browse", Modifier.attrsModifier { classes("daily-option-label") })
+                FaArrowRight()
+            }
+        }
+    }
+}
+
+@Composable
+internal fun EightBallChallengeEntry(
     attempt: DailyChallengeAttempt,
     onDailyChallenge: (String) -> Unit,
-    onBrowse: () -> Unit,
     onBack: () -> Unit,
     alias: String?,
     aliasLocked: Boolean,
@@ -58,7 +96,7 @@ internal fun EightBallModeChoice(
     val dailyLabel = when {
         attempt.complete && attempt.challenge.shotIds.isNotEmpty() -> "View today's results"
         aliasLocked || attempt.answers.isNotEmpty() || attempt.currentShotElapsedMs > 0 -> "Resume daily challenge"
-        else -> "Daily challenge"
+        else -> "Start challenge"
     }
     Column(
         Modifier.attrsModifier { classes("daily-challenge-page", "daily-choice") },
@@ -66,8 +104,8 @@ internal fun EightBallModeChoice(
     ) {
         Button(attrs = {
             classes("daily-back")
-            attr("aria-label", "Back to welcome")
-            title("Back to welcome")
+            attr("aria-label", "Back to choices")
+            title("Back to choices")
             onClick { onBack() }
         }) { FaArrowLeft() }
         Img(src = BasePath.prependTo("/images/pool-ball-icon.svg"), alt = "8-Ball Buddy", attrs = {
@@ -75,7 +113,7 @@ internal fun EightBallModeChoice(
             attr("width", "80")
             attr("height", "80")
         })
-        H2 { Text("Your next move") }
+        H2 { Text("Daily challenge") }
         Column(Modifier.attrsModifier { classes("daily-options") }) {
             Form(attrs = {
                 classes("daily-alias-form")
@@ -87,7 +125,7 @@ internal fun EightBallModeChoice(
                             aliasError = null
                             onDailyChallenge(chosenAlias)
                         } else {
-                            aliasError = "Your nickname name must have 3 to 20 characters."
+                            aliasError = "Your nickname must have 3 to 20 characters."
                         }
                     }
                 }
@@ -127,18 +165,6 @@ internal fun EightBallModeChoice(
                     }
                     FaArrowRight()
                 }
-            }
-            Button(attrs = {
-                classes("daily-option")
-                attr("aria-label", "Just browse")
-                onClick { onBrowse() }
-            }) {
-                FaPlay(Modifier.attrsModifier { classes("daily-option-icon") })
-                Column(Modifier.attrsModifier { classes("daily-option-label") }) {
-                    SpanText("Just browse")
-                    SpanText("No finish line", Modifier.attrsModifier { classes("daily-option-detail") })
-                }
-                FaArrowRight()
             }
         }
         if (visibleError != null) {

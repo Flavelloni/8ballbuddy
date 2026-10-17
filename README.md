@@ -73,7 +73,8 @@ media behavior.
 
 After the welcome reel, choose **Daily challenge** or **Just browse**. Browsing
 does not require an account. The Home button beside Like and Share returns to
-the choice reel. Enter a leaderboard alias to start a daily challenge. Firebase
+the choice reel. Choosing Daily challenge opens a separate nickname reel where
+you can enter a leaderboard alias and start, or return to the choices. Firebase
 silently creates an anonymous identity; no Google account or password is needed.
 Complete the one-time setup in [FIREBASE.md](FIREBASE.md) before trying a ranked round.
 

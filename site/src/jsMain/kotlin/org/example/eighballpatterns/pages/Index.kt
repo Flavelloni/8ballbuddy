@@ -20,6 +20,7 @@ import org.example.eighballpatterns.browser.updateEightBallChallengeUrl
 import org.example.eighballpatterns.components.reels.EightBallChallengeHeader
 import org.example.eighballpatterns.components.reels.EightBallChallengeResults
 import org.example.eighballpatterns.components.reels.EightBallModeChoice
+import org.example.eighballpatterns.components.reels.EightBallChallengeEntry
 import org.example.eighballpatterns.components.reels.EightBallFullscreenImage
 import org.example.eighballpatterns.components.reels.EightBallPlayerIntro
 import org.example.eighballpatterns.components.reels.EightBallReelIntro
@@ -134,7 +135,7 @@ fun ShotPredictionPage() {
     }
 
     LaunchedEffect(position.stage, daily.player?.uid) {
-        if (position.stage == ReelStage.ModeChoice && daily.player != null && daily.statusDate != currentChallengeDate()) {
+        if (position.stage == ReelStage.ChallengeEntry && daily.player != null && daily.statusDate != currentChallengeDate()) {
             daily.refreshStatus()
         }
     }
@@ -155,7 +156,7 @@ fun ShotPredictionPage() {
     fun moveReel(delta: Int) {
         val shotCount = reelShots?.size ?: return
         if (shotCount == 0 || isAdvancing || imageFullscreen || shareShot != null) return
-        if (position.stage == ReelStage.ModeChoice || position.stage == ReelStage.ChallengeResults) return
+        if (position.stage in listOf(ReelStage.ModeChoice, ReelStage.ChallengeEntry, ReelStage.ChallengeResults)) return
         if (challengeMode && (daily.busy || delta < 0 || (position.stage == ReelStage.Shot && selectedBall == null))) return
         isAdvancing = true
         resetPrediction()
@@ -177,7 +178,7 @@ fun ShotPredictionPage() {
         val available = loadedShots ?: return
         challengeError = null
         daily.open(alias) { active ->
-            if (position.stage != ReelStage.ModeChoice) return@open
+            if (position.stage != ReelStage.ChallengeEntry) return@open
             if (active.challenge.shotIds.any { id -> available.none { it.entry.id == id } }) {
                 challengeError = "Today's shots aren't available in this version. Please reload the page."
             } else {
@@ -248,7 +249,7 @@ fun ShotPredictionPage() {
     EightBallReelsShell(
         onNext = { moveReel(1) },
         onPrevious = { moveReel(-1) },
-        allowContentScroll = position.stage == ReelStage.ModeChoice || position.stage == ReelStage.ChallengeResults,
+        allowContentScroll = position.stage in listOf(ReelStage.ModeChoice, ReelStage.ChallengeEntry, ReelStage.ChallengeResults),
         onTouchStart = { y -> touchStartY = y },
         onTouchCancel = { touchStartY = null },
         onTouchEnd = { y ->
@@ -272,11 +273,14 @@ fun ShotPredictionPage() {
                     canStart = loadedShots != null,
                 )
                 loadedShots == null -> EightBallReelMessage("Loading...")
-                position.stage == ReelStage.ModeChoice && attempt != null -> EightBallModeChoice(
+                position.stage == ReelStage.ModeChoice -> EightBallModeChoice(
+                    onDailyChallenge = { position = ReelPosition(ReelStage.ChallengeEntry) },
+                    onBrowse = { browse() },
+                )
+                position.stage == ReelStage.ChallengeEntry && attempt != null -> EightBallChallengeEntry(
                     attempt = attempt,
                     onDailyChallenge = { startChallenge(it) },
-                    onBrowse = { browse() },
-                    onBack = { position = ReelPosition() },
+                    onBack = { position = ReelPosition(ReelStage.ModeChoice) },
                     alias = daily.alias,
                     aliasLocked = daily.attempt?.challenge?.date == today,
                     busy = daily.busy || !daily.authReady,
