@@ -75,6 +75,9 @@ internal fun ensureEightBallReelsStyles() {
         .eight-ball-reel-intro { gap: 24px; padding: 32px; }
         .eight-ball-reel-brand { gap: 16px; }
         .eight-ball-reel-logo { width: 128px; height: 128px; flex-shrink: 0; }
+        @container eight-ball-ball-tray (max-width: calc(308px + 2.76rem)) {
+          .eight-ball-seven-picker { max-width: calc(177px + 1.38rem); }
+        }
         @media (max-height: 650px) {
           .eight-ball-reel-intro { gap: 16px; padding: 20px; }
           .eight-ball-reel-brand { gap: 12px; }

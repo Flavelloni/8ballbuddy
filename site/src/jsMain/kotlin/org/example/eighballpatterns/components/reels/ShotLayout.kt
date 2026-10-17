@@ -12,6 +12,7 @@ import com.varabyte.kobweb.compose.foundation.layout.Column
 import com.varabyte.kobweb.compose.foundation.layout.Row
 import com.varabyte.kobweb.compose.ui.Alignment
 import com.varabyte.kobweb.compose.ui.Modifier
+import com.varabyte.kobweb.compose.ui.attrsModifier
 import com.varabyte.kobweb.compose.ui.graphics.Color
 import com.varabyte.kobweb.compose.ui.modifiers.backgroundColor
 import com.varabyte.kobweb.compose.ui.modifiers.border
@@ -311,6 +312,8 @@ private fun EightBallReelBallTray(balls: List<Int>, onBallSelected: (Int) -> Uni
             .styleModifier {
                 property("box-sizing", "border-box")
                 property("padding-bottom", "max(10px, env(safe-area-inset-bottom))")
+                property("container-type", "inline-size")
+                property("container-name", "eight-ball-ball-tray")
             },
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
@@ -330,7 +333,8 @@ private fun EightBallReelBallTray(balls: List<Int>, onBallSelected: (Int) -> Uni
                 .fillMaxWidth()
                 .gap(0.46.cssRem)
                 .flexWrap(FlexWrap.Wrap)
-                .styleModifier { property("justify-content", "center") },
+                .styleModifier { property("justify-content", "center") }
+                .attrsModifier { if (balls.size == 7) classes("eight-ball-seven-picker") },
             verticalAlignment = Alignment.CenterVertically,
         ) {
             balls.forEach { ball ->
