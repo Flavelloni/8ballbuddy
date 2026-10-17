@@ -1,6 +1,7 @@
 package org.example.eighballpatterns.components.reels
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import com.varabyte.kobweb.compose.css.FontWeight
 import com.varabyte.kobweb.compose.foundation.layout.Box
 import com.varabyte.kobweb.compose.foundation.layout.Column
@@ -26,6 +27,7 @@ import com.varabyte.kobweb.compose.ui.toAttrs
 import com.varabyte.kobweb.navigation.BasePath
 import com.varabyte.kobweb.silk.components.icons.fa.FaAnglesUp
 import kotlinx.browser.document
+import kotlinx.browser.window
 import org.jetbrains.compose.web.css.LineStyle
 import org.jetbrains.compose.web.css.Position
 import org.jetbrains.compose.web.css.cssRem
@@ -39,6 +41,26 @@ import org.jetbrains.compose.web.dom.Span
 import org.jetbrains.compose.web.dom.Text
 
 private const val EIGHT_BALL_WHEEL_THRESHOLD = 56.0
+private const val EIGHT_BALL_WHEEL_GESTURE_GAP_MS = 500.0
+private const val EIGHT_BALL_WHEEL_COOLDOWN_MS = 500.0
+
+private class WheelGesture {
+    private var accumulatedY = 0.0
+    private var lastEventAt = 0.0
+    private var lastNavigationAt = Double.NEGATIVE_INFINITY
+
+    fun direction(deltaY: Double, timeStamp: Double): Int {
+        if (timeStamp - lastEventAt > EIGHT_BALL_WHEEL_GESTURE_GAP_MS) accumulatedY = 0.0
+        lastEventAt = timeStamp
+        if (timeStamp - lastNavigationAt < EIGHT_BALL_WHEEL_COOLDOWN_MS) return 0
+        accumulatedY += deltaY
+        if (accumulatedY < EIGHT_BALL_WHEEL_THRESHOLD && accumulatedY > -EIGHT_BALL_WHEEL_THRESHOLD) return 0
+        val direction = if (accumulatedY > 0) 1 else -1
+        accumulatedY = 0.0
+        lastNavigationAt = timeStamp
+        return direction
+    }
+}
 
 internal fun ensureEightBallReelsStyles() {
     if (document.getElementById("eight-ball-reels-styles") != null) return
@@ -172,6 +194,7 @@ internal fun EightBallReelsShell(
     allowContentScroll: Boolean = false,
     content: @Composable () -> Unit,
 ) {
+    val wheelGesture = remember { WheelGesture() }
     Box(
         contentAlignment = Alignment.TopCenter,
         modifier = Modifier
@@ -187,12 +210,15 @@ internal fun EightBallReelsShell(
             .attrsModifier {
                 onWheel { event ->
                     if (allowContentScroll) return@onWheel
-                    if (event.deltaY >= EIGHT_BALL_WHEEL_THRESHOLD) {
-                        event.preventDefault()
-                        onNext()
-                    } else if (event.deltaY <= -EIGHT_BALL_WHEEL_THRESHOLD) {
-                        event.preventDefault()
-                        onPrevious()
+                    event.preventDefault()
+                    val deltaY = event.deltaY * when (event.deltaMode) {
+                        1 -> 16.0
+                        2 -> window.innerHeight.toDouble()
+                        else -> 1.0
+                    }
+                    when (wheelGesture.direction(deltaY, window.performance.now())) {
+                        1 -> onNext()
+                        -1 -> onPrevious()
                     }
                 }
                 onTouchStart { event ->
