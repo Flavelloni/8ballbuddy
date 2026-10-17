@@ -8,6 +8,7 @@ import org.example.eighballpatterns.model.EightBallShot
 internal fun loadEightBallShots(onLoaded: (List<EightBallShot>) -> Unit, onError: (String) -> Unit) {
     fetchResourceText(
         BasePath.prependTo("/8ball/index.json"),
+        revalidate = true,
         onSuccess = { manifestText ->
             val entries = parseEightBallEntries(manifestText)
             if (entries.isEmpty()) {

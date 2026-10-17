@@ -1,5 +1,7 @@
 import com.varabyte.kobweb.gradle.application.util.configAsKobwebApplication
 import groovy.json.JsonOutput
+import java.security.MessageDigest
+import java.util.HexFormat
 import org.jetbrains.kotlin.gradle.targets.js.nodejs.NodeJsEnvSpec
 import org.jetbrains.kotlin.gradle.targets.js.nodejs.NodeJsPlugin
 
@@ -30,6 +32,19 @@ val generateEightBallManifest = tasks.register("generateEightBallManifest") {
 
     doLast {
         val root = shotsDir.asFile
+        fun versionedPath(id: String, name: String): String {
+            val digest = MessageDigest.getInstance("SHA-256")
+            root.resolve("$id/$name").inputStream().use { input ->
+                val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+                var count = input.read(buffer)
+                while (count != -1) {
+                    digest.update(buffer, 0, count)
+                    count = input.read(buffer)
+                }
+            }
+            val version = HexFormat.of().formatHex(digest.digest())
+            return "/8ball/$id/$name?v=$version"
+        }
         val entries = root.walkTopDown()
             .filter { shotDir ->
                 shotDir.isDirectory && listOf("meta.json", "layout.jpg", "clip.mp4")
@@ -40,9 +55,9 @@ val generateEightBallManifest = tasks.register("generateEightBallManifest") {
                 val id = shotDir.relativeTo(root).invariantSeparatorsPath
                 mapOf(
                     "id" to id,
-                    "metaPath" to "/8ball/$id/meta.json",
-                    "imagePath" to "/8ball/$id/layout.jpg",
-                    "videoPath" to "/8ball/$id/clip.mp4",
+                    "metaPath" to versionedPath(id, "meta.json"),
+                    "imagePath" to versionedPath(id, "layout.jpg"),
+                    "videoPath" to versionedPath(id, "clip.mp4"),
                 )
             }.toList()
 
