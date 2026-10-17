@@ -47,9 +47,10 @@ internal fun EightBallLeaderboard(
         } else if (leaderboard != null) {
             P(attrs = { classes("daily-muted") }) { Text("${leaderboard.total} results") }
         }
-        if (leaderboard != null && leaderboard.simulatedCount > 0) {
+        /*if (leaderboard != null && leaderboard.simulatedCount > 0) {
             P(attrs = { classes("daily-muted") }) { Text("Includes ${leaderboard.simulatedCount} simulated scores") }
         }
+        */
         if (error != null) {
             P(attrs = { classes("daily-incorrect"); attr("role", "alert") }) { Text(error) }
         }
@@ -76,7 +77,7 @@ internal fun EightBallLeaderboard(
                             Td {
                                 Text(entry.displayName)
                                 if (own) SpanText(" (you)", Modifier.attrsModifier { classes("daily-own-label") })
-                                if (entry.simulated) SpanText(" (simulated)", Modifier.attrsModifier { classes("daily-muted") })
+                                //if (entry.simulated) SpanText(" (simulated)", Modifier.attrsModifier { classes("daily-muted") })
                             }
                             Td { Text("${entry.correctCount}/${entry.shotCount}") }
                             Td { Text(formatChallengeTime(entry.totalElapsedMs)) }
