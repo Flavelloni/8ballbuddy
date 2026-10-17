@@ -35,14 +35,12 @@ import org.example.eighballpatterns.data.loadPlayerProfiles
 import org.example.eighballpatterns.data.currentChallengeDate
 import org.example.eighballpatterns.data.FirebaseChallengeRepository
 import org.example.eighballpatterns.model.AnswerClock
-import org.example.eighballpatterns.model.DailyChallengeAttempt
 import org.example.eighballpatterns.model.EightBallReelStats
 import org.example.eighballpatterns.model.EightBallShot
 import org.example.eighballpatterns.model.PlayerProfile
 import org.example.eighballpatterns.model.ReelPosition
 import org.example.eighballpatterns.model.ReelStage
 import org.example.eighballpatterns.model.buildEightBallReelFeedback
-import org.example.eighballpatterns.model.createDailyChallenge
 import org.w3c.dom.HTMLVideoElement
 
 private const val EIGHT_BALL_SLIDE_DURATION_MS = 320
@@ -103,7 +101,6 @@ fun ShotPredictionPage() {
     val loadedShots = shots
     val today = currentChallengeDate()
     val attempt = daily.attempt?.takeIf { challengeMode || it.challenge.date == today }
-        ?: loadedShots?.let { DailyChallengeAttempt(createDailyChallenge(today, it)) }
     val reelShots = if (challengeMode) attempt?.challenge?.shotIds?.mapNotNull { id ->
         loadedShots?.find { it.entry.id == id }
     } else loadedShots
@@ -113,7 +110,7 @@ fun ShotPredictionPage() {
         rawShot.copy(meta = rawShot.meta.copy(ball = answer?.correctBall ?: -1))
     } else rawShot
     val answerClock = remember(challengeMode, currentShot?.entry?.id, attempt?.challenge?.date, daily.clockRevision) {
-        if (challengeMode) AnswerClock({ window.performance.now() }, attempt?.currentShotElapsedMs ?: 0, continuous = true) else null
+        if (challengeMode) AnswerClock({ window.performance.now() }, attempt?.currentShotElapsedMs ?: 0) else null
     }
     val displayedStats = if (challengeMode) attempt?.answers?.fold(EightBallReelStats()) { value, answer -> value.next(answer.correct) }
         ?: EightBallReelStats() else stats
@@ -134,8 +131,8 @@ fun ShotPredictionPage() {
         }
     }
 
-    LaunchedEffect(position.stage, daily.player?.uid) {
-        if (position.stage == ReelStage.ChallengeEntry && daily.player != null && daily.statusDate != currentChallengeDate()) {
+    LaunchedEffect(position.stage, daily.player?.uid, daily.authReady) {
+        if (position.stage == ReelStage.ChallengeEntry && daily.statusDate != currentChallengeDate()) {
             daily.refreshStatus()
         }
     }
@@ -277,14 +274,17 @@ fun ShotPredictionPage() {
                     onDailyChallenge = { position = ReelPosition(ReelStage.ChallengeEntry) },
                     onBrowse = { browse() },
                 )
-                position.stage == ReelStage.ChallengeEntry && attempt != null -> EightBallChallengeEntry(
+                position.stage == ReelStage.ChallengeEntry -> EightBallChallengeEntry(
                     attempt = attempt,
+                    date = daily.statusDate,
+                    shotCount = daily.shotCount,
                     onDailyChallenge = { startChallenge(it) },
                     onBack = { position = ReelPosition(ReelStage.ModeChoice) },
                     alias = daily.alias,
                     aliasLocked = daily.attempt?.challenge?.date == today,
                     busy = daily.busy || !daily.authReady,
                     error = challengeError ?: daily.error,
+                    onRetry = { daily.refreshStatus() },
                 )
                 position.stage == ReelStage.ChallengeResults && attempt?.complete == true -> EightBallChallengeResults(
                     attempt = attempt,
@@ -373,7 +373,7 @@ fun ShotPredictionPage() {
                         onVideoToggle = { toggleVideoPlayback() },
                         answerClock = answerClock,
                         inputEnabled = !challengeMode || (daily.clockStarted && !daily.busy),
-                        clockRunning = !challengeMode || daily.clockStarted,
+                        clockRunning = challengeMode && daily.clockStarted,
                         onLayoutReady = { if (challengeMode) daily.startShot(currentShot.entry.id) },
                         requestError = if (challengeMode) daily.error else null,
                         requestBusy = challengeMode && daily.busy,

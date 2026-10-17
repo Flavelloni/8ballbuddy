@@ -82,20 +82,25 @@ internal fun EightBallModeChoice(
 
 @Composable
 internal fun EightBallChallengeEntry(
-    attempt: DailyChallengeAttempt,
+    attempt: DailyChallengeAttempt?,
+    date: String?,
+    shotCount: Int?,
     onDailyChallenge: (String) -> Unit,
     onBack: () -> Unit,
     alias: String?,
     aliasLocked: Boolean,
     busy: Boolean,
     error: String?,
+    onRetry: () -> Unit,
 ) {
     var aliasDraft by remember(alias) { mutableStateOf(alias.orEmpty()) }
     var aliasError by remember(alias) { mutableStateOf<String?>(null) }
     val visibleError = aliasError ?: error
+    val count = attempt?.challenge?.shotIds?.size ?: shotCount
+    val challengeDate = attempt?.challenge?.date ?: date
     val dailyLabel = when {
-        attempt.complete && attempt.challenge.shotIds.isNotEmpty() -> "View today's results"
-        aliasLocked || attempt.answers.isNotEmpty() || attempt.currentShotElapsedMs > 0 -> "Resume daily challenge"
+        attempt?.complete == true && count != 0 -> "View today's results"
+        aliasLocked || attempt?.answers?.isNotEmpty() == true || (attempt?.currentShotElapsedMs ?: 0) > 0 -> "Resume daily challenge"
         else -> "Start challenge"
     }
     Column(
@@ -119,7 +124,7 @@ internal fun EightBallChallengeEntry(
                 classes("daily-alias-form")
                 addEventListener("submit") { event ->
                     event.preventDefault()
-                    if (!busy && attempt.challenge.shotIds.isNotEmpty()) {
+                    if (!busy && count != null && count > 0) {
                         val chosenAlias = normalizePlayerAlias(aliasDraft)
                         if (aliasLocked || hasValidPlayerAliasLength(chosenAlias)) {
                             aliasError = null
@@ -153,13 +158,13 @@ internal fun EightBallChallengeEntry(
                     classes("daily-option", "daily-option-primary")
                     attr("type", "submit")
                     attr("aria-label", dailyLabel)
-                    if (busy || attempt.challenge.shotIds.isEmpty()) attr("disabled", "")
+                    if (busy || count == null || count == 0) attr("disabled", "")
                     attr("aria-busy", busy.toString())
                 }) {
                     FaTrophy(Modifier.attrsModifier { classes("daily-option-icon") })
                     Column(Modifier.attrsModifier { classes("daily-option-label") }) {
                         SpanText(if (busy) "Connecting..." else dailyLabel)
-                        SpanText("${attempt.challenge.shotIds.size} shots · ${attempt.challenge.date}", Modifier.attrsModifier {
+                        SpanText(if (count != null && challengeDate != null) "$count shots · $challengeDate" else "Loading challenge...", Modifier.attrsModifier {
                             classes("daily-option-detail")
                         })
                     }
@@ -169,8 +174,14 @@ internal fun EightBallChallengeEntry(
         }
         if (visibleError != null) {
             P(attrs = { classes("daily-incorrect"); attr("role", "alert") }) { Text(visibleError) }
+            if (count == null) {
+                Button(attrs = { classes("daily-command"); if (busy) attr("disabled", ""); onClick { onRetry() } }) {
+                    FaRotateRight()
+                    Text("Try again")
+                }
+            }
         }
-        if (attempt.answers.isNotEmpty()) {
+        if (attempt != null && attempt.answers.isNotEmpty()) {
             P(attrs = { classes("daily-muted") }) {
                 Text(if (attempt.complete) "${attempt.correctCount}/${attempt.answers.size} correct · ${formatChallengeTime(attempt.totalElapsedMs)}"
                 else "${attempt.answers.size} of ${attempt.challenge.shotIds.size} answered")

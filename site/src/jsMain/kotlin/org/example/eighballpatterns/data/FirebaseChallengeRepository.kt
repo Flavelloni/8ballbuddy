@@ -18,6 +18,8 @@ internal class FirebaseChallengeRepository {
         private set
     var statusDate by mutableStateOf<String?>(null)
         private set
+    var shotCount by mutableStateOf<Int?>(null)
+        private set
     var attempt by mutableStateOf<DailyChallengeAttempt?>(null)
         private set
     var busy by mutableStateOf(false)
@@ -44,6 +46,7 @@ internal class FirebaseChallengeRepository {
             identityRevision++
             alias = null
             statusDate = null
+            shotCount = null
             attempt = null
             leaderboard = null
             error = null
@@ -56,7 +59,7 @@ internal class FirebaseChallengeRepository {
     }
 
     fun refreshStatus() {
-        if (player == null || busy) return
+        if (busy || !authReady) return
         val revision = identityRevision
         busy = true
         error = null
@@ -64,6 +67,7 @@ internal class FirebaseChallengeRepository {
             if (revision != identityRevision) return@then
             alias = data.alias as? String
             statusDate = data.date as String
+            shotCount = data.shotCount as Int
             if (data.attempt != null) updateAttempt(data.attempt) else attempt = null
             busy = false
         }.catch { failure ->
@@ -142,6 +146,7 @@ internal class FirebaseChallengeRepository {
     private fun updateAttempt(data: dynamic, shotReady: Boolean = false) {
         alias = data.displayName as String
         statusDate = data.date as String
+        shotCount = (data.shotIds as Array<String>).size
         attempt = DailyChallengeAttempt(
             DailyChallenge(data.date as String, (data.shotIds as Array<String>).toList()),
             (data.answers as Array<dynamic>).map { answer ->

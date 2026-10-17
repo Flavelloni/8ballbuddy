@@ -99,8 +99,11 @@ can choose the same name and should get its own attempt and **(you)** marker.
   simulated results. Their names come from a pool of ten; no simulated shot takes
   less than 60 seconds, and none has a perfect score. A marker prevents duplicates.
 
-All browser Firestore access is denied. Authenticated callable functions handle
-reads and writes through the Admin SDK. Clients submit shot IDs and chosen balls,
+All browser Firestore access is denied. Callable functions handle reads and writes
+through the Admin SDK. The status endpoint returns the UTC date and actual shot
+count before sign-in, without creating a round. Profile and attempt data require
+authentication; starting and answering also require authentication. The backend
+alone defines the three-shot limit. Clients submit shot IDs and chosen balls,
 never scores or answer times. Answer submission and result publication happen in
 one transaction. Repeated requests return the accepted answer without scoring it
 twice. The functions do not send unsubmitted answers to the challenge client.

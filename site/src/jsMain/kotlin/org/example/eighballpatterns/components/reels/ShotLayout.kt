@@ -76,7 +76,6 @@ internal fun EightBallReelShot(
     onVideoPause: () -> Unit,
     onVideoToggle: () -> Unit,
     answerClock: AnswerClock? = null,
-    onElapsed: (Int) -> Unit = {},
     onChallengeNext: (() -> Unit)? = null,
     challengeLastShot: Boolean = false,
     inputEnabled: Boolean = true,
@@ -124,7 +123,6 @@ internal fun EightBallReelShot(
                 onImageFullscreen = onImageFullscreen,
                 onBallSelected = onBallSelected,
                 answerClock = answerClock,
-                onElapsed = onElapsed,
                 inputEnabled = inputEnabled,
                 clockRunning = clockRunning,
                 onLayoutReady = onLayoutReady,
@@ -151,7 +149,6 @@ private fun EightBallReelLayoutOverlay(
     onImageFullscreen: () -> Unit,
     onBallSelected: (Int) -> Unit,
     answerClock: AnswerClock?,
-    onElapsed: (Int) -> Unit,
     inputEnabled: Boolean,
     clockRunning: Boolean,
     onLayoutReady: () -> Unit,
@@ -194,7 +191,9 @@ private fun EightBallReelLayoutOverlay(
                 Modifier.gap(4.px),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                ShotClock(shot.entry.id, running = layoutReady && clockRunning, answerClock = answerClock, onElapsed = onElapsed)
+                if (answerClock != null) {
+                    ShotClock(running = layoutReady && clockRunning, answerClock = answerClock)
+                }
                 P(
                     attrs = Modifier.margin(0.px)
                         .styleModifier {
@@ -324,7 +323,7 @@ private fun EightBallReelBallTray(balls: List<Int>, onBallSelected: (Int) -> Uni
                 .styleModifier { property("text-transform", "uppercase") }
                 .toAttrs()
         ) {
-            Text("Pick the ball the pro pots next")
+            Text("Pick the ball the pro tries to pot. Click on it here:")
         }
         Row(
             Modifier

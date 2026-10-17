@@ -87,9 +87,10 @@ you can enter a leaderboard alias and start, or return to the choices. Firebase
 silently creates an anonymous identity; no Google account or password is needed.
 Complete the one-time setup in [FIREBASE.md](FIREBASE.md) before trying a ranked round.
 
-Each UTC date gets a server-defined set of up to ten distinct shots, frozen when
-the first participant starts. The current catalog has three shots, so the round
-has three. Every player ID has one attempt per date, resumable in the same browser.
+Each UTC date gets a server-defined set of up to three distinct shots, frozen when
+the first participant starts. The shot limit is defined only in the backend.
+The nickname reel reads the actual shot count from Firebase without creating an
+account or attempt. Every player ID has one attempt per date, resumable in the same browser.
 Duplicate aliases are allowed. Names are remembered and fixed for each started
 daily attempt. A new browser or cleared site data creates a different identity;
 entering the same alias cannot restore the original account or progress.
@@ -100,6 +101,7 @@ answer reaches the server, including hidden tabs and interruptions after that
 shot starts. Introductions and reveals between shots do not count. The clock
 cannot be reset by reloading. The displayed clock is approximate; the result
 uses server time. Challenge shots cannot be skipped or answered twice.
+The stopwatch appears only on unanswered daily challenge layouts; browsing has no clock.
 
 Completed rounds are published automatically. The results reel shows your rank,
 all results (50 per page), and an answer breakdown. Ranking uses correct

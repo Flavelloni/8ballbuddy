@@ -2,45 +2,18 @@ package org.example.eighballpatterns.model
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
-import kotlin.test.assertNotEquals
 import kotlin.test.assertTrue
 
 class DailyChallengeTest {
-    private fun shot(id: String, ball: Int = 6) = EightBallShot(
-        EightBallEntry(id, "meta", "layout", "clip"),
-        EightBallMeta("Player", "Opponent", 1, ball, ""),
-    )
-
     @Test
-    fun dailySetIsStableAndHasTenDistinctShots() {
-        val shots = (1..30).map { shot("shot-$it") }
-        val daily = createDailyChallenge("2026-10-16", shots)
-        assertEquals(10, daily.shotIds.size)
-        assertEquals(10, daily.shotIds.distinct().size)
-        assertEquals(daily, createDailyChallenge(daily.date, shots.reversed()))
-        assertNotEquals(daily.shotIds, createDailyChallenge("2026-10-17", shots).shotIds)
-    }
-
-    @Test
-    fun smallCatalogUsesEachEligibleShotOnce() {
-        val shots = listOf(shot("a"), shot("b"), shot("a"), shot("unknown", -1), shot("not-in-group", 14))
-        assertEquals(setOf("a", "b"), createDailyChallenge("2026-10-16", shots).shotIds.toSet())
-    }
-
-    @Test
-    fun answersAreRecordedInOrderAndCompletionIsFinite() {
-        val first = shot("a")
-        val second = shot("b")
+    fun progressAndScoreFollowTheServerSuppliedRound() {
         var attempt = DailyChallengeAttempt(DailyChallenge("2026-10-16", listOf("a", "b")))
-        assertFailsWith<IllegalArgumentException> { attempt.answer(second, 6, 1500) }
-        attempt = attempt.answer(first, 6, 1500)
+        assertEquals("a", attempt.currentShotId)
+        attempt = attempt.copy(answers = listOf(ChallengeAnswer("a", 6, 6, 1500)))
         assertFalse(attempt.complete)
         assertEquals("b", attempt.currentShotId)
-        assertFailsWith<IllegalArgumentException> { attempt.answer(first, 6, 100) }
-        assertFailsWith<IllegalArgumentException> { attempt.answer(second, 14, 100) }
-        attempt = attempt.answer(second, 1, 2500)
+        attempt = attempt.copy(answers = attempt.answers + ChallengeAnswer("b", 1, 6, 2500))
         assertTrue(attempt.complete)
         assertEquals(null, attempt.currentShotId)
         assertEquals(1, attempt.correctCount)
