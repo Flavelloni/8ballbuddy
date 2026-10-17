@@ -25,10 +25,10 @@ test("invalid aliases cannot enter the leaderboard", () => {
   }
 });
 
-test("every player gets the same ten distinct shots regardless of catalog order", () => {
+test("every player gets the same three distinct shots regardless of catalog order", () => {
   const challenge = createDailyChallenge(date, catalog);
-  assert.equal(challenge.shotIds.length, 10);
-  assert.equal(new Set(challenge.shotIds).size, 10);
+  assert.equal(challenge.shotIds.length, 3);
+  assert.equal(new Set(challenge.shotIds).size, 3);
   assert.deepEqual(challenge, createDailyChallenge(date, [...catalog].reverse()));
   assert.notDeepEqual(challenge.shotIds, createDailyChallenge("2026-10-17", catalog).shotIds);
 });

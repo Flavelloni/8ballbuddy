@@ -65,11 +65,13 @@ export function createDailyBenchmarks(date, shotCount) {
   });
 }
 
+const DAILY_CHALLENGE_SHOT_LIMIT = 3;
+
 export function createDailyChallenge(date, catalog) {
   const shots = [...new Map(catalog.map(shot => [shot.id, shot])).values()]
     .filter(shot => pickerBalls(shot.group).includes(shot.correctBall))
     .sort((a, b) => shotHash(date, a.id) - shotHash(date, b.id) || (a.id < b.id ? -1 : 1))
-    .slice(0, 10);
+    .slice(0, DAILY_CHALLENGE_SHOT_LIMIT);
   if (!shots.length) throw new ChallengeError("failed-precondition", "No challenge shots are available.");
   return { date, shotIds: shots.map(shot => shot.id), shots };
 }

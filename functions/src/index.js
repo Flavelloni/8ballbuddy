@@ -40,16 +40,17 @@ function callable(handler) {
   });
 }
 
-export const getDailyChallengeStatus = callable(async (_data, identity) => {
+export const getDailyChallengeStatus = onCall(async request => {
   const date = utcDate(Date.now());
   const dailyRef = db.doc(`dailyChallenges/${date}`);
-  const [profile, daily, attempt] = await db.getAll(
-    db.doc(`players/${identity.uid}`), dailyRef, dailyRef.collection("attempts").doc(identity.uid),
-  );
+  const refs = [dailyRef];
+  if (request.auth) refs.push(db.doc(`players/${request.auth.uid}`), dailyRef.collection("attempts").doc(request.auth.uid));
+  const [daily, profile, attempt] = await db.getAll(...refs);
+  const challenge = daily.exists ? daily.data() : createDailyChallenge(date, catalog);
   return {
-    date,
-    alias: attempt.exists ? attempt.data().displayName : profile.exists ? profile.data().alias : null,
-    attempt: daily.exists && attempt.exists ? publicAttempt(daily.data(), attempt.data(), Date.now()) : null,
+    date, shotCount: challenge.shotIds.length,
+    alias: attempt?.exists ? attempt.data().displayName : profile?.exists ? profile.data().alias : null,
+    attempt: daily.exists && attempt?.exists ? publicAttempt(challenge, attempt.data(), Date.now()) : null,
   };
 });
 

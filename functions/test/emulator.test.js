@@ -38,7 +38,12 @@ test("anonymous aliases, duplicate names, immutable daily attempts, server score
   const bob = await signIn();
   assert.notEqual(alice.uid, bob.uid);
   await call("startDailyChallenge", null, {}, 401);
-  await call("getDailyChallengeStatus", null, {}, 401);
+  const summary = await call("getDailyChallengeStatus", null);
+  assert.equal(summary.shotCount, 3);
+  assert.equal(summary.alias, null);
+  assert.equal(summary.attempt, null);
+  assert.equal(summary.shotIds, undefined);
+  assert.equal((await db.doc(`dailyChallenges/${summary.date}`).get()).exists, false);
   assert.equal((await call("getDailyChallengeStatus", alice)).alias, null);
   for (const alias of ["ab", "a".repeat(21), "<script>", "bad\u202ename"]) {
     await call("startDailyChallenge", alice, { alias }, 400);
@@ -59,6 +64,11 @@ test("anonymous aliases, duplicate names, immutable daily attempts, server score
   assert.equal((await call("startDailyChallenge", returning)).displayName, "RememberedName");
   assert.equal((await db.doc(`players/${bob.uid}`).get()).data().alias, "PoolFan42");
   const status = await call("getDailyChallengeStatus", alice);
+  assert.equal(first.shotIds.length, summary.shotCount);
+  assert.equal(status.shotCount, first.shotIds.length);
+  const publicStatus = await call("getDailyChallengeStatus", null, { uid: alice.uid });
+  assert.equal(publicStatus.alias, null);
+  assert.equal(publicStatus.attempt, null);
   assert.equal(status.alias, "PoolFan42");
   assert.deepEqual(status.attempt, first);
   assert.equal((await call("startDailyChallenge", alice, { alias: "AnotherName" })).displayName, "PoolFan42");
