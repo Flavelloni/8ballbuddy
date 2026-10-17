@@ -69,6 +69,15 @@ Layout containers use Kobweb Compose wrappers. Native HTML elements remain for
 headings, paragraphs, buttons, images, and video to preserve their semantics and
 media behavior.
 
+## Media Caching
+
+Shot images, clips, and metadata use content-hashed version URLs generated during
+the build. Unchanged files retain the same URL; replacing a file changes its URL
+automatically. The shot manifest is revalidated on each page load. Media uses the
+browser's normal HTTP cache and native video range requests, without downloading
+the entire library. GitHub Pages currently serves media with a ten-minute cache
+lifetime; this does not provide guaranteed offline playback or permanent storage.
+
 ## Daily Challenge
 
 After the welcome reel, choose **Daily challenge** or **Just browse**. Browsing
