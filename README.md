@@ -92,8 +92,11 @@ cannot be reset by reloading. The displayed clock is approximate; the result
 uses server time. Challenge shots cannot be skipped or answered twice.
 
 Completed rounds are published automatically. The results reel shows your rank,
-all finishers (50 per page), and an answer breakdown. Ranking uses correct
+all results (50 per page), and an answer breakdown. Ranking uses correct
 answers descending and total answer time ascending; exact ties share a rank.
+Three date-seeded simulated results provide comparison from the first round.
+They use short names from a pool of ten, are labeled **simulated**, count in the
+displayed ranks, never score perfectly, and take at least 60 seconds per shot.
 Chosen aliases are public, with your own row marked **(you)**. There are no tags
 or email addresses in standings. Aliases have 3 to 20 characters, using letters,
 numbers, spaces, underscores, or hyphens.

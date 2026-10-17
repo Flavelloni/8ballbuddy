@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
-  completedResult, createAttempt, createDailyChallenge, pickerBalls,
+  completedResult, createAttempt, createDailyBenchmarks, createDailyChallenge, pickerBalls,
   publicAttempt, startShot, submitAnswer, utcDate, validateAlias,
 } from "../src/challenge.js";
 
@@ -31,6 +31,19 @@ test("every player gets the same ten distinct shots regardless of catalog order"
   assert.equal(new Set(challenge.shotIds).size, 10);
   assert.deepEqual(challenge, createDailyChallenge(date, [...catalog].reverse()));
   assert.notDeepEqual(challenge.shotIds, createDailyChallenge("2026-10-17", catalog).shotIds);
+});
+
+test("daily simulated scores have distinct names and take at least a minute per shot", () => {
+  const benchmarks = createDailyBenchmarks(date, 10);
+  assert.equal(benchmarks.length, 3);
+  assert.deepEqual(benchmarks, createDailyBenchmarks(date, 10));
+  assert.notDeepEqual(benchmarks, createDailyBenchmarks("2026-10-17", 10));
+  assert.equal(new Set(benchmarks.map(entry => entry.displayName)).size, 3);
+  assert.ok(benchmarks.every(entry => entry.simulated && entry.correctCount < 10));
+  assert.ok(benchmarks.every(entry => entry.shotElapsedMs.length === 10 &&
+    entry.shotElapsedMs.every(elapsed => elapsed >= 60_000)));
+  assert.ok(benchmarks.every(entry => entry.totalElapsedMs ===
+    entry.shotElapsedMs.reduce((total, elapsed) => total + elapsed, 0)));
 });
 
 test("the day changes at midnight UTC", () => {

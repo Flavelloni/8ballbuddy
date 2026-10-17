@@ -4,7 +4,7 @@ import { FieldPath, getFirestore } from "firebase-admin/firestore";
 import { setGlobalOptions } from "firebase-functions/v2";
 import { HttpsError, onCall } from "firebase-functions/v2/https";
 import {
-  ChallengeError, completedResult, createAttempt, createDailyChallenge,
+  ChallengeError, completedResult, createAttempt, createDailyBenchmarks, createDailyChallenge,
   publicAttempt, startShot, submitAnswer, utcDate, validateAlias,
 } from "./challenge.js";
 
@@ -125,8 +125,24 @@ async function rankOf(results, entry) {
   return moreCorrect + faster + 1;
 }
 
+async function ensureDailyBenchmarks(date) {
+  const dailyRef = db.doc(`dailyChallenges/${date}`);
+  const markerRef = dailyRef.collection("meta").doc("benchmarks");
+  return db.runTransaction(async transaction => {
+    const marker = await transaction.get(markerRef);
+    if (marker.exists) return marker.data().count;
+    const daily = await transaction.get(dailyRef);
+    if (!daily.exists) return 0;
+    const benchmarks = createDailyBenchmarks(date, daily.data().shotIds.length);
+    for (const entry of benchmarks) transaction.create(dailyRef.collection("results").doc(entry.uid), entry);
+    transaction.create(markerRef, { count: benchmarks.length });
+    return benchmarks.length;
+  });
+}
+
 export const getDailyLeaderboard = callable(async (data, identity) => {
   const date = dateArgument(data.date);
+  const simulatedCount = await ensureDailyBenchmarks(date);
   const results = db.collection(`dailyChallenges/${date}/results`);
   let query = results.orderBy("correctCount", "desc").orderBy("totalElapsedMs", "asc").orderBy(FieldPath.documentId());
   if (data.afterUid != null) {
@@ -159,7 +175,7 @@ export const getDailyLeaderboard = callable(async (data, identity) => {
     return { ...entry, rank: currentRank };
   });
   return {
-    entries, total,
+    entries, total, simulatedCount,
     ownRank: own.exists ? await rankOf(results, own.data()) : null,
     nextAfterUid: snapshot.docs.length > 50 ? rows.at(-1).uid : null,
   };
