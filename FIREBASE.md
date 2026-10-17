@@ -94,6 +94,9 @@ can choose the same name and should get its own attempt and **(you)** marker.
   server-recorded clock starts and answers.
 - `dailyChallenges/{UTC-date}/results/{uid}` contains completed results with a
   display name, score, total time, and completion time. Emails are omitted.
+- The first standings request also saves three date-seeded, clearly labeled
+  simulated results. Their names come from a pool of ten; no simulated shot takes
+  less than 60 seconds, and none has a perfect score. A marker prevents duplicates.
 
 All browser Firestore access is denied. Authenticated callable functions handle
 reads and writes through the Admin SDK. Clients submit shot IDs and chosen balls,
@@ -101,9 +104,10 @@ never scores or answer times. Answer submission and result publication happen in
 one transaction. Repeated requests return the accepted answer without scoring it
 twice. The functions do not send unsubmitted answers to the challenge client.
 
-Standings use competition ranking, including ties across page boundaries. The
-results reel can load every finisher, and your own rank is calculated even when
-your row is on a later page.
+Standings sort by correct answers descending, then total shot time ascending.
+Exact ties share a rank, including across page boundaries. Simulated results
+count in these ranks and are labeled in the table. The results reel can load
+every entry, and your own rank is calculated even when your row is on a later page.
 
 Public browsing metadata and reveal clips still expose answers to someone who
 inspects the site. One Firebase player ID is one daily entry, not proof of a

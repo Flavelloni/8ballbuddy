@@ -105,10 +105,17 @@ test("anonymous aliases, duplicate names, immutable daily attempts, server score
   }
 
   let board = await call("getDailyLeaderboard", alice, { date: first.date });
-  assert.equal(board.total, 2);
+  assert.equal(board.total, 5);
+  assert.equal(board.simulatedCount, 3);
   assert.equal(board.ownRank, 2);
-  assert.deepEqual(board.entries.map(entry => entry.displayName), ["PoolFan42", "PoolFan42"]);
-  assert.deepEqual(board.entries.map(entry => entry.uid), [bob.uid, alice.uid]);
+  assert.deepEqual(board.entries.slice(0, 2).map(entry => entry.displayName), ["PoolFan42", "PoolFan42"]);
+  assert.deepEqual(board.entries.slice(0, 2).map(entry => entry.uid), [bob.uid, alice.uid]);
+  assert.ok(board.entries.slice(2).every(entry => entry.simulated));
+  const benchmarks = (await results.where("simulated", "==", true).get()).docs.map(doc => doc.data());
+  assert.equal(benchmarks.length, 3);
+  assert.ok(benchmarks.every(entry => entry.correctCount < first.shotIds.length &&
+    entry.shotElapsedMs.every(elapsed => elapsed >= 60_000)));
+  assert.equal((await call("getDailyLeaderboard", alice, { date: first.date })).total, 5);
   const stranger = await signIn();
   const strangerAttempt = await call("startDailyChallenge", stranger, { alias: "PoolFan42" });
   assert.equal(strangerAttempt.answers.length, 0);
@@ -124,17 +131,18 @@ test("anonymous aliases, duplicate names, immutable daily attempts, server score
   }
   await batch.commit();
   board = await call("getDailyLeaderboard", alice, { date: first.date });
-  assert.equal(board.total, 62);
+  assert.equal(board.total, 65);
   assert.equal(board.ownRank, 62);
   assert.equal(board.entries.length, 50);
   assert.ok(board.entries.every(entry => entry.rank === 1));
   const next = await call("getDailyLeaderboard", alice, { date: first.date, afterUid: board.nextAfterUid });
-  assert.equal(next.entries.length, 12);
+  assert.equal(next.entries.length, 15);
   assert.equal(next.nextAfterUid, null);
   assert.ok(next.entries.slice(0, 10).every(entry => entry.rank === 1));
   assert.equal(next.entries[10].rank, 61);
   assert.equal(next.entries[11].rank, 62);
-  assert.equal(new Set([...board.entries, ...next.entries].map(entry => entry.uid)).size, 62);
+  assert.ok(next.entries.slice(12).every(entry => entry.simulated));
+  assert.equal(new Set([...board.entries, ...next.entries].map(entry => entry.uid)).size, 65);
 
   const denied = await fetch(`http://${process.env.FIRESTORE_EMULATOR_HOST}/v1/projects/${projectId}/databases/(default)/documents/dailyChallenges/${first.date}`, {
     headers: { Authorization: `Bearer ${alice.token}` },

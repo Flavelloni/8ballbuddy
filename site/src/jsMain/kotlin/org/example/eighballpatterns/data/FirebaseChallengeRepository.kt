@@ -165,11 +165,13 @@ internal class FirebaseChallengeRepository {
         FirebaseClient.call("getDailyLeaderboard", input).then<Unit> { data: dynamic ->
             val entries = (data.entries as Array<dynamic>).map { entry ->
                 LeaderboardEntry(entry.uid as String, entry.displayName as String, entry.correctCount as Int,
-                    entry.shotCount as Int, entry.totalElapsedMs as Int, entry.rank as Int)
+                    entry.shotCount as Int, entry.totalElapsedMs as Int, entry.rank as Int,
+                    entry.simulated == true)
             }
             leaderboard = DailyLeaderboard(
                 entries = ((if (more) leaderboard?.entries.orEmpty() else emptyList()) + entries).distinctBy { it.uid },
                 total = data.total as Int,
+                simulatedCount = data.simulatedCount as Int,
                 ownRank = data.ownRank as? Int,
                 nextAfterUid = data.nextAfterUid as? String,
             )
