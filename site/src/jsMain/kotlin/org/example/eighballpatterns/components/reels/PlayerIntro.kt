@@ -29,9 +29,9 @@ import com.varabyte.kobweb.compose.ui.modifiers.width
 import com.varabyte.kobweb.compose.ui.styleModifier
 import com.varabyte.kobweb.compose.ui.toAttrs
 import com.varabyte.kobweb.navigation.BasePath
+import com.varabyte.kobweb.silk.components.icons.fa.FaUser
 import com.varabyte.kobweb.silk.components.layout.SimpleGrid
 import com.varabyte.kobweb.silk.components.layout.numColumns
-import com.varabyte.kobweb.silk.components.text.SpanText
 import org.example.eighballpatterns.components.widgets.PoolBall
 import org.example.eighballpatterns.model.EightBallShot
 import org.example.eighballpatterns.model.PlayerProfile
@@ -50,8 +50,6 @@ internal fun EightBallPlayerIntro(shot: EightBallShot, player: PlayerProfile?, c
     }
     var imageReady by remember(imageUrl) { mutableStateOf(false) }
     var imageFailed by remember(imageUrl) { mutableStateOf(false) }
-    val initials = shot.meta.player.trim().split(Regex("\\s+"))
-        .filter { it.isNotEmpty() }.take(2).joinToString("") { it.take(1) }.uppercase()
     val balls = when (shot.meta.group) {
         0 -> (1..15).filter { it != 8 }
         1 -> (1..7).toList()
@@ -90,9 +88,9 @@ internal fun EightBallPlayerIntro(shot: EightBallShot, player: PlayerProfile?, c
                     contentAlignment = Alignment.Center,
                 ) {
                     if (!imageReady || imageFailed) {
-                        SpanText(
-                            initials,
-                            Modifier.fontSize(5.cssRem).fontWeight(FontWeight.Bold).color(Color.rgb(0x94C9B5)),
+                        FaUser(
+                            Modifier.fontSize(5.cssRem).color(Color.rgb(0x94C9B5))
+                                .attrsModifier { attr("aria-hidden", "true") },
                         )
                     }
                     if (imageUrl != null && !imageFailed) {
