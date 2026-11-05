@@ -22,6 +22,5 @@ functions/generated/
 .firebase/
 
 # Withdrawn clips/layouts must never be republished or recommitted.
-site/src/jsMain/resources/public/8ball/BmbUbSQ8av4/000650/
-site/src/jsMain/resources/public/8ball/BmbUbSQ8av4/000929/
-site/src/jsMain/resources/public/8ball/BmbUbSQ8av4/000959/
+site/src/jsMain/resources/public/8ball/BmbUbSQ8av4/
+site/src/jsMain/resources/public/8ball/demo-sindre/
