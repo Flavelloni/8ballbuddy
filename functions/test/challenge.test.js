@@ -2,11 +2,39 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
   completedResult, createAttempt, createDailyBenchmarks, createDailyChallenge, pickerBalls,
-  publicAttempt, startShot, submitAnswer, utcDate, validateAlias,
+  publicAttempt, startShot, submitAnswer, utcDate, validateAlias, answerChoices,
 } from "../src/challenge.js";
 
 const date = "2026-10-16";
 const catalog = Array.from({ length: 30 }, (_, i) => ({ id: `shot-${i + 1}`, group: 1, correctBall: 6 }));
+
+test("breaks accept counts 0 through 4 and score zero correctly", () => {
+  const shot = { id: "break", group: null, isBreak: true, correctBall: 0 };
+  assert.deepEqual(answerChoices(shot), [0, 1, 2, 3, 4]);
+  const challenge = createDailyChallenge(date, [shot]);
+  assert.deepEqual(challenge.shotIds, ["break"]);
+  const attempt = startShot(challenge, createAttempt(challenge, "uid", "Player", 0), "break", 100);
+  for (const value of [-1, 5, 8, "0", 0.5, null]) {
+    assert.throws(() => submitAnswer(challenge, attempt, "break", value, 200), error => error.code === "invalid-argument");
+  }
+  for (const value of [0, 1, 2, 3, 4]) {
+    const answered = submitAnswer(challenge, attempt, "break", value, 200);
+    assert.equal(answered.answers[0].correctBall, 0);
+    assert.equal(completedResult(challenge, answered).correctCount, value === 0 ? 1 : 0);
+  }
+  assert.deepEqual(publicAttempt(challenge, attempt, 200).answers, []);
+});
+
+test("daily selection excludes unsupported break counts and keeps normal shots unchanged", () => {
+  const shots = [
+    { id: "zero", isBreak: true, correctBall: 0 },
+    { id: "four", isBreak: true, correctBall: 4 },
+    { id: "bad-break", isBreak: true, correctBall: 5 },
+    { id: "normal", group: 1, correctBall: 6 },
+  ];
+  assert.deepEqual(new Set(createDailyChallenge(date, shots).shotIds), new Set(["zero", "four", "normal"]));
+  assert.deepEqual(answerChoices(shots[3]), pickerBalls(1));
+});
 
 test("aliases are normalized and allow international letters and duplicate display names", () => {
   assert.equal(validateAlias("  Pool   Fan_42-  "), "Pool Fan_42-");

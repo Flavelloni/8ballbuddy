@@ -13,7 +13,14 @@ internal data class EightBallMeta(
     val group: Int,
     val ball: Int,
     val comments: String,
-)
+    val source: String = "",
+    val videoLink: String = "",
+    val isBreak: Boolean = false,
+    val ballsPotted: Int? = null,
+) {
+    // Keep numbered-ball answers separate from break counts (including zero).
+    val correctAnswer: Int get() = if (isBreak) ballsPotted ?: -1 else ball
+}
 
 internal data class EightBallShot(
     val entry: EightBallEntry,

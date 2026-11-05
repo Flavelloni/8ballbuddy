@@ -87,7 +87,7 @@ internal fun EightBallReelShot(
     onRetry: () -> Unit = {},
 ) {
     val hasPrediction = selectedBall != null
-    val correct = selectedBall == shot.meta.ball
+    val correct = selectedBall == shot.meta.correctAnswer
 
     Box(
         modifier = Modifier
@@ -260,8 +260,9 @@ private fun EightBallReelLayoutOverlay(
                 modifier = Modifier
                     .position(Position.Relative)
                     .styleModifier {
-                        property("width", "min(calc(100% - 28px), 38dvh, 56.25cqh, 460px)")
-                        property("aspect-ratio", "9 / 16")
+                        property("width", "calc(100% - 28px)")
+                        property("height", "100%")
+                        property("min-height", "0")
                         property("overflow", "hidden")
                         property("display", "flex")
                         property("align-items", "center")
@@ -272,11 +273,9 @@ private fun EightBallReelLayoutOverlay(
                     src = BasePath.prependTo(shot.entry.imagePath),
                     attrs = Modifier
                         .styleModifier {
-                            property("width", "177.777%")
-                            property("height", "auto")
-                            property("max-width", "none")
-                            property("max-height", "none")
-                            property("transform", "rotate(90deg)")
+                            property("width", "100%")
+                            property("height", "100%")
+                            property("object-fit", "contain")
                             property("user-select", "none")
                             property("-webkit-user-select", "none")
                             property("-webkit-user-drag", "none")
@@ -296,6 +295,7 @@ private fun EightBallReelLayoutOverlay(
 
         EightBallReelBallTray(
             balls = eightBallReelPickerBalls(shot),
+            isBreak = shot.meta.isBreak,
             onBallSelected = onBallSelected,
             enabled = layoutReady && inputEnabled,
         )
@@ -303,7 +303,7 @@ private fun EightBallReelLayoutOverlay(
 }
 
 @Composable
-private fun EightBallReelBallTray(balls: List<Int>, onBallSelected: (Int) -> Unit, enabled: Boolean) {
+private fun EightBallReelBallTray(balls: List<Int>, isBreak: Boolean, onBallSelected: (Int) -> Unit, enabled: Boolean) {
     Column(
         Modifier
             .fillMaxWidth()
@@ -326,7 +326,7 @@ private fun EightBallReelBallTray(balls: List<Int>, onBallSelected: (Int) -> Uni
                 .styleModifier { property("text-transform", "uppercase") }
                 .toAttrs()
         ) {
-            Text("Pick the ball the pro tries to pot. Click on it here:")
+            Text(if (isBreak) "How many balls will drop on the break?" else "Pick the ball the pool shark tries to pot. Click on it here:")
         }
         Row(
             Modifier
@@ -349,15 +349,22 @@ private fun EightBallReelBallTray(balls: List<Int>, onBallSelected: (Int) -> Uni
                         .styleModifier {
                             property("box-sizing", "border-box")
                             property("cursor", "pointer")
+                            if (isBreak) {
+                                property("color", "white")
+                                property("font-size", "1.2rem")
+                                property("font-weight", "750")
+                            }
                         }
                         .toAttrs {
-                            title("${ballLabel(ball)} ball")
-                            attr("aria-label", "${ballLabel(ball)} ball")
+                            val label = if (isBreak) "$ball ${if (ball == 1) "ball" else "balls"} potted" else "${ballLabel(ball)} ball"
+                            title(label)
+                            attr("aria-label", label)
                             if (!enabled) attr("disabled", "")
                             onClick { onBallSelected(ball) }
                         }
                 ) {
-                    PoolBall(ball, Modifier.width(100.percent).height(100.percent), fillParent = true)
+                    if (isBreak) Text(ball.toString())
+                    else PoolBall(ball, Modifier.width(100.percent).height(100.percent), fillParent = true)
                 }
             }
         }

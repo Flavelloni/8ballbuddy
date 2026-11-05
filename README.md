@@ -44,6 +44,28 @@ Metadata uses the same format as the original site:
 The build generates the shot manifest from complete shot directories.
 Links such as `/?shot=BmbUbSQ8av4%2F000346` open a specific shot directly.
 
+For a break, set `isBreak` and the actual number of balls potted instead of a
+target ball. The picker offers plain counts 0 through 4; zero is a valid answer:
+
+```json
+{
+  "player": "Lance Ireland",
+  "opponent": "Rob Hall",
+  "group": null,
+  "ball": null,
+  "isBreak": true,
+  "ballsPotted": 0,
+  "source": "MagicCitySlate",
+  "videoLink": "https://www.youtube.com/watch?v=AMDgls4nJhQ"
+}
+```
+
+Ordinary shots can also specify `source` and `videoLink` for a credit beneath
+the video reveal. Layout JPGs are displayed as supplied, without rotation.
+Both browse scoring and the private daily-challenge catalog support break
+counts; regenerate the catalog and deploy updated Functions with frontend
+changes when publishing this new question type (see `FIREBASE.md`).
+
 The feed alternates a player introduction and a shot. Add `&view=player` to a
 shot link to open its introduction. The shot clock counts visible-tab study
 time after the layout image loads, and resets when entering another attempt.
@@ -55,12 +77,15 @@ metadata to `imageUrl`, `imageCredit`, `imageSourceUrl`, and `imagePosition`.
 Names are matched without regard to case. Use an HTTPS image URL or a local
 public path such as `/images/players/jayson-shaw.jpg`.
 Portraits are centered by default; `imagePosition` can override the focal point.
+Optional `FargoRating`, `FargoSource`, and `FargoDate` fields are shown only for
+the featured player on the introduction. The rating is prominent; source/date
+are secondary. Missing photos do not prevent ratings displaying.
 Open-table introductions show all fourteen solids and stripes in two rows.
 
 The initial registry links to the players' World Nineball Tour profile images
 and includes source links. These are external references, not a grant of image
 reuse rights. Use photos approved for your public site. Unknown players and
-failed images fall back to initials without blocking the feed.
+failed images fall back to a person icon without blocking the feed.
 No open reuse licence has been verified for the WNT photos. Their profile pages
 carry an "all rights reserved" notice; obtain appropriate permission or replace
 the photos with assets licensed for your intended website use before publishing.

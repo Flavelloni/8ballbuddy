@@ -25,6 +25,7 @@ import org.jetbrains.compose.web.css.Position
 import org.jetbrains.compose.web.css.percent
 import org.jetbrains.compose.web.css.px
 import org.jetbrains.compose.web.dom.Button
+import org.jetbrains.compose.web.dom.A
 import org.jetbrains.compose.web.dom.Span
 import org.jetbrains.compose.web.dom.Text
 import org.jetbrains.compose.web.dom.Video
@@ -110,7 +111,7 @@ internal fun EightBallReelVideoLayer(
                     }
                     .toAttrs()
             ) {
-                Text(eightBallReelResultText(selectedBall, shot.meta.ball))
+                Text(eightBallReelResultText(selectedBall, shot.meta))
             }
             if (feedback != null) {
                 Span(
@@ -188,20 +189,38 @@ internal fun EightBallReelVideoLayer(
             }
         }
 
-        Row(
+        Column(
             modifier = Modifier
                 .styleModifier {
                     property("display", "flex")
-                    property("align-items", "start")
-                    property("justify-content", "center")
+                    property("align-items", "center")
+                    property("justify-content", "start")
+                    property("gap", "10px")
                     property("padding", "12px 18px max(18px, env(safe-area-inset-bottom))")
-                    property("opacity", if (showSwipeHint || (showFeedback && onChallengeNext != null)) "1" else "0")
-                    property("pointer-events", if (showFeedback && onChallengeNext != null) "auto" else "none")
+                    property("opacity", if (showFeedback) "1" else "0")
+                    property("pointer-events", if (showFeedback) "auto" else "none")
                 }
         ) {
+            if (shot.meta.source.isNotBlank() &&
+                (shot.meta.videoLink.startsWith("https://") || shot.meta.videoLink.startsWith("http://"))) {
+                A(
+                    href = shot.meta.videoLink,
+                    attrs = Modifier.styleModifier {
+                        property("font-size", ".8rem")
+                        property("color", "rgba(245,248,245,.8)")
+                        property("text-align", "center")
+                    }.toAttrs {
+                        attr("target", "_blank")
+                        attr("rel", "noopener noreferrer")
+                        onClick { it.stopPropagation() }
+                    },
+                ) {
+                    Text("Source: ${shot.meta.source} · Original video")
+                }
+            }
             if (onChallengeNext != null && showFeedback) {
                 EightBallChallengeNext(challengeLastShot, onChallengeNext)
-            } else {
+            } else if (showSwipeHint) {
                 EightBallReelSwipeHint("Swipe next")
             }
         }

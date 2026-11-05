@@ -10,5 +10,15 @@
     "imageCredit": "World Nineball Tour",
     "imageSourceUrl": "https://worldnineballtour.com/players/albin-ouschan/",
     "imagePosition": "center"
+  },
+  "Lance Ireland": {
+    "FargoRating": 708,
+    "FargoSource": "Fargo App",
+    "FargoDate": "Nov 2026"
+  },
+  "Rob Hall": {
+    "FargoRating": 696,
+    "FargoSource": "Fargo App",
+    "FargoDate": "Nov 2026"
   }
 }

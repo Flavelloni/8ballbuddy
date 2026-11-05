@@ -26,6 +26,10 @@ export function pickerBalls(group) {
   return [];
 }
 
+export function answerChoices(shot) {
+  return shot.isBreak === true ? [0, 1, 2, 3, 4] : pickerBalls(shot.group);
+}
+
 export function utcDate(now) {
   return new Date(now).toISOString().slice(0, 10);
 }
@@ -69,7 +73,7 @@ const DAILY_CHALLENGE_SHOT_LIMIT = 3;
 
 export function createDailyChallenge(date, catalog) {
   const shots = [...new Map(catalog.map(shot => [shot.id, shot])).values()]
-    .filter(shot => pickerBalls(shot.group).includes(shot.correctBall))
+    .filter(shot => answerChoices(shot).includes(shot.correctBall))
     .sort((a, b) => shotHash(date, a.id) - shotHash(date, b.id) || (a.id < b.id ? -1 : 1))
     .slice(0, DAILY_CHALLENGE_SHOT_LIMIT);
   if (!shots.length) throw new ChallengeError("failed-precondition", "No challenge shots are available.");
@@ -105,8 +109,9 @@ export function submitAnswer(challenge, attempt, shotId, selectedBall, now) {
   if (!shot || shot.id !== shotId) {
     throw new ChallengeError("failed-precondition", "Please continue with the current shot.");
   }
-  if (!pickerBalls(shot.group).includes(selectedBall)) {
-    throw new ChallengeError("invalid-argument", "Choose a ball from this player's group.");
+  if (!answerChoices(shot).includes(selectedBall)) {
+    throw new ChallengeError("invalid-argument", shot.isBreak === true
+      ? "Choose a break count from 0 to 4." : "Choose a ball from this player's group.");
   }
   if (attempt.currentShotStartedAtMs == null) {
     throw new ChallengeError("failed-precondition", "The shot clock has not started yet.");

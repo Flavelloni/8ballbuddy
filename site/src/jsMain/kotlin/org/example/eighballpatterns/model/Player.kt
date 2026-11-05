@@ -6,4 +6,7 @@ internal data class PlayerProfile(
     val imageCredit: String,
     val imageSourceUrl: String,
     val imagePosition: String,
+    val fargoRating: Int? = null,
+    val fargoSource: String = "",
+    val fargoDate: String = "",
 )

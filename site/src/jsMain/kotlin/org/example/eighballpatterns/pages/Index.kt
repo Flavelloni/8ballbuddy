@@ -107,7 +107,10 @@ fun ShotPredictionPage() {
     val rawShot = reelShots?.getOrNull(position.shotIndex)
     val currentShot = if (challengeMode && rawShot != null) {
         val answer = daily.attempt?.answers?.find { it.shotId == rawShot.entry.id }
-        rawShot.copy(meta = rawShot.meta.copy(ball = answer?.correctBall ?: -1))
+        rawShot.copy(meta = rawShot.meta.copy(
+            ball = if (rawShot.meta.isBreak) -1 else answer?.correctBall ?: -1,
+            ballsPotted = if (rawShot.meta.isBreak) answer?.correctBall else rawShot.meta.ballsPotted,
+        ))
     } else rawShot
     val answerClock = remember(challengeMode, currentShot?.entry?.id, attempt?.challenge?.date, daily.clockRevision) {
         if (challengeMode) AnswerClock({ window.performance.now() }, attempt?.currentShotElapsedMs ?: 0) else null
@@ -237,7 +240,7 @@ fun ShotPredictionPage() {
             daily.attempt?.answers?.find { it.shotId == currentShot?.entry?.id }?.let { answer ->
                 if (selectedBall == null) {
                     selectedBall = answer.selectedBall
-                    feedback = buildEightBallReelFeedback(answer.correct)
+                    feedback = buildEightBallReelFeedback(answer.correct, currentShot?.meta?.isBreak == true)
                 }
             }
         }
@@ -340,18 +343,18 @@ fun ShotPredictionPage() {
                                     if (answer != null) {
                                         answerClock?.pause()
                                         selectedBall = answer.selectedBall
-                                        feedback = buildEightBallReelFeedback(answer.correct)
+                                        feedback = buildEightBallReelFeedback(answer.correct, currentShot.meta.isBreak)
                                         videoEnded = false
                                         videoPaused = false
                                     }
                                 }
                                 return@EightBallReelShot
                             }
-                            val correct = ball == currentShot.meta.ball
+                            val correct = ball == currentShot.meta.correctAnswer
                             selectedBall = ball
                             videoEnded = false
                             videoPaused = false
-                            feedback = buildEightBallReelFeedback(correct)
+                            feedback = buildEightBallReelFeedback(correct, currentShot.meta.isBreak)
                             stats = stats.next(correct)
                             videoElement?.let { video ->
                                 video.currentTime = 0.0

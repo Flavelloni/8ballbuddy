@@ -1,7 +1,7 @@
 import { readdir, readFile, mkdir, writeFile, access } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
-import { pickerBalls } from "../src/challenge.js";
+import { answerChoices } from "../src/challenge.js";
 
 const root = fileURLToPath(new URL("../../site/src/jsMain/resources/public/8ball/", import.meta.url));
 const shots = [];
@@ -11,13 +11,15 @@ async function visit(directory) {
   if (entries.some(entry => entry.name === "meta.json")) {
     await Promise.all(["layout.jpg", "clip.mp4"].map(name => access(path.join(directory, name))));
     const meta = JSON.parse(await readFile(path.join(directory, "meta.json"), "utf8"));
-    if (!Number.isInteger(meta.ball) || !pickerBalls(meta.group).includes(meta.ball)) {
+    const correctAnswer = meta.isBreak === true ? meta.ballsPotted : meta.ball;
+    if (!Number.isInteger(correctAnswer) || !answerChoices(meta).includes(correctAnswer)) {
       throw new Error(`Invalid answer or group: ${directory}`);
     }
     shots.push({
       id: path.relative(root, directory).split(path.sep).join("/"),
       group: meta.group,
-      correctBall: meta.ball,
+      correctBall: correctAnswer,
+      isBreak: meta.isBreak === true,
     });
     return;
   }

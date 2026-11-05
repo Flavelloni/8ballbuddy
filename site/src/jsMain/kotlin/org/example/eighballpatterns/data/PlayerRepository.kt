@@ -11,7 +11,7 @@ internal fun loadPlayerProfiles(onLoaded: (Map<String, PlayerProfile>) -> Unit) 
     )
 }
 
-private fun parsePlayerProfiles(text: String): Map<String, PlayerProfile> {
+internal fun parsePlayerProfiles(text: String): Map<String, PlayerProfile> {
     val players = js("JSON.parse(text)")
     val names = js("Object.keys(players)") as Array<String>
     return names.associate { name ->
@@ -22,6 +22,9 @@ private fun parsePlayerProfiles(text: String): Map<String, PlayerProfile> {
             imageCredit = (item.imageCredit as? String).orEmpty(),
             imageSourceUrl = (item.imageSourceUrl as? String).orEmpty(),
             imagePosition = (item.imagePosition as? String) ?: "center",
+            fargoRating = (item.FargoRating as? Int)?.takeIf { it > 0 },
+            fargoSource = (item.FargoSource as? String).orEmpty(),
+            fargoDate = (item.FargoDate as? String).orEmpty(),
         )
     }
 }

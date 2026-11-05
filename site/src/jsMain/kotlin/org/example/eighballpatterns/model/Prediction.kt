@@ -36,7 +36,8 @@ private val negativeEightBallFeedback = listOf(
     "The table had other plans."
 )
 
-internal fun buildEightBallReelFeedback(correct: Boolean): String {
+internal fun buildEightBallReelFeedback(correct: Boolean, isBreak: Boolean = false): String {
+    if (isBreak) return if (correct) "Nice read." else "Not this time."
     return if (correct) {
         positiveEightBallFeedback[Random.nextInt(positiveEightBallFeedback.size)]
     } else {
@@ -53,7 +54,15 @@ internal fun eightBallReelResultText(selectedBall: Int?, actualBall: Int): Strin
     }
 }
 
+internal fun eightBallReelResultText(selectedAnswer: Int?, meta: EightBallMeta): String {
+    if (!meta.isBreak) return eightBallReelResultText(selectedAnswer, meta.ball)
+    val actual = "${meta.correctAnswer} ${if (meta.correctAnswer == 1) "ball" else "balls"} potted on the break"
+    return if (selectedAnswer == meta.correctAnswer) "Correct: $actual"
+    else "You guessed ${selectedAnswer ?: "?"}. Correct: $actual"
+}
+
 internal fun eightBallReelPickerBalls(shot: EightBallShot): List<Int> {
+    if (shot.meta.isBreak) return (0..4).toList()
     return when (shot.meta.group) {
         1 -> (1..7).toList()
         2 -> (9..15).toList()
@@ -63,6 +72,7 @@ internal fun eightBallReelPickerBalls(shot: EightBallShot): List<Int> {
 }
 
 internal fun eightBallReelTitle(meta: EightBallMeta): String {
+    if (meta.isBreak) return "${meta.player} is breaking"
     return when (meta.group) {
         0 -> "${meta.player} has an open table"
         1 -> "${meta.player} has solids"

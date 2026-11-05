@@ -58,7 +58,7 @@ private fun parseEightBallEntries(json: String): List<EightBallEntry> {
     }
 }
 
-private fun parseEightBallMeta(text: String): EightBallMeta {
+internal fun parseEightBallMeta(text: String): EightBallMeta {
     val item = js("JSON.parse(text)")
     return EightBallMeta(
         player = (item.player as? String).orEmpty(),
@@ -66,5 +66,9 @@ private fun parseEightBallMeta(text: String): EightBallMeta {
         group = (item.group as? Int) ?: 0,
         ball = (item.ball as? Int) ?: -1,
         comments = (item.comments as? String).orEmpty(),
+        source = (item.source as? String).orEmpty(),
+        videoLink = (item.videoLink as? String).orEmpty(),
+        isBreak = (item.isBreak as? Boolean) ?: false,
+        ballsPotted = (item.ballsPotted as? Int),
     )
 }
