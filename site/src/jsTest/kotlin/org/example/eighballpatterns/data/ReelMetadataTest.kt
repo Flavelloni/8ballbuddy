@@ -3,8 +3,21 @@ package org.example.eighballpatterns.data
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
+import org.example.eighballpatterns.model.EightBallEntry
+import org.example.eighballpatterns.model.EightBallShot
+import org.example.eighballpatterns.model.browseEightBallShots
 
 class ReelMetadataTest {
+    @Test
+    fun archivedMetadataRemainsLoadableButDoesNotAppearInBrowse() {
+        val meta = parseEightBallMeta("""{"player":"Archived player","group":1,"ball":5,"archived":true}""")
+        val archived = EightBallShot(EightBallEntry("old", "meta.json", "layout.jpg", "clip.mp4"), meta)
+        val active = archived.copy(entry = archived.entry.copy(id = "new"), meta = meta.copy(archived = false))
+        val all = listOf(archived, active)
+        assertEquals(listOf(active), browseEightBallShots(all))
+        assertEquals(5, all.find { it.entry.id == "old" }?.meta?.correctAnswer)
+    }
+
     @Test
     fun breakCountZeroIsAnAnswerNotAnUnknownBall() {
         val meta = parseEightBallMeta("""{

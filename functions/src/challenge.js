@@ -73,7 +73,7 @@ const DAILY_CHALLENGE_SHOT_LIMIT = 3;
 
 export function createDailyChallenge(date, catalog) {
   const shots = [...new Map(catalog.map(shot => [shot.id, shot])).values()]
-    .filter(shot => answerChoices(shot).includes(shot.correctBall))
+    .filter(shot => shot.archived !== true && answerChoices(shot).includes(shot.correctBall))
     .sort((a, b) => shotHash(date, a.id) - shotHash(date, b.id) || (a.id < b.id ? -1 : 1))
     .slice(0, DAILY_CHALLENGE_SHOT_LIMIT);
   if (!shots.length) throw new ChallengeError("failed-precondition", "No challenge shots are available.");

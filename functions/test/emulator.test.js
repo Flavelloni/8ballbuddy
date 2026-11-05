@@ -3,7 +3,7 @@ import { test } from "node:test";
 import { initializeApp } from "firebase-admin/app";
 import { getFirestore } from "firebase-admin/firestore";
 import { readFile } from "node:fs/promises";
-import { pickerBalls } from "../src/challenge.js";
+import { answerChoices } from "../src/challenge.js";
 
 const projectId = "demo-ballbuddy";
 assert.ok(process.env.FIRESTORE_EMULATOR_HOST, "Run this test using Firebase emulators:exec.");
@@ -95,7 +95,7 @@ test("anonymous aliases, duplicate names, immutable daily attempts, server score
       const startedAt = (await attemptRef.get()).data().currentShotStartedAtMs;
       await call("startChallengeShot", account, input);
       assert.equal((await attemptRef.get()).data().currentShotStartedAtMs, startedAt);
-      const selectedBall = wrongFirst && index === 0 ? pickerBalls(shot.group).find(ball => ball !== shot.correctBall) : shot.correctBall;
+      const selectedBall = wrongFirst && index === 0 ? answerChoices(shot).find(ball => ball !== shot.correctBall) : shot.correctBall;
       const request = { ...input, selectedBall, elapsedMs: 0, correctCount: 100, uid: "forged" };
       const [accepted, retry] = await Promise.all([
         call("submitChallengeAnswer", account, request), call("submitChallengeAnswer", account, request),

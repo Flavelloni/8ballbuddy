@@ -54,6 +54,15 @@ Deploying functions after adding shots makes them eligible for subsequent daily
 rounds. Existing daily shot sets are immutable, so keep the current day's media
 available when deploying the frontend.
 
+Do not delete shots used by a saved daily challenge. Set `"archived": true` in
+their `meta.json` instead, retaining the original ID, layout, and clip. Archived
+shots remain in the public manifest for frozen challenges, but are hidden from
+browsing and excluded from newly generated backend catalogs/rounds. Never reset
+a live round to repair missing media: restore the referenced assets instead.
+
+The 2026-11-05 round references archived `BmbUbSQ8av4/000650`, `000929`, and
+`000959`; these compatibility assets must remain available for that saved round.
+
 Commit and push the frontend changes to deploy GitHub Pages through the existing
 workflow. Backend deployment is a separate command, not part of the Pages build.
 The public Firebase config does not require GitHub secrets.

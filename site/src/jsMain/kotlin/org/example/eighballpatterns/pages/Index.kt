@@ -41,6 +41,7 @@ import org.example.eighballpatterns.model.PlayerProfile
 import org.example.eighballpatterns.model.ReelPosition
 import org.example.eighballpatterns.model.ReelStage
 import org.example.eighballpatterns.model.buildEightBallReelFeedback
+import org.example.eighballpatterns.model.browseEightBallShots
 import org.w3c.dom.HTMLVideoElement
 
 private const val EIGHT_BALL_SLIDE_DURATION_MS = 320
@@ -83,7 +84,7 @@ fun ShotPredictionPage() {
         loadEightBallShots(
             onLoaded = {
                 shots = it
-                val requestedIndex = it.indexOfFirst { shot -> shot.entry.id == initialShotId }
+                val requestedIndex = browseEightBallShots(it).indexOfFirst { shot -> shot.entry.id == initialShotId }
                 if (initialChallenge) {
                     position = ReelPosition(ReelStage.ModeChoice)
                 } else if (requestedIndex >= 0) {
@@ -103,7 +104,7 @@ fun ShotPredictionPage() {
     val attempt = daily.attempt?.takeIf { challengeMode || it.challenge.date == today }
     val reelShots = if (challengeMode) attempt?.challenge?.shotIds?.mapNotNull { id ->
         loadedShots?.find { it.entry.id == id }
-    } else loadedShots
+    } else loadedShots?.let(::browseEightBallShots)
     val rawShot = reelShots?.getOrNull(position.shotIndex)
     val currentShot = if (challengeMode && rawShot != null) {
         val answer = daily.attempt?.answers?.find { it.shotId == rawShot.entry.id }

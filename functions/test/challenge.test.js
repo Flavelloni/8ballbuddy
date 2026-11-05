@@ -8,6 +8,17 @@ import {
 const date = "2026-10-16";
 const catalog = Array.from({ length: 30 }, (_, i) => ({ id: `shot-${i + 1}`, group: 1, correctBall: 6 }));
 
+test("archived shots stay playable in frozen rounds but are excluded from new rounds", () => {
+  const archived = { id: "archived", group: 1, correctBall: 6, archived: true };
+  const challenge = createDailyChallenge(date, [archived, catalog[0]]);
+  assert.deepEqual(challenge.shotIds, [catalog[0].id]);
+  const frozen = { date, shotIds: [archived.id], shots: [archived] };
+  let attempt = createAttempt(frozen, "uid", "Player", 0);
+  attempt = startShot(frozen, attempt, archived.id, 100);
+  attempt = submitAnswer(frozen, attempt, archived.id, 6, 200);
+  assert.equal(completedResult(frozen, attempt).correctCount, 1);
+});
+
 test("breaks accept counts 0 through 4 and score zero correctly", () => {
   const shot = { id: "break", group: null, isBreak: true, correctBall: 0 };
   assert.deepEqual(answerChoices(shot), [0, 1, 2, 3, 4]);

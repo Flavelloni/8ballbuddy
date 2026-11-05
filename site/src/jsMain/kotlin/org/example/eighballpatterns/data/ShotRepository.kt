@@ -70,5 +70,6 @@ internal fun parseEightBallMeta(text: String): EightBallMeta {
         videoLink = (item.videoLink as? String).orEmpty(),
         isBreak = (item.isBreak as? Boolean) ?: false,
         ballsPotted = (item.ballsPotted as? Int),
+        archived = (item.archived as? Boolean) ?: false,
     )
 }

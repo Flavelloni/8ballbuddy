@@ -17,6 +17,7 @@ internal data class EightBallMeta(
     val videoLink: String = "",
     val isBreak: Boolean = false,
     val ballsPotted: Int? = null,
+    val archived: Boolean = false,
 ) {
     // Keep numbered-ball answers separate from break counts (including zero).
     val correctAnswer: Int get() = if (isBreak) ballsPotted ?: -1 else ball
@@ -26,3 +27,6 @@ internal data class EightBallShot(
     val entry: EightBallEntry,
     val meta: EightBallMeta,
 )
+
+internal fun browseEightBallShots(shots: List<EightBallShot>): List<EightBallShot> =
+    shots.filterNot { it.meta.archived }
