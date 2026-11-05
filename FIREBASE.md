@@ -60,8 +60,11 @@ shots remain in the public manifest for frozen challenges, but are hidden from
 browsing and excluded from newly generated backend catalogs/rounds. Never reset
 a live round to repair missing media: restore the referenced assets instead.
 
-The 2026-11-05 round references archived `BmbUbSQ8av4/000650`, `000929`, and
-`000959`; these compatibility assets must remain available for that saved round.
+If videos must be withdrawn, remove their published assets. The generated
+`published-shot-ids.json` lets the backend reject new starts/answers for a saved
+round whose media is missing, with a clear explanation. Existing round data,
+attempts and scores remain unchanged; subsequent UTC dates use the active catalog.
+Never restore withdrawn media merely to keep a past round playable.
 
 Commit and push the frontend changes to deploy GitHub Pages through the existing
 workflow. Backend deployment is a separate command, not part of the Pages build.

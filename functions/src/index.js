@@ -5,13 +5,14 @@ import { setGlobalOptions } from "firebase-functions/v2";
 import { HttpsError, onCall } from "firebase-functions/v2/https";
 import {
   ChallengeError, completedResult, createAttempt, createDailyBenchmarks, createDailyChallenge,
-  publicAttempt, startShot, submitAnswer, utcDate, validateAlias,
+  publicAttempt, startShot, submitAnswer, utcDate, validateAlias, requireAvailableChallenge,
 } from "./challenge.js";
 
 initializeApp();
 setGlobalOptions({ region: "europe-west1", maxInstances: 3, memory: "256MiB", timeoutSeconds: 30 });
 const db = getFirestore();
 const catalog = JSON.parse(readFileSync(new URL("../generated/catalog.json", import.meta.url), "utf8"));
+const publishedShotIds = JSON.parse(readFileSync(new URL("../generated/published-shot-ids.json", import.meta.url), "utf8"));
 
 function player(request) {
   if (!request.auth) {
@@ -66,6 +67,7 @@ export const startDailyChallenge = callable(async (data, identity) => {
     const alias = attemptSnapshot.exists ? attemptSnapshot.data().displayName
       : validateAlias(data.alias ?? (profileSnapshot.exists ? profileSnapshot.data().alias : undefined));
     const challenge = dailySnapshot.exists ? dailySnapshot.data() : createDailyChallenge(date, catalog);
+    requireAvailableChallenge(challenge, publishedShotIds);
     const attempt = attemptSnapshot.exists ? attemptSnapshot.data() : createAttempt(challenge, identity.uid, alias, now);
     if (!dailySnapshot.exists) transaction.create(dailyRef, challenge);
     if (!attemptSnapshot.exists) {
@@ -97,6 +99,7 @@ function updateAttempt(data, identity, update) {
     const now = Date.now();
     if (date !== utcDate(now)) throw new HttpsError("failed-precondition", "This daily challenge has ended.");
     const challenge = dailySnapshot.data();
+    requireAvailableChallenge(challenge, publishedShotIds);
     const original = attemptSnapshot.data();
     const attempt = update(challenge, original, data, now);
     if (attempt !== original) {

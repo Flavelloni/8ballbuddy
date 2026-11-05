@@ -181,7 +181,7 @@ fun ShotPredictionPage() {
         daily.open(alias) { active ->
             if (position.stage != ReelStage.ChallengeEntry) return@open
             if (active.challenge.shotIds.any { id -> available.none { it.entry.id == id } }) {
-                challengeError = "Today's shots aren't available in this version. Please reload the page."
+                challengeError = "Today's challenge contains unavailable videos. Please browse the available shots and try the next daily challenge after midnight UTC."
             } else {
                 resetPrediction()
                 challengeMode = true

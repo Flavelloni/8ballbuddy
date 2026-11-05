@@ -20,3 +20,8 @@ node_modules/
 functions/generated/
 *-debug.log
 .firebase/
+
+# Withdrawn clips/layouts must never be republished or recommitted.
+site/src/jsMain/resources/public/8ball/BmbUbSQ8av4/000650/
+site/src/jsMain/resources/public/8ball/BmbUbSQ8av4/000929/
+site/src/jsMain/resources/public/8ball/BmbUbSQ8av4/000959/

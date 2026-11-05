@@ -71,6 +71,14 @@ export function createDailyBenchmarks(date, shotCount) {
 
 const DAILY_CHALLENGE_SHOT_LIMIT = 3;
 
+export function requireAvailableChallenge(challenge, publishedShotIds) {
+  const available = new Set(publishedShotIds);
+  if (challenge.shotIds.some(id => !available.has(id))) {
+    throw new ChallengeError("failed-precondition",
+      "Today's challenge is unavailable because its videos were removed. Please browse the available shots and try the next daily challenge after midnight UTC.");
+  }
+}
+
 export function createDailyChallenge(date, catalog) {
   const shots = [...new Map(catalog.map(shot => [shot.id, shot])).values()]
     .filter(shot => shot.archived !== true && answerChoices(shot).includes(shot.correctBall))

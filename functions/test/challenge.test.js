@@ -2,11 +2,21 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
   completedResult, createAttempt, createDailyBenchmarks, createDailyChallenge, pickerBalls,
-  publicAttempt, startShot, submitAnswer, utcDate, validateAlias, answerChoices,
+  publicAttempt, startShot, submitAnswer, utcDate, validateAlias, answerChoices, requireAvailableChallenge,
 } from "../src/challenge.js";
 
 const date = "2026-10-16";
 const catalog = Array.from({ length: 30 }, (_, i) => ({ id: `shot-${i + 1}`, group: 1, correctBall: 6 }));
+
+test("withdrawn media retires a frozen round without replacing it or changing progress", () => {
+  const challenge = createDailyChallenge(date, [catalog[0]]);
+  const before = structuredClone(challenge);
+  assert.throws(() => requireAvailableChallenge(challenge, ["new-shot"]),
+    error => error.code === "failed-precondition" && /videos were removed/.test(error.message));
+  assert.deepEqual(challenge, before);
+  assert.doesNotThrow(() => requireAvailableChallenge(challenge, [catalog[0].id]));
+  assert.doesNotThrow(() => requireAvailableChallenge({ shotIds: ["archived-but-published"] }, ["archived-but-published"]));
+});
 
 test("archived shots stay playable in frozen rounds but are excluded from new rounds", () => {
   const archived = { id: "archived", group: 1, correctBall: 6, archived: true };
