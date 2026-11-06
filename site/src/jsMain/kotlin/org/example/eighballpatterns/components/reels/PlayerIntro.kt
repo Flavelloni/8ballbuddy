@@ -36,7 +36,7 @@ import com.varabyte.kobweb.silk.components.text.SpanText
 import org.example.eighballpatterns.components.widgets.PoolBall
 import org.example.eighballpatterns.model.EightBallShot
 import org.example.eighballpatterns.model.PlayerProfile
-import org.example.eighballpatterns.model.eightBallReelTitle
+import org.example.eighballpatterns.model.eightBallPlayerStatus
 import org.jetbrains.compose.web.css.cssRem
 import org.jetbrains.compose.web.css.px
 import org.jetbrains.compose.web.dom.A
@@ -125,12 +125,12 @@ internal fun EightBallPlayerIntro(shot: EightBallShot, player: PlayerProfile?, c
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     H2(
-                        Modifier.margin(0.px).fontSize(1.65.cssRem).fontWeight(FontWeight.Bold)
+                        Modifier.margin(0.px).fontSize(1.85.cssRem).fontWeight(FontWeight.Bold)
                             .lineHeight(1.2).color(Colors.White)
                             .styleModifier { property("text-align", "center") }
                             .toAttrs()
                     ) {
-                        Text(eightBallReelTitle(shot.meta))
+                        Text(shot.meta.player)
                     }
                     if (player?.fargoRating != null) {
                         Column(
@@ -141,7 +141,7 @@ internal fun EightBallPlayerIntro(shot: EightBallShot, player: PlayerProfile?, c
                                 SpanText("Fargo Rating ", Modifier.fontSize(0.95.cssRem))
                                 SpanText(
                                     player.fargoRating.toString(),
-                                    Modifier.fontSize(1.85.cssRem).fontWeight(FontWeight.Bold)
+                                    Modifier.fontSize(1.4.cssRem).fontWeight(FontWeight.Bold)
                                         .color(Color.rgb(0x94C9B5)),
                                 )
                             }
@@ -149,12 +149,16 @@ internal fun EightBallPlayerIntro(shot: EightBallShot, player: PlayerProfile?, c
                             if (attribution.isNotEmpty()) {
                                 SpanText(
                                     "(${attribution.joinToString(" ")})",
-                                    Modifier.fontSize(0.7.cssRem).color(Color.rgba(255, 255, 255, 0.55f)),
+                                    Modifier.fontSize(0.65.cssRem).color(Color.rgba(255, 255, 255, 0.45f)),
                                 )
                             }
                         }
                     }
                     Column(Modifier.gap(6.px), horizontalAlignment = Alignment.CenterHorizontally) {
+                        SpanText(
+                            eightBallPlayerStatus(shot.meta),
+                            Modifier.fontSize(1.cssRem).color(Colors.White),
+                        )
                         if (shot.meta.isBreak) {
                             P(Modifier.margin(0.px).color(Colors.White).toAttrs()) {
                                 Text("How many balls will drop?")

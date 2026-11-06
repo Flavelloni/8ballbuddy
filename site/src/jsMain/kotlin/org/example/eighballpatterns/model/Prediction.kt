@@ -81,6 +81,16 @@ internal fun eightBallReelTitle(meta: EightBallMeta): String {
     }
 }
 
+internal fun eightBallPlayerStatus(meta: EightBallMeta): String {
+    if (meta.isBreak) return "Is breaking"
+    return when (meta.group) {
+        0 -> "Open table"
+        1 -> "Shoots solids"
+        2 -> "Shoots stripes"
+        else -> "Shoots the 8-ball"
+    }
+}
+
 internal fun ballLabel(ball: Int): String {
     return if (ball in 1..15) ball.toString() else "unknown"
 }

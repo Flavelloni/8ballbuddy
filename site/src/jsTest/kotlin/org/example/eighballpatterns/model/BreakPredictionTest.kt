@@ -18,6 +18,15 @@ class BreakPredictionTest {
     }
 
     @Test
+    fun playerStatusDoesNotRepeatTheSeparatelyDisplayedName() {
+        assertEquals("Is breaking", eightBallPlayerStatus(meta))
+        assertEquals("Open table", eightBallPlayerStatus(meta.copy(isBreak = false)))
+        assertEquals("Shoots solids", eightBallPlayerStatus(meta.copy(isBreak = false, group = 1)))
+        assertEquals("Shoots stripes", eightBallPlayerStatus(meta.copy(isBreak = false, group = 2)))
+        assertEquals("Shoots the 8-ball", eightBallPlayerStatus(meta.copy(isBreak = false, group = 3)))
+    }
+
+    @Test
     fun breakRevealReportsCountIncludingZeroAndSingularOne() {
         assertEquals("Correct: 0 balls potted on the break", eightBallReelResultText(0, meta))
         assertEquals("You guessed 2. Correct: 0 balls potted on the break", eightBallReelResultText(2, meta))
