@@ -1,8 +1,13 @@
 package org.example.eighballpatterns.components.reels
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import com.varabyte.kobweb.compose.css.FontWeight
+import com.varabyte.kobweb.compose.css.TouchAction
 import com.varabyte.kobweb.compose.foundation.layout.Box
 import com.varabyte.kobweb.compose.foundation.layout.Column
 import com.varabyte.kobweb.compose.ui.Alignment
@@ -21,6 +26,7 @@ import com.varabyte.kobweb.compose.ui.modifiers.lineHeight
 import com.varabyte.kobweb.compose.ui.modifiers.margin
 import com.varabyte.kobweb.compose.ui.modifiers.padding
 import com.varabyte.kobweb.compose.ui.modifiers.position
+import com.varabyte.kobweb.compose.ui.modifiers.touchAction
 import com.varabyte.kobweb.compose.ui.modifiers.width
 import com.varabyte.kobweb.compose.ui.styleModifier
 import com.varabyte.kobweb.compose.ui.toAttrs
@@ -39,6 +45,10 @@ import org.jetbrains.compose.web.dom.Img
 import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.dom.Span
 import org.jetbrains.compose.web.dom.Text
+import org.w3c.dom.events.Event
+
+// VisualViewport is not exposed by the project's Kotlin DOM bindings.
+private fun reelViewportScale(): Double = (window.asDynamic().visualViewport?.scale as? Double) ?: 1.0
 
 private const val EIGHT_BALL_WHEEL_THRESHOLD = 56.0
 private const val EIGHT_BALL_WHEEL_GESTURE_GAP_MS = 500.0
@@ -198,21 +208,35 @@ internal fun EightBallReelsShell(
     content: @Composable () -> Unit,
 ) {
     val wheelGesture = remember { WheelGesture() }
+    val touchGesture = remember { ReelTouchGesture() }
+    var viewportScale by remember { mutableStateOf(reelViewportScale()) }
+    DisposableEffect(Unit) {
+        val viewport = window.asDynamic().visualViewport
+        val onResize: (Event) -> Unit = { viewportScale = reelViewportScale() }
+        viewport?.addEventListener("resize", onResize)
+        onDispose { viewport?.removeEventListener("resize", onResize) }
+    }
     Box(
         contentAlignment = Alignment.TopCenter,
         modifier = Modifier
             .position(Position.Relative)
             .width(100.percent)
+            .touchAction(
+                when {
+                    isReelViewportZoomed(viewportScale) -> TouchAction.Manipulation
+                    allowContentScroll -> TouchAction.of(TouchAction.PanY, pinchZoom = true)
+                    else -> TouchAction.PinchZoom
+                }
+            )
             .styleModifier {
                 property("height", "100dvh")
                 property("min-height", "100dvh")
                 property("background", "radial-gradient(circle at 50% 18%, rgba(32,64,49,.32), transparent 36%), #050606")
                 property("overflow", "hidden")
-                property("touch-action", if (allowContentScroll) "pan-y" else "none")
             }
             .attrsModifier {
                 onWheel { event ->
-                    if (allowContentScroll) return@onWheel
+                    if (allowContentScroll || event.ctrlKey || event.metaKey || isReelViewportZoomed(reelViewportScale())) return@onWheel
                     event.preventDefault()
                     val deltaY = event.deltaY * when (event.deltaMode) {
                         1 -> 16.0
@@ -226,15 +250,30 @@ internal fun EightBallReelsShell(
                 }
                 onTouchStart { event ->
                     if (allowContentScroll) return@onTouchStart
+                    if (!touchGesture.start(event.touches.length, reelViewportScale())) {
+                        onTouchCancel()
+                        return@onTouchStart
+                    }
                     val touch = event.touches.item(0) ?: return@onTouchStart
                     onTouchStart(touch.clientY.toDouble())
                 }
+                onTouchMove { event ->
+                    if (event.touches.length != 1 || isReelViewportZoomed(reelViewportScale())) {
+                        touchGesture.cancel()
+                        onTouchCancel()
+                    }
+                }
                 onTouchEnd { event ->
                     if (allowContentScroll) return@onTouchEnd
+                    if (!touchGesture.end(event.touches.length, event.changedTouches.length, reelViewportScale())) {
+                        onTouchCancel()
+                        return@onTouchEnd
+                    }
                     val touch = event.changedTouches.item(0) ?: return@onTouchEnd
                     onTouchEnd(touch.clientY.toDouble())
                 }
                 onTouchCancel {
+                    touchGesture.cancel()
                     onTouchCancel()
                 }
             }

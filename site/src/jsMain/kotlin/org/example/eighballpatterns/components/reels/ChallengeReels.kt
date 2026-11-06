@@ -304,7 +304,7 @@ internal val dailyChallengeStyles = """
     .daily-challenge-page {
       width: 100%; height: 100%; box-sizing: border-box; position: relative;
       padding: max(48px, env(safe-area-inset-top)) 24px max(24px, env(safe-area-inset-bottom));
-      overflow-y: auto; touch-action: pan-y; color: #f5faf7; gap: 16px; text-align: center;
+      overflow-y: auto; touch-action: pan-y pinch-zoom; color: #f5faf7; gap: 16px; text-align: center;
     }
     .daily-challenge-page h2 { margin: 0; font-size: 1.8rem; line-height: 1.2; }
     .daily-challenge-page h3 { margin: 0; font-size: 1rem; }
