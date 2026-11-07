@@ -13,8 +13,8 @@ class BreakPredictionTest {
     fun breakOffersCountsZeroThroughFourInsteadOfNumberedBalls() {
         assertEquals(listOf(0, 1, 2, 3, 4), eightBallReelPickerBalls(EightBallShot(entry, meta)))
         assertEquals("Lance Ireland is breaking", eightBallReelTitle(meta))
-        assertEquals((1..7).toList(), eightBallReelPickerBalls(EightBallShot(entry, meta.copy(isBreak = false, group = 1))))
-        assertEquals((9..15).toList(), eightBallReelPickerBalls(EightBallShot(entry, meta.copy(isBreak = false, group = 2))))
+        assertEquals((1..7).toList() + 0, eightBallReelPickerBalls(EightBallShot(entry, meta.copy(isBreak = false, group = 1))))
+        assertEquals((9..15).toList() + 0, eightBallReelPickerBalls(EightBallShot(entry, meta.copy(isBreak = false, group = 2))))
     }
 
     @Test

@@ -36,6 +36,7 @@ import com.varabyte.kobweb.navigation.BasePath
 import com.varabyte.kobweb.silk.components.icons.fa.FaExpand
 import com.varabyte.kobweb.silk.components.layout.SimpleGrid
 import com.varabyte.kobweb.silk.components.layout.numColumns
+import com.varabyte.kobweb.silk.components.text.SpanText
 import org.example.eighballpatterns.components.widgets.PoolBall
 import org.example.eighballpatterns.model.EightBallReelStats
 import org.example.eighballpatterns.model.AnswerClock
@@ -195,6 +196,7 @@ internal fun EightBallReelLayoutOverlay(
                 if (answerClock != null) {
                     ShotClock(running = layoutReady && clockRunning, answerClock = answerClock)
                 }
+                if (!layoutReady) PoolLoading("Loading table…")
                 P(
                     attrs = Modifier.margin(0.px)
                         .styleModifier {
@@ -208,8 +210,13 @@ internal fun EightBallReelLayoutOverlay(
                 ) {
                     Text(eightBallReelTitle(shot.meta))
                 }
+                if (shot.meta.ballInHand) {
+                    SpanText("Ball in hand", Modifier.fontSize(0.9.cssRem).fontWeight(FontWeight.Bold)
+                        .color(Color.rgb(0x94C9B5)))
+                }
                 if (requestBusy || requestError != null) {
-                    EightBallChallengeRequestStatus(requestBusy, requestError, onRetry)
+                    EightBallChallengeRequestStatus(requestBusy, requestError, onRetry,
+                        if (clockRunning) "Saving guess…" else "Starting shot clock…")
                 }
             }
 
@@ -327,7 +334,7 @@ private fun EightBallReelBallTray(balls: List<Int>, isBreak: Boolean, ballColors
                 .styleModifier { property("text-transform", "uppercase") }
                 .toAttrs()
         ) {
-            Text(if (isBreak) "How many balls will drop on the break?" else "Pick the ball the expert tries to pot. Click on it here:")
+            Text(if (isBreak) "How many balls will drop on the break?" else "Which ball will the expert pot? Or choose no ball:")
         }
         Row(
             Modifier
@@ -341,7 +348,7 @@ private fun EightBallReelBallTray(balls: List<Int>, isBreak: Boolean, ballColors
             balls.forEach { ball ->
                 Button(
                     attrs = Modifier
-                        .width(44.px)
+                        .width(if (!isBreak && ball == 0) 84.px else 44.px)
                         .height(44.px)
                         .padding(5.px)
                         .borderRadius(999.px)
@@ -350,14 +357,14 @@ private fun EightBallReelBallTray(balls: List<Int>, isBreak: Boolean, ballColors
                         .styleModifier {
                             property("box-sizing", "border-box")
                             property("cursor", "pointer")
-                            if (isBreak) {
+                            if (isBreak || ball == 0) {
                                 property("color", "white")
                                 property("font-size", "1.2rem")
                                 property("font-weight", "750")
                             }
                         }
                         .toAttrs {
-                            val label = if (isBreak) "$ball ${if (ball == 1) "ball" else "balls"} potted" else "${ballLabel(ball)} ball"
+                            val label = if (isBreak) "$ball ${if (ball == 1) "ball" else "balls"} potted" else if (ball == 0) "No ball" else "${ballLabel(ball)} ball"
                             title(label)
                             attr("aria-label", label)
                             if (!enabled) attr("disabled", "")
@@ -365,6 +372,7 @@ private fun EightBallReelBallTray(balls: List<Int>, isBreak: Boolean, ballColors
                         }
                 ) {
                     if (isBreak) Text(ball.toString())
+                    else if (ball == 0) Text("No ball")
                     else PoolBall(ball, Modifier.width(100.percent).height(100.percent), fillParent = true,
                         colorOverride = ballColors[ball]?.let { Color.rgb(it) })
                 }

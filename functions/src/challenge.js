@@ -27,7 +27,8 @@ export function pickerBalls(group) {
 }
 
 export function answerChoices(shot) {
-  return shot.isBreak === true ? [0, 1, 2, 3, 4] : pickerBalls(shot.group);
+  const balls = pickerBalls(shot.group);
+  return shot.isBreak === true ? [0, 1, 2, 3, 4] : balls.length ? [...balls, 0] : [];
 }
 
 export function utcDate(now) {

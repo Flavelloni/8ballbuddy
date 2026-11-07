@@ -8,6 +8,18 @@ import org.example.eighballpatterns.model.EightBallShot
 import org.example.eighballpatterns.model.browseEightBallShots
 
 class ReelMetadataTest {
+    @Test fun explicitNullMeansNoPotButMissingBallStaysUnknown() {
+        val meta = parseEightBallMeta("""{"group":1,"ball":null}""")
+        assertEquals(0, meta.correctAnswer)
+        assertEquals("Correct: No ball potted", org.example.eighballpatterns.model.eightBallReelResultText(0, meta))
+        assertEquals("You picked 2. Correct: No ball potted", org.example.eighballpatterns.model.eightBallReelResultText(2, meta))
+        assertEquals(-1, parseEightBallMeta("""{"group":1}""").correctAnswer)
+    }
+    @Test fun ballInHandDefaultsFalseAndLoadsExplicitTrue() {
+        assertEquals(true, parseEightBallMeta("""{"ballInHand":true}""").ballInHand)
+        assertEquals(false, parseEightBallMeta("""{}""").ballInHand)
+        assertEquals(false, parseEightBallMeta("""{"ballInHand":false}""").ballInHand)
+    }
     @Test
     fun browseOrderIsIndependentOfFolderNamesAndDoesNotChangeStableIds() {
         val ordinary = parseEightBallMeta("""{"source":"MagicCitySlate"}""")

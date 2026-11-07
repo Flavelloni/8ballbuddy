@@ -164,6 +164,10 @@ internal fun EightBallPlayerIntro(shot: EightBallShot, player: PlayerProfile?, c
                                 Text("How many balls will drop?")
                             }
                         }
+                        if (shot.meta.ballInHand) {
+                            SpanText("Ball in hand", Modifier.fontSize(1.cssRem).fontWeight(FontWeight.Bold)
+                                .color(Color.rgb(0x94C9B5)))
+                        }
                         balls.chunked(7).forEach { row ->
                             Row(Modifier.gap(6.px)) {
                                 row.forEach { ball ->

@@ -8,6 +8,17 @@ import {
 const date = "2026-10-16";
 const catalog = Array.from({ length: 30 }, (_, i) => ({ id: `shot-${i + 1}`, group: 1, correctBall: 6 }));
 
+test("no-pot answers are accepted and scored without confusing break counts", () => {
+  const shot = { id: "miss", group: 1, correctBall: 0 };
+  const challenge = createDailyChallenge(date, [shot]);
+  const attempt = startShot(challenge, createAttempt(challenge, "uid", "Player", 0), "miss", 100);
+  const answered = submitAnswer(challenge, attempt, "miss", 0, 200);
+  assert.equal(completedResult(challenge, answered).correctCount, 1);
+  assert.equal(completedResult(challenge, submitAnswer(challenge, attempt, "miss", 2, 200)).correctCount, 0);
+  assert.deepEqual(answerChoices({group: 2}), [...pickerBalls(2), 0]);
+  assert.deepEqual(answerChoices({group: "invalid"}), []);
+});
+
 test("withdrawn media retires a frozen round without replacing it or changing progress", () => {
   const challenge = createDailyChallenge(date, [catalog[0]]);
   const before = structuredClone(challenge);
@@ -54,7 +65,7 @@ test("daily selection excludes unsupported break counts and keeps normal shots u
     { id: "normal", group: 1, correctBall: 6 },
   ];
   assert.deepEqual(new Set(createDailyChallenge(date, shots).shotIds), new Set(["zero", "four", "normal"]));
-  assert.deepEqual(answerChoices(shots[3]), pickerBalls(1));
+  assert.deepEqual(answerChoices(shots[3]), [...pickerBalls(1), 0]);
 });
 
 test("aliases are normalized and allow international letters and duplicate display names", () => {
@@ -80,6 +91,15 @@ test("every player gets the same three distinct shots regardless of catalog orde
   assert.equal(new Set(challenge.shotIds).size, 3);
   assert.deepEqual(challenge, createDailyChallenge(date, [...catalog].reverse()));
   assert.notDeepEqual(challenge.shotIds, createDailyChallenge("2026-10-17", catalog).shotIds);
+});
+
+test("daily selection ignores shooting players and browse groups", () => {
+  const tagged = catalog.map((shot, index) => ({...shot, player: index % 2 ? "Erik" : "Rob",
+    match: "one-match", browseGroup: "one-rack", browseOrder: -100}));
+  const untaggedIds = createDailyChallenge(date, catalog).shotIds;
+  assert.deepEqual(createDailyChallenge(date, tagged).shotIds, untaggedIds);
+  assert.deepEqual(createDailyChallenge(date, tagged.map(shot => ({...shot, player: "Anyone",
+    match: shot.id, browseGroup: shot.id, browseOrder: 100}))).shotIds, untaggedIds);
 });
 
 test("daily simulated scores have distinct names and take at least a minute per shot", () => {

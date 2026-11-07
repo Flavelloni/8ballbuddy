@@ -239,6 +239,7 @@ internal fun EightBallChallengeResults(
     leaderboardError: String?,
     onRefresh: () -> Unit,
     onLoadMore: () -> Unit,
+    breakShotIds: Set<String> = emptySet(),
 ) {
     Column(
         Modifier.attrsModifier { classes("daily-challenge-page", "daily-results") },
@@ -278,10 +279,10 @@ internal fun EightBallChallengeResults(
                     Tr {
                         Td { Text((index + 1).toString()) }
                         Td(attrs = { classes(if (answer.correct) "daily-correct" else "daily-incorrect") }) {
-                            Text(answer.selectedBall.toString())
+                            Text(if (answer.selectedBall == 0 && answer.shotId !in breakShotIds) "No ball" else answer.selectedBall.toString())
                             if (answer.correct) FaCheck(Modifier.attrsModifier { attr("aria-label", "Correct") })
                         }
-                        Td { Text(answer.correctBall.toString()) }
+                        Td { Text(if (answer.correctBall == 0 && answer.shotId !in breakShotIds) "No ball" else answer.correctBall.toString()) }
                         Td { Text(formatChallengeTime(answer.elapsedMs)) }
                     }
                 }
@@ -295,10 +296,11 @@ internal fun EightBallChallengeResults(
 }
 
 @Composable
-internal fun EightBallChallengeRequestStatus(busy: Boolean, error: String?, onRetry: () -> Unit) {
+internal fun EightBallChallengeRequestStatus(busy: Boolean, error: String?, onRetry: () -> Unit,
+    loadingLabel: String = "Connecting…") {
     Row(Modifier.attrsModifier { classes("daily-request-status"); attr("role", if (error != null) "alert" else "status") },
         verticalAlignment = Alignment.CenterVertically) {
-        SpanText(if (busy) "Connecting..." else error.orEmpty())
+        if (busy) PoolLoading(loadingLabel) else SpanText(error.orEmpty())
         if (!busy && error != null) {
             Button(attrs = {
                 classes("daily-back")

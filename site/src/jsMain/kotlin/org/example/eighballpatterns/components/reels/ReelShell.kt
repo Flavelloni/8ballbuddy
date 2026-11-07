@@ -78,6 +78,11 @@ internal fun ensureEightBallReelsStyles() {
     val style = document.createElement("style")
     style.setAttribute("id", "eight-ball-reels-styles")
     style.textContent = """
+        @keyframes poolLoading { 0%, 75%, 100% { opacity: .15; } 30%, 60% { opacity: 1; } }
+        .pool-loading-ball { animation: poolLoading 1.4s infinite; }
+        .player-choice-card.player-choice-card:hover { background: #203f32; border-color: #94c9b5; }
+        .player-choice-card:focus-visible { outline: 2px solid #94c9b5; outline-offset: 3px; }
+        @media (prefers-reduced-motion: reduce) { .pool-loading-ball { animation: none; } }
         @keyframes eightBallReelPulse {
           0%, 100% { opacity: .42; transform: translateY(7px); }
           50% { opacity: 1; transform: translateY(-7px); }

@@ -10,6 +10,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import com.varabyte.kobweb.core.Page
 import kotlinx.browser.window
+import kotlinx.browser.document
+import com.varabyte.kobweb.navigation.BasePath
+import org.w3c.dom.HTMLImageElement
 import org.example.eighballpatterns.browser.copyEightBallShareUrl
 import org.example.eighballpatterns.browser.currentEightBallReelsShotId
 import org.example.eighballpatterns.browser.currentEightBallReelsPlayerIntro
@@ -23,7 +26,9 @@ import org.example.eighballpatterns.components.reels.EightBallModeChoice
 import org.example.eighballpatterns.components.reels.EightBallChallengeEntry
 import org.example.eighballpatterns.components.reels.EightBallFullscreenImage
 import org.example.eighballpatterns.components.reels.EightBallPlayerIntro
+import org.example.eighballpatterns.components.reels.EightBallPlayerChoice
 import org.example.eighballpatterns.components.reels.EightBallReelIntro
+import org.example.eighballpatterns.components.reels.PoolLoading
 import org.example.eighballpatterns.components.reels.EightBallReelMessage
 import org.example.eighballpatterns.components.reels.EightBallReelShot
 import org.example.eighballpatterns.components.reels.EightBallReelsShell
@@ -41,7 +46,9 @@ import org.example.eighballpatterns.model.PlayerProfile
 import org.example.eighballpatterns.model.ReelPosition
 import org.example.eighballpatterns.model.ReelStage
 import org.example.eighballpatterns.model.buildEightBallReelFeedback
-import org.example.eighballpatterns.model.browseEightBallShots
+import org.example.eighballpatterns.model.shuffledBrowseShots
+import org.example.eighballpatterns.model.availableBrowsePlayers
+import kotlin.random.Random
 import org.w3c.dom.HTMLVideoElement
 
 private const val EIGHT_BALL_SLIDE_DURATION_MS = 320
@@ -70,6 +77,8 @@ fun ShotPredictionPage() {
     var shareCopied by remember { mutableStateOf(false) }
     var stats by remember { mutableStateOf(EightBallReelStats()) }
     var challengeMode by remember { mutableStateOf(false) }
+    val browseSeed = remember { Random.nextInt() }
+    var selectedPlayer by remember { mutableStateOf<String?>(null) }
     val daily = remember { FirebaseChallengeRepository() }
     var challengeError by remember { mutableStateOf<String?>(null) }
 
@@ -84,7 +93,7 @@ fun ShotPredictionPage() {
         loadEightBallShots(
             onLoaded = {
                 shots = it
-                val requestedIndex = browseEightBallShots(it).indexOfFirst { shot -> shot.entry.id == initialShotId }
+                val requestedIndex = shuffledBrowseShots(it, null, browseSeed).indexOfFirst { shot -> shot.entry.id == initialShotId }
                 if (initialChallenge) {
                     position = ReelPosition(ReelStage.ModeChoice)
                 } else if (requestedIndex >= 0) {
@@ -100,11 +109,15 @@ fun ShotPredictionPage() {
     }
 
     val loadedShots = shots
+    val browseShots = remember(loadedShots, selectedPlayer, browseSeed) {
+        loadedShots?.let { shuffledBrowseShots(it, selectedPlayer, browseSeed) }
+    }
+    val availablePlayers = remember(loadedShots) { availableBrowsePlayers(loadedShots.orEmpty()) }
     val today = currentChallengeDate()
     val attempt = daily.attempt?.takeIf { challengeMode || it.challenge.date == today }
     val reelShots = if (challengeMode) attempt?.challenge?.shotIds?.mapNotNull { id ->
         loadedShots?.find { it.entry.id == id }
-    } else loadedShots?.let(::browseEightBallShots)
+    } else browseShots
     val rawShot = reelShots?.getOrNull(position.shotIndex)
     val currentShot = if (challengeMode && rawShot != null) {
         val answer = daily.attempt?.answers?.find { it.shotId == rawShot.entry.id }
@@ -157,7 +170,7 @@ fun ShotPredictionPage() {
     fun moveReel(delta: Int) {
         val shotCount = reelShots?.size ?: return
         if (shotCount == 0 || isAdvancing || imageFullscreen || shareShot != null) return
-        if (position.stage in listOf(ReelStage.ModeChoice, ReelStage.ChallengeEntry, ReelStage.ChallengeResults)) return
+        if (position.stage in listOf(ReelStage.ModeChoice, ReelStage.PlayerChoice, ReelStage.ChallengeEntry, ReelStage.ChallengeResults)) return
         if (challengeMode && (daily.busy || delta < 0 || (position.stage == ReelStage.Shot && selectedBall == null))) return
         isAdvancing = true
         resetPrediction()
@@ -167,10 +180,11 @@ fun ShotPredictionPage() {
         window.setTimeout({ isAdvancing = false }, EIGHT_BALL_SLIDE_DURATION_MS)
     }
 
-    fun browse() {
+    fun browse(player: String?) {
         resetPrediction()
         challengeMode = false
         stats = EightBallReelStats()
+        selectedPlayer = player
         position = ReelPosition(ReelStage.Player)
         isAdvancing = false
     }
@@ -202,6 +216,11 @@ fun ShotPredictionPage() {
         if (position.stage != ReelStage.Shot || selectedBall == null || daily.busy) return
         isAdvancing = false
         moveReel(1)
+    }
+
+    // Warm only the current layout while its player intro is visible, not the whole library.
+    LaunchedEffect(currentShot?.entry?.imagePath) {
+        currentShot?.let { (document.createElement("img") as HTMLImageElement).src = BasePath.prependTo(it.entry.imagePath) }
     }
 
     fun playVideo(video: HTMLVideoElement) {
@@ -250,7 +269,7 @@ fun ShotPredictionPage() {
     EightBallReelsShell(
         onNext = { moveReel(1) },
         onPrevious = { moveReel(-1) },
-        allowContentScroll = position.stage in listOf(ReelStage.ModeChoice, ReelStage.ChallengeEntry, ReelStage.ChallengeResults),
+        allowContentScroll = position.stage in listOf(ReelStage.ModeChoice, ReelStage.PlayerChoice, ReelStage.ChallengeEntry, ReelStage.ChallengeResults),
         onTouchStart = { y -> touchStartY = y },
         onTouchCancel = { touchStartY = null },
         onTouchEnd = { y ->
@@ -273,10 +292,15 @@ fun ShotPredictionPage() {
                     onStart = { moveReel(1) },
                     canStart = loadedShots != null,
                 )
-                loadedShots == null -> EightBallReelMessage("Loading...")
+                loadedShots == null -> PoolLoading("Loading shots…")
                 position.stage == ReelStage.ModeChoice -> EightBallModeChoice(
                     onDailyChallenge = { position = ReelPosition(ReelStage.ChallengeEntry) },
-                    onBrowse = { browse() },
+                    onBrowse = { position = ReelPosition(ReelStage.PlayerChoice) },
+                )
+                position.stage == ReelStage.PlayerChoice -> EightBallPlayerChoice(
+                    players = availablePlayers,
+                    onSelected = { browse(it) },
+                    onBack = { position = ReelPosition(ReelStage.ModeChoice) },
                 )
                 position.stage == ReelStage.ChallengeEntry -> EightBallChallengeEntry(
                     attempt = attempt,
@@ -292,7 +316,7 @@ fun ShotPredictionPage() {
                 )
                 position.stage == ReelStage.ChallengeResults && attempt?.complete == true -> EightBallChallengeResults(
                     attempt = attempt,
-                    onBrowse = { browse() },
+                    onBrowse = { leaveChallenge(); position = ReelPosition(ReelStage.PlayerChoice) },
                     onBack = { leaveChallenge() },
                     leaderboard = daily.leaderboard,
                     playerUid = daily.player?.uid,
@@ -300,6 +324,7 @@ fun ShotPredictionPage() {
                     leaderboardError = daily.leaderboardError,
                     onRefresh = { daily.loadLeaderboard() },
                     onLoadMore = { daily.loadLeaderboard(more = true) },
+                    breakShotIds = loadedShots.orEmpty().filter { it.meta.isBreak }.map { it.entry.id }.toSet(),
                 )
                 position.stage == ReelStage.Player && currentShot != null -> EightBallPlayerIntro(
                     shot = currentShot,

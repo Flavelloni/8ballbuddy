@@ -64,7 +64,9 @@ internal fun parseEightBallMeta(text: String): EightBallMeta {
         player = (item.player as? String).orEmpty(),
         opponent = (item.opponent as? String).orEmpty(),
         group = (item.group as? Int) ?: 0,
-        ball = (item.ball as? Int) ?: -1,
+        // Explicit null means no pot; a missing/invalid value is still unknown.
+        ball = if (item.ball == null && item.isBreak != true &&
+            (js("Object.prototype.hasOwnProperty.call(item, 'ball')") as Boolean)) 0 else (item.ball as? Int) ?: -1,
         comments = (item.comments as? String).orEmpty(),
         source = (item.source as? String).orEmpty(),
         videoLink = (item.videoLink as? String).orEmpty(),
@@ -73,6 +75,7 @@ internal fun parseEightBallMeta(text: String): EightBallMeta {
         archived = (item.archived as? Boolean) ?: false,
         ballColors = parseBallColors(item.ballColors),
         browseOrder = (item.browseOrder as? Int) ?: 0,
+        ballInHand = (item.ballInHand as? Boolean) ?: false,
     )
 }
 

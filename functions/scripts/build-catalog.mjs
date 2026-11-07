@@ -19,7 +19,7 @@ async function visit(directory) {
     publishedShotIds.push(id);
     // Preserve media/metadata for frozen rounds, but never select archived shots again.
     if (meta.archived === true) return;
-    const correctAnswer = meta.isBreak === true ? meta.ballsPotted : meta.ball;
+    const correctAnswer = meta.isBreak === true ? meta.ballsPotted : meta.ball === null ? 0 : meta.ball;
     if (!Number.isInteger(correctAnswer) || !answerChoices(meta).includes(correctAnswer)) {
       throw new Error(`Invalid answer or group: ${directory}`);
     }

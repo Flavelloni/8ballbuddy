@@ -23,16 +23,16 @@ private val positiveEightBallFeedback = listOf(
     "That's it!",
     "Exactly!",
     "Nice read.",
-    "Right ball.",
+    "Good call.",
     "You called it.",
     "Sharp pick.",
 )
 
 private val negativeEightBallFeedback = listOf(
     "Not this time.",
-    "Different ball.",
+    "Not quite.",
     "Good try.",
-    "Nope, another ball.",
+    "Watch what happens.",
     "The table had other plans."
 )
 
@@ -46,7 +46,7 @@ internal fun buildEightBallReelFeedback(correct: Boolean, isBreak: Boolean = fal
 }
 
 internal fun eightBallReelResultText(selectedBall: Int?, actualBall: Int): String {
-    val actual = "${ballLabel(actualBall)} ball"
+    val actual = if (actualBall == 0) "No ball potted" else "${ballLabel(actualBall)} ball"
     return if (selectedBall == actualBall) {
         "Correct: $actual"
     } else {
@@ -68,7 +68,7 @@ internal fun eightBallReelPickerBalls(shot: EightBallShot): List<Int> {
         2 -> (9..15).toList()
         0 -> (1..15).filter { it != 8 }
         else -> (8..10).toList()
-    }
+    } + 0
 }
 
 internal fun eightBallReelTitle(meta: EightBallMeta): String {
@@ -92,5 +92,5 @@ internal fun eightBallPlayerStatus(meta: EightBallMeta): String {
 }
 
 internal fun ballLabel(ball: Int): String {
-    return if (ball in 1..15) ball.toString() else "unknown"
+    return if (ball == 0) "No ball" else if (ball in 1..15) ball.toString() else "unknown"
 }

@@ -67,6 +67,10 @@ Metadata uses the same format as the original site:
 ```
 
 `group` is `0` for an open table, `1` for solids, and `2` for stripes.
+For non-break shots, explicit `"ball": null` means no ball was potted. The
+picker always offers **No ball**, scored internally as answer `0` (also accepted
+by the daily-challenge backend). A missing `ball` is not treated as a no-pot answer.
+Breaks still use `ballsPotted` and the count picker instead.
 The build generates the shot manifest from complete shot directories.
 Links such as `/?shot=AMDgls4nJhQ%2F051958` open a specific shot directly.
 
@@ -95,11 +99,25 @@ Put `source-info.json` alongside the match's timestamp folders with `source` and
 generated public metadata. You only need to author the player and shot answer.
 The backend catalog uses the same stable shot IDs and skips `_bad` folders.
 
-Browse ordering is explicit, not encoded in broadcaster folder names. Set
-`"browseOrder": -100` in a match's `source-info.json` to feature it ahead of
-ordinary matches (default `0`). Lower values appear first; shots within each
-priority are ordered by stable ID/timestamp. This changes browsing only, not
-date-seeded daily challenge selection, existing IDs or shared links.
+Browsing forms chronological shot groups, then shuffles whole groups once per
+page load. A break, different shooting player, different match/video, or gap
+greater than three minutes starts a new group. Exactly three minutes does not.
+Shots inside a group retain chronological order. Grouping happens before player
+filtering, so separate turns never merge when another player is filtered out.
+This supersedes the older `browseOrder` priority; no folder prefixes or resource
+reorganization are required. Shared shot IDs are unchanged, and shared links
+still open their exact shot within the page's shuffled order.
+
+After **Just browse**, a player-choice reel offers **Any player** or the shooting
+players actually represented by active published shots. The list does not come
+from the complete `players.json` profile directory, and excludes opponent-only
+or archived-only names. The shuffle remains stable during navigation and
+rendering, and a fresh page load gets a fresh seed.
+
+`"ballInHand": true` in a shot's `meta.json` displays **Ball in hand** on both
+the player introduction and unanswered layout. Missing/false preserves the
+ordinary display. The cue ball is not draggable and the answer remains the
+object ball; this is an explanatory notice only.
 
 Match-specific ball colors can also be set once in that `source-info.json`:
 
@@ -186,6 +204,10 @@ Complete the one-time setup in [FIREBASE.md](FIREBASE.md) before trying a ranked
 
 Each UTC date gets a server-defined set of up to three distinct shots, frozen when
 the first participant starts. The shot limit is defined only in the backend.
+Shots are selected independently from the full active catalog using a date-seeded
+shuffle: browsing groups, players, matches, and the browsing player filter do not
+affect selection. Everyone gets the same daily round; there are no player-specific
+daily challenges or separate player leaderboards. Only browsing has a player picker.
 The nickname reel reads the actual shot count from Firebase without creating an
 account or attempt. Every player ID has one attempt per date, resumable in the same browser.
 Duplicate aliases are allowed. Names are remembered and fixed for each started

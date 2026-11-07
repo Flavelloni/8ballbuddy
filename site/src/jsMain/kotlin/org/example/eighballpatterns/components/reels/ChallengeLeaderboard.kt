@@ -55,7 +55,7 @@ internal fun EightBallLeaderboard(
             P(attrs = { classes("daily-incorrect"); attr("role", "alert") }) { Text(error) }
         }
         if (leaderboard == null && busy) {
-            P(attrs = { classes("daily-muted"); attr("role", "status") }) { Text("Loading standings...") }
+            PoolLoading("Loading standings…")
         }
         if (leaderboard != null && leaderboard.entries.isEmpty()) {
             P(attrs = { classes("daily-muted") }) { Text("No finishers yet.") }
