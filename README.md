@@ -18,6 +18,31 @@ kobweb run
 
 Open http://localhost:8080. The server port is configured in `site/.kobweb/conf.yaml`.
 
+## Parked YouTube experiment (disabled)
+
+The experiment is disabled and its mode-selection link is commented out. The
+code is retained for later: enable `ENABLE_YOUTUBE_EXPERIMENT` and uncomment the
+link in `ChallengeReels.kt` to resume at `/youtube-test`.
+The isolated experiment reuses Rob Hall's player introduction,
+layout image, fullscreen image viewer and ball picker for `AMDgls4nJhQ/052056`.
+Choosing a ball automatically reveals a muted YouTube player for broadcast
+seconds **19300.4–19308.5**, equivalent to the existing MP4's 8.1-second clip.
+The iframe uses supported `controls=0` and `disablekb=1` settings. At the end of
+the shot it is destroyed and replaced by our own end view; **Replay shot** creates
+a new player with the same start/end bounds, avoiding YouTube's whole-video replay.
+The complete player uses the available width without cropping, with an external
+fullscreen button where the browser supports it. Play/pause, retry, original-source and
+MP4-comparison controls remain outside the player. Ads, branding, buffering and
+browser playback restrictions remain genuine parts of this test; no ad blocking,
+cropping or hidden/background YouTube playback is used.
+
+The regular shot catalog, daily challenge and existing MP4s are unchanged. YouTube
+is contacted only when a reveal is requested on this route. To disable the test,
+set `ENABLE_YOUTUBE_EXPERIMENT = false` in `model/YouTubeExperiment.kt`; this hides
+the menu link and disables the test route. To remove it completely, delete the
+YouTube experiment's page, model, player bridge, reveal component and tests,
+remove its menu link/import, and make `EightBallReelLayoutOverlay` private again.
+
 ## Branding
 
 The 8-ball logo with its mint ring and dots is in
@@ -27,7 +52,8 @@ so it stays sharp without external fonts or image services.
 
 ## Shot Data
 
-Shots live under `site/src/jsMain/resources/public/8ball/<match>/<shot>/`.
+Shots live under
+`site/src/jsMain/resources/public/8ball/<broadcaster>/<video-id>/<matchup>/<shot>/`.
 Each shot directory contains `meta.json`, `layout.jpg`, and `clip.mp4`.
 Metadata uses the same format as the original site:
 
@@ -42,7 +68,53 @@ Metadata uses the same format as the original site:
 
 `group` is `0` for an open table, `1` for solids, and `2` for stripes.
 The build generates the shot manifest from complete shot directories.
-Links such as `/?shot=BmbUbSQ8av4%2F000346` open a specific shot directly.
+Links such as `/?shot=AMDgls4nJhQ%2F051958` open a specific shot directly.
+
+Shot IDs remain `<video-id>/<timestamp>` even when files move into broadcaster
+and matchup folders. This preserves shared links and frozen daily challenges.
+The existing MagicCitySlate shots have `legacyAssetPath` entries so the build
+also generates copies at their old asset URLs for already-open/cached clients;
+these aliases are build output, not duplicate source files in Git.
+
+### Import a reviewed match folder
+
+Copy the local broadcaster folder (for example `OBK/`) into
+`site/src/jsMain/resources/public/8ball/`. The build publishes only shot folders
+containing `meta.json`, `layout.jpg` and `clip.mp4`; folders suffixed `_bad` and
+hidden working folders are ignored. A folder with `meta.json` but missing media
+fails the build so incomplete reviewed shots are not silently omitted.
+
+Only those three presentation files are published. Full recordings, preserved
+`screenshot.jpg` images, timing reports, contact sheets and unannotated shots
+are excluded, even if the complete local match folder was copied. Unreviewed
+shots can stay alongside the reviewed ones and become available after you add
+their `meta.json` files. Do not commit raw source videos to the website repository.
+
+Put `source-info.json` alongside the match's timestamp folders with `source` and
+`videoLink`. Missing credits in each `meta.json` are inherited from it in the
+generated public metadata. You only need to author the player and shot answer.
+The backend catalog uses the same stable shot IDs and skips `_bad` folders.
+
+Browse ordering is explicit, not encoded in broadcaster folder names. Set
+`"browseOrder": -100` in a match's `source-info.json` to feature it ahead of
+ordinary matches (default `0`). Lower values appear first; shots within each
+priority are ordered by stable ID/timestamp. This changes browsing only, not
+date-seeded daily challenge selection, existing IDs or shared links.
+
+Match-specific ball colors can also be set once in that `source-info.json`:
+
+```json
+"ballColors": { "12": "#F4A6C1" }
+```
+
+The build inherits this map into each shot's public metadata. It changes the
+12 ball's stripe to light pink in both the introduction and picker, without
+changing the standard palette for other matches or the solid 4 ball. Individual
+shot `meta.json` files can supply their own `ballColors` map (`{}` restores the
+standard palette). Keys are ball numbers 1–15; values must be `#RRGGBB` colors.
+There is no broadcaster-name hardcoding: a different OBK match can use its own
+palette. For a non-timestamp folder name, set an explicit stable `id`, for
+example `"id": "QymvyRiXJ9A/001412"` in `001412_emil/meta.json`.
 
 For a break, set `isBreak` and the actual number of balls potted instead of a
 target ball. The picker offers plain counts 0 through 4; zero is a valid answer:

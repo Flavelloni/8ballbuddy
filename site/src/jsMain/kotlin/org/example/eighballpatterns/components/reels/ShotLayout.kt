@@ -145,7 +145,7 @@ internal fun EightBallReelShot(
 }
 
 @Composable
-private fun EightBallReelLayoutOverlay(
+internal fun EightBallReelLayoutOverlay(
     shot: EightBallShot,
     onImageFullscreen: () -> Unit,
     onBallSelected: (Int) -> Unit,
@@ -296,6 +296,7 @@ private fun EightBallReelLayoutOverlay(
         EightBallReelBallTray(
             balls = eightBallReelPickerBalls(shot),
             isBreak = shot.meta.isBreak,
+            ballColors = shot.meta.ballColors,
             onBallSelected = onBallSelected,
             enabled = layoutReady && inputEnabled,
         )
@@ -303,7 +304,7 @@ private fun EightBallReelLayoutOverlay(
 }
 
 @Composable
-private fun EightBallReelBallTray(balls: List<Int>, isBreak: Boolean, onBallSelected: (Int) -> Unit, enabled: Boolean) {
+private fun EightBallReelBallTray(balls: List<Int>, isBreak: Boolean, ballColors: Map<Int, Int>, onBallSelected: (Int) -> Unit, enabled: Boolean) {
     Column(
         Modifier
             .fillMaxWidth()
@@ -326,7 +327,7 @@ private fun EightBallReelBallTray(balls: List<Int>, isBreak: Boolean, onBallSele
                 .styleModifier { property("text-transform", "uppercase") }
                 .toAttrs()
         ) {
-            Text(if (isBreak) "How many balls will drop on the break?" else "Pick the ball the pool shark tries to pot. Click on it here:")
+            Text(if (isBreak) "How many balls will drop on the break?" else "Pick the ball the expert tries to pot. Click on it here:")
         }
         Row(
             Modifier
@@ -364,7 +365,8 @@ private fun EightBallReelBallTray(balls: List<Int>, isBreak: Boolean, onBallSele
                         }
                 ) {
                     if (isBreak) Text(ball.toString())
-                    else PoolBall(ball, Modifier.width(100.percent).height(100.percent), fillParent = true)
+                    else PoolBall(ball, Modifier.width(100.percent).height(100.percent), fillParent = true,
+                        colorOverride = ballColors[ball]?.let { Color.rgb(it) })
                 }
             }
         }

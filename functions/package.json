@@ -8,7 +8,7 @@
     "build": "node scripts/build-catalog.mjs",
     "gcp-build": "",
     "pretest": "npm run build",
-    "test": "node --test test/challenge.test.js",
+    "test": "node --test test/challenge.test.js test/shot-paths.test.js",
     "test:emulator": "node --test test/emulator.test.js"
   },
   "dependencies": {

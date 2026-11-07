@@ -9,6 +9,38 @@ import org.example.eighballpatterns.model.browseEightBallShots
 
 class ReelMetadataTest {
     @Test
+    fun browseOrderIsIndependentOfFolderNamesAndDoesNotChangeStableIds() {
+        val ordinary = parseEightBallMeta("""{"source":"MagicCitySlate"}""")
+        val featured = parseEightBallMeta("""{"source":"OBK","browseOrder":-100}""")
+        fun shot(id: String, meta: org.example.eighballpatterns.model.EightBallMeta) =
+            EightBallShot(EightBallEntry(id, "meta.json", "layout.jpg", "clip.mp4"), meta)
+        val magic = shot("AMDgls4nJhQ/051958", ordinary)
+        val second = shot("QymvyRiXJ9A/003105", featured)
+        val first = shot("QymvyRiXJ9A/001412", featured)
+        val original = listOf(magic, second, first)
+        assertEquals(listOf(first, second, magic), browseEightBallShots(original))
+        assertEquals(listOf(magic, second, first), original)
+    }
+
+    @Test
+    fun matchBallColorsOverrideOnlyExplicitlyConfiguredBalls() {
+        val obk = parseEightBallMeta("""{"source":"OBK","ballColors":{"12":"#F4A6C1"}}""")
+        assertEquals(mapOf(12 to 0xF4A6C1), obk.ballColors)
+        assertNull(obk.ballColors[4])
+        val magicCity = parseEightBallMeta("""{"source":"MagicCitySlate"}""")
+        assertEquals(emptyMap(), magicCity.ballColors)
+        assertEquals(emptyMap(), parseEightBallMeta("""{"source":"OBK"}""").ballColors)
+    }
+
+    @Test
+    fun invalidBallColorMetadataCannotBecomeCssOrInvalidBallNumbers() {
+        val meta = parseEightBallMeta("""{"ballColors":{"12":"red; display:none","16":"#FFFFFF","0":"#FFFFFF","04":"#FFFFFF","5":123,"6":"#abcdEF"}}""")
+        assertEquals(mapOf(6 to 0xABCDEF), meta.ballColors)
+        assertEquals(emptyMap(), parseEightBallMeta("""{"ballColors":["#FFFFFF"]}""").ballColors)
+        assertEquals(emptyMap(), parseEightBallMeta("""{"ballColors":null}""").ballColors)
+    }
+
+    @Test
     fun archivedMetadataRemainsLoadableButDoesNotAppearInBrowse() {
         val meta = parseEightBallMeta("""{"player":"Archived player","group":1,"ball":5,"archived":true}""")
         val archived = EightBallShot(EightBallEntry("old", "meta.json", "layout.jpg", "clip.mp4"), meta)

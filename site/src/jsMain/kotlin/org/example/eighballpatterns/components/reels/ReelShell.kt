@@ -157,7 +157,7 @@ internal fun EightBallReelIntro(onStart: () -> Unit, canStart: Boolean = true) {
                 }
                 .toAttrs()
         ) {
-            Text("Can you predict the pool shark's next move?")
+            Text("Can you predict the expert's next move?")
         }
         P(
             attrs = Modifier
@@ -171,7 +171,7 @@ internal fun EightBallReelIntro(onStart: () -> Unit, canStart: Boolean = true) {
                 }
                 .toAttrs()
         ) {
-            Text("Predict the pool shark's next shot or break, then watch the reveal.")
+            Text("Predict the expert's next shot or break, then watch the reveal.")
         }
 
         Button(

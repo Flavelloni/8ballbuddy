@@ -44,10 +44,11 @@ fun PoolBall(
     ballNumber: Int,
     modifier: Modifier = Modifier,
     fillParent: Boolean = false,
+    colorOverride: Color? = null,
 ) {
     require(ballNumber in 1..15)
 
-    val color = if (ballNumber == 8) Color.rgb(17, 17, 17) else ballColors[(ballNumber - 1) % 8]
+    val color = colorOverride ?: if (ballNumber == 8) Color.rgb(17, 17, 17) else ballColors[(ballNumber - 1) % 8]
     val isStripe = ballNumber >= 9
     val size = if (fillParent) 100.percent else 33.px
 

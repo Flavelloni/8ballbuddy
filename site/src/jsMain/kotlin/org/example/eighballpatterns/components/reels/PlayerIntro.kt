@@ -173,7 +173,7 @@ internal fun EightBallPlayerIntro(shot: EightBallShot, player: PlayerProfile?, c
                                             attr("aria-label", "$ball ball")
                                         }
                                     ) {
-                                        PoolBall(ball, fillParent = true)
+                                        PoolBall(ball, fillParent = true, colorOverride = shot.meta.ballColors[ball]?.let { Color.rgb(it) })
                                     }
                                 }
                             }

@@ -21,11 +21,13 @@ import com.varabyte.kobweb.silk.components.icons.fa.FaTrophy
 import com.varabyte.kobweb.silk.components.text.SpanText
 import org.example.eighballpatterns.model.DailyChallengeAttempt
 import org.example.eighballpatterns.model.DailyLeaderboard
+import org.example.eighballpatterns.model.ENABLE_YOUTUBE_EXPERIMENT
 import org.example.eighballpatterns.model.formatChallengeTime
 import org.example.eighballpatterns.model.hasValidPlayerAliasLength
 import org.example.eighballpatterns.model.normalizePlayerAlias
 import org.jetbrains.compose.web.attributes.InputType
 import org.jetbrains.compose.web.dom.Button
+import org.jetbrains.compose.web.dom.A
 import org.jetbrains.compose.web.dom.Form
 import org.jetbrains.compose.web.dom.H2
 import org.jetbrains.compose.web.dom.H3
@@ -76,6 +78,14 @@ internal fun EightBallModeChoice(
                 SpanText("Just browse", Modifier.attrsModifier { classes("daily-option-label") })
                 FaArrowRight()
             }
+            /* Parked YouTube experiment. To resume: uncomment this link and enable
+               ENABLE_YOUTUBE_EXPERIMENT in model/YouTubeExperiment.kt.
+            if (ENABLE_YOUTUBE_EXPERIMENT) {
+                A(href = BasePath.prependTo("/youtube-test"), attrs = { classes("daily-muted") }) {
+                    Text("Try the YouTube embed experiment")
+                }
+            }
+            */
         }
     }
 }

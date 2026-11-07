@@ -24,3 +24,21 @@ functions/generated/
 # Withdrawn clips/layouts must never be republished or recommitted.
 site/src/jsMain/resources/public/8ball/BmbUbSQ8av4/
 site/src/jsMain/resources/public/8ball/demo-sindre/
+
+# Working source recordings and analysis files are never website assets.
+site/src/jsMain/resources/public/8ball/**/source.mp4
+site/src/jsMain/resources/public/8ball/**/source.downloading.mp4
+site/src/jsMain/resources/public/8ball/**/screenshot.jpg
+site/src/jsMain/resources/public/8ball/**/break-screenshot.jpg
+site/src/jsMain/resources/public/8ball/**/table-preview.jpg
+site/src/jsMain/resources/public/8ball/**/review*.jpg
+site/src/jsMain/resources/public/8ball/**/motion.csv
+site/src/jsMain/resources/public/8ball/**/shots.json
+site/src/jsMain/resources/public/8ball/**/timing.json
+site/src/jsMain/resources/public/8ball/**/layout-crop.json
+site/src/jsMain/resources/public/8ball/**/camera-profile.json
+site/src/jsMain/resources/public/8ball/**/source.download.json
+site/src/jsMain/resources/public/8ball/**/validation.json
+site/src/jsMain/resources/public/8ball/**/break-screenshot.json
+site/src/jsMain/resources/public/8ball/**/REVIEW.md
+site/src/jsMain/resources/public/8ball/**/.*/

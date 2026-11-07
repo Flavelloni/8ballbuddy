@@ -18,6 +18,8 @@ internal data class EightBallMeta(
     val isBreak: Boolean = false,
     val ballsPotted: Int? = null,
     val archived: Boolean = false,
+    val ballColors: Map<Int, Int> = emptyMap(),
+    val browseOrder: Int = 0,
 ) {
     // Keep numbered-ball answers separate from break counts (including zero).
     val correctAnswer: Int get() = if (isBreak) ballsPotted ?: -1 else ball
@@ -30,3 +32,4 @@ internal data class EightBallShot(
 
 internal fun browseEightBallShots(shots: List<EightBallShot>): List<EightBallShot> =
     shots.filterNot { it.meta.archived }
+        .sortedWith(compareBy<EightBallShot> { it.meta.browseOrder }.thenBy { it.entry.id })

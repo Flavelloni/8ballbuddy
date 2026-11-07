@@ -71,5 +71,20 @@ internal fun parseEightBallMeta(text: String): EightBallMeta {
         isBreak = (item.isBreak as? Boolean) ?: false,
         ballsPotted = (item.ballsPotted as? Int),
         archived = (item.archived as? Boolean) ?: false,
+        ballColors = parseBallColors(item.ballColors),
+        browseOrder = (item.browseOrder as? Int) ?: 0,
     )
+}
+
+// Only numbered balls and six-digit RGB colors are accepted, never arbitrary CSS.
+private fun parseBallColors(value: dynamic): Map<Int, Int> {
+    if (!(js("typeof value === 'object' && value !== null && !Array.isArray(value)") as Boolean)) return emptyMap()
+    val keys = js("Object.keys(value)") as Array<String>
+    return keys.mapNotNull { key ->
+        val number = key.toIntOrNull()
+        val hex = value[key] as? String
+        if (number == null || number !in 1..15 || key != number.toString() ||
+            hex == null || !Regex("#[0-9a-fA-F]{6}").matches(hex)) null
+        else number to hex.drop(1).toInt(16)
+    }.toMap()
 }
