@@ -31,13 +31,15 @@ import com.varabyte.kobweb.silk.components.icons.fa.FaUser
 import com.varabyte.kobweb.silk.components.icons.fa.FaShuffle
 import com.varabyte.kobweb.silk.components.icons.fa.FaChevronRight
 import com.varabyte.kobweb.silk.components.text.SpanText
+import org.example.eighballpatterns.model.PlayerProfile
 import org.jetbrains.compose.web.css.LineStyle
 import org.jetbrains.compose.web.css.percent
 import org.jetbrains.compose.web.css.cssRem
 import org.jetbrains.compose.web.css.px
 
 @Composable
-internal fun EightBallPlayerChoice(players: List<String>, onSelected: (String?) -> Unit, onBack: () -> Unit) {
+internal fun EightBallPlayerChoice(players: List<String>, profiles: Map<String, PlayerProfile>,
+    onSelected: (String?) -> Unit, onBack: () -> Unit) {
     Column(
         Modifier.fillMaxSize().minHeight(0.px).overflow(Overflow.Auto)
             .padding(topBottom = 64.px, leftRight = 24.px).gap(16.px)
@@ -48,9 +50,10 @@ internal fun EightBallPlayerChoice(players: List<String>, onSelected: (String?) 
         SpanText("Watch everyone, or follow one player's shots.",
             Modifier.fontSize(0.9.cssRem).color(Color.rgb(0x94C9B5)))
         Column(Modifier.fillMaxWidth().maxWidth(480.px).gap(12.px)) {
-            PlayerChoiceCard("Any player", "Mix it up · All available players", anyPlayer = true) { onSelected(null) }
+            PlayerChoiceCard("Any player", null, anyPlayer = true) { onSelected(null) }
             for (name in players) {
-                PlayerChoiceCard(name, "Follow this player's shots") { onSelected(name) }
+                val detail = profiles[name.trim().lowercase()]?.fargoRating?.let { "Fargo $it" }
+                PlayerChoiceCard(name, detail) { onSelected(name) }
             }
         }
         Button(onClick = { onBack() }, modifier = Modifier.padding(12.px)
@@ -59,7 +62,7 @@ internal fun EightBallPlayerChoice(players: List<String>, onSelected: (String?) 
 }
 
 @Composable
-private fun PlayerChoiceCard(name: String, detail: String, anyPlayer: Boolean = false, onClick: () -> Unit) {
+private fun PlayerChoiceCard(name: String, detail: String?, anyPlayer: Boolean = false, onClick: () -> Unit) {
     val mint = Color.rgb(0x94C9B5)
     Button(onClick = { onClick() }, modifier = Modifier.fillMaxWidth().minHeight(82.px)
         .padding(16.px).borderRadius(18.px)
@@ -74,7 +77,7 @@ private fun PlayerChoiceCard(name: String, detail: String, anyPlayer: Boolean = 
             }
             Column(Modifier.flexGrow(1).gap(5.px), horizontalAlignment = Alignment.Start) {
                 SpanText(name, Modifier.fontSize(1.cssRem).fontWeight(FontWeight.Bold))
-                SpanText(detail, Modifier.fontSize(0.75.cssRem).fontWeight(FontWeight.Normal).color(mint))
+                if (detail != null) SpanText(detail, Modifier.fontSize(0.75.cssRem).fontWeight(FontWeight.Normal).color(mint))
             }
             FaChevronRight(Modifier.color(mint).fontSize(0.8.cssRem))
         }

@@ -103,7 +103,7 @@ Browsing forms chronological shot groups, then shuffles whole groups once per
 page load. A break, different shooting player, different match/video, or gap
 greater than three minutes starts a new group. Exactly three minutes does not.
 Shots inside a group retain chronological order. Grouping happens before player
-filtering, so separate turns never merge when another player is filtered out.
+prioritization, so putting a player first never merges their separate turns.
 This supersedes the older `browseOrder` priority; no folder prefixes or resource
 reorganization are required. Shared shot IDs are unchanged, and shared links
 still open their exact shot within the page's shuffled order.
@@ -113,6 +113,11 @@ players actually represented by active published shots. The list does not come
 from the complete `players.json` profile directory, and excludes opponent-only
 or archived-only names. The shuffle remains stable during navigation and
 rendering, and a fresh page load gets a fresh seed.
+Player cards show `Fargo <rating>` from `players.json` when available, with no
+detail line otherwise. Choosing a player puts all of that player's shuffled
+groups first, then continues with shuffled groups from the remaining players.
+Every active shot appears once before the feed loops; groups stay intact in
+both sections. Daily challenges are unaffected.
 
 `"ballInHand": true` in a shot's `meta.json` displays **Ball in hand** on both
 the player introduction and unanswered layout. Missing/false preserves the

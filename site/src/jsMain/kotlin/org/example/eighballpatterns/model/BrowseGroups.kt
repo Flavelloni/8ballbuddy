@@ -20,7 +20,7 @@ private fun EightBallShot.broadcastSeconds(): Int? {
     return if (minutes < 60 && seconds < 60) hours * 3600 + minutes * 60 + seconds else null
 }
 
-/** Form chronological runs BEFORE filtering players, so another player's turn stays a boundary. */
+/** Form chronological runs BEFORE prioritizing players, so another player's turn stays a boundary. */
 internal fun browseShotGroups(shots: List<EightBallShot>): List<List<EightBallShot>> {
     val ordered = shots.filterNot { it.meta.archived }.sortedWith(
         compareBy<EightBallShot> { it.matchPath() }
@@ -41,8 +41,13 @@ internal fun browseShotGroups(shots: List<EightBallShot>): List<List<EightBallSh
     return groups
 }
 
-/** A page-load seed makes the shuffle stable during rendering/navigation, fresh after reload. */
-internal fun shuffledBrowseShots(shots: List<EightBallShot>, selectedPlayer: String?, seed: Int): List<EightBallShot> =
-    browseShotGroups(shots)
-        .filter { selectedPlayer == null || playerKey(it.first().meta.player) == playerKey(selectedPlayer) }
-        .shuffled(Random(seed)).flatten()
+/** Prefer the selected player's shuffled runs, then all remaining runs, without repeats. */
+internal fun shuffledBrowseShots(shots: List<EightBallShot>, selectedPlayer: String?, seed: Int): List<EightBallShot> {
+    // A page-load seed keeps navigation/recomposition stable, with a fresh order on reload.
+    val groups = browseShotGroups(shots).shuffled(Random(seed))
+    if (selectedPlayer == null) return groups.flatten()
+    val (preferred, remaining) = groups.partition {
+        playerKey(it.first().meta.player) == playerKey(selectedPlayer)
+    }
+    return (preferred + remaining).flatten()
+}

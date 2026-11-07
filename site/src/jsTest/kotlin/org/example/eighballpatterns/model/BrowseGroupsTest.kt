@@ -29,9 +29,10 @@ class BrowseGroupsTest {
         val groups = browseShotGroups(shots)
         assertEquals(3, groups.size)
         val ordered = shuffledBrowseShots(shots, " erik ", 42)
-        assertEquals(4, ordered.size)
-        assertTrue(ordered.all { it.meta.player == "Erik" })
-        for (group in groups.filter { it.first().meta.player == "Erik" }) {
+        assertEquals(5, ordered.size)
+        assertTrue(ordered.take(4).all { it.meta.player == "Erik" })
+        assertEquals("Ronny", ordered.last().meta.player)
+        for (group in groups) {
             val index = ordered.indexOf(group.first())
             assertEquals(group, ordered.subList(index, index + group.size))
         }
@@ -42,6 +43,25 @@ class BrowseGroupsTest {
     @Test fun availablePlayersComeOnlyFromActiveShotShooters() {
         val shots = listOf(shot("020000", "Erik"), shot("020010", " erik "), shot("020020", "Ronny"), shot("020030", "Retired", archived = true))
         assertEquals(listOf("Erik", "Ronny"), availableBrowsePlayers(shots))
-        assertTrue(shuffledBrowseShots(shots, "Not available", 1).isEmpty())
+        assertEquals(shuffledBrowseShots(shots, null, 1), shuffledBrowseShots(shots, "Not available", 1))
+    }
+
+    @Test fun preferredPlayerThenOtherPlayersStayGroupedRandomAndDoNotRepeat() {
+        val shots = listOf(shot("020000"), shot("020010"), shot("020020", "Ronny"),
+            shot("020030", "Ronny"), shot("020040"), shot("020050", "Lance"), shot("020100", "Lance"))
+        val orders = (1..20).map { seed ->
+            shuffledBrowseShots(shots, "Erik", seed).also { ordered ->
+                assertEquals(shots.size, ordered.size)
+                assertEquals(shots.toSet(), ordered.toSet())
+                assertTrue(ordered.take(3).all { it.meta.player == "Erik" })
+                assertTrue(ordered.drop(3).none { it.meta.player == "Erik" })
+                for (group in browseShotGroups(shots)) {
+                    val index = ordered.indexOf(group.first())
+                    assertEquals(group, ordered.subList(index, index + group.size))
+                }
+            }
+        }
+        assertTrue(orders.map { it.take(3) }.distinct().size > 1)
+        assertTrue(orders.map { it.drop(3) }.distinct().size > 1)
     }
 }

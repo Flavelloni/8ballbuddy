@@ -299,6 +299,7 @@ fun ShotPredictionPage() {
                 )
                 position.stage == ReelStage.PlayerChoice -> EightBallPlayerChoice(
                     players = availablePlayers,
+                    profiles = players,
                     onSelected = { browse(it) },
                     onBack = { position = ReelPosition(ReelStage.ModeChoice) },
                 )
