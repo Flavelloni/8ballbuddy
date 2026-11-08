@@ -56,4 +56,18 @@ class DailyChallengeTest {
         assertEquals(ReelPosition(ReelStage.ModeChoice), ReelPosition(ReelStage.Player).previous())
         assertEquals(ReelPosition(ReelStage.Player), ReelPosition(ReelStage.Shot, 2).next(3))
     }
+
+    @Test fun browsingSkipsIntroductionsOnlyWithinRunsAndBacktrackingIsSymmetric() {
+        val firstLayout = ReelPosition(ReelStage.Shot, 0)
+        val secondLayout = firstLayout.next(4, nextStartsGroup = false)
+        assertEquals(ReelPosition(ReelStage.Shot, 1), secondLayout)
+        assertEquals(firstLayout, secondLayout.previous(currentStartsGroup = false))
+        val nextIntro = secondLayout.next(4, nextStartsGroup = true)
+        assertEquals(ReelPosition(ReelStage.Player, 2), nextIntro)
+        assertEquals(secondLayout, nextIntro.previous())
+        assertEquals(nextIntro, nextIntro.next(4).previous(currentStartsGroup = true))
+        // Daily/default navigation still introduces every independent shot.
+        assertEquals(ReelPosition(ReelStage.Player, 1), firstLayout.next(4))
+        assertEquals(ReelPosition(ReelStage.Player, 0), ReelPosition(ReelStage.Shot, 3).next(4))
+    }
 }

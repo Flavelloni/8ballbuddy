@@ -48,6 +48,7 @@ import org.example.eighballpatterns.model.ReelStage
 import org.example.eighballpatterns.model.buildEightBallReelFeedback
 import org.example.eighballpatterns.model.shuffledBrowseShots
 import org.example.eighballpatterns.model.availableBrowsePlayers
+import org.example.eighballpatterns.model.browseShotGroups
 import kotlin.random.Random
 import org.w3c.dom.HTMLVideoElement
 
@@ -113,6 +114,10 @@ fun ShotPredictionPage() {
         loadedShots?.let { shuffledBrowseShots(it, selectedPlayer, browseSeed) }
     }
     val availablePlayers = remember(loadedShots) { availableBrowsePlayers(loadedShots.orEmpty()) }
+    // Preserve actual run boundaries after shuffling; adjacent runs may have the same player.
+    val browseGroupStarts = remember(loadedShots) {
+        browseShotGroups(loadedShots.orEmpty()).map { it.first().entry.id }.toSet()
+    }
     val today = currentChallengeDate()
     val attempt = daily.attempt?.takeIf { challengeMode || it.challenge.date == today }
     val reelShots = if (challengeMode) attempt?.challenge?.shotIds?.mapNotNull { id ->
@@ -167,6 +172,9 @@ fun ShotPredictionPage() {
         touchStartY = null
     }
 
+    fun startsGroup(index: Int): Boolean = challengeMode || index == 0 ||
+        reelShots?.getOrNull(index)?.entry?.id in browseGroupStarts
+
     fun moveReel(delta: Int) {
         val shotCount = reelShots?.size ?: return
         if (shotCount == 0 || isAdvancing || imageFullscreen || shareShot != null) return
@@ -176,7 +184,8 @@ fun ShotPredictionPage() {
         resetPrediction()
         position = if (challengeMode && position.stage == ReelStage.Shot && position.shotIndex == shotCount - 1) {
             ReelPosition(ReelStage.ChallengeResults)
-        } else if (delta > 0) position.next(shotCount) else position.previous()
+        } else if (delta > 0) position.next(shotCount, startsGroup((position.shotIndex + 1) % shotCount))
+        else position.previous(startsGroup(position.shotIndex))
         window.setTimeout({ isAdvancing = false }, EIGHT_BALL_SLIDE_DURATION_MS)
     }
 
@@ -392,6 +401,10 @@ fun ShotPredictionPage() {
                         onVideoEnded = {
                             videoEnded = true
                             videoPaused = false
+                            if (!challengeMode && selectedBall != null &&
+                                !startsGroup((position.shotIndex + 1) % reelShots.orEmpty().size)) {
+                                moveReel(1)
+                            }
                         },
                         onVideoPlay = {
                             videoEnded = false

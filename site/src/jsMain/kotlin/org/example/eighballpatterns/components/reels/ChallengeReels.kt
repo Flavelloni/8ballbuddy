@@ -59,16 +59,7 @@ internal fun EightBallModeChoice(
         })
         H2 { Text("Your next move") }
         Column(Modifier.attrsModifier { classes("daily-options") }) {
-            Button(attrs = {
-                classes("daily-option", "daily-option-primary")
-                attr("aria-label", "Daily challenge")
-                onClick { onDailyChallenge() }
-            }) {
-                FaTrophy(Modifier.attrsModifier { classes("daily-option-icon") })
-                SpanText("Daily challenge", Modifier.attrsModifier { classes("daily-option-label") })
-                FaArrowRight()
-            }
-            P(attrs = { classes("daily-muted"); style { property("align-self", "center") } }) { Text("or") }
+
             Button(attrs = {
                 classes("daily-option")
                 attr("aria-label", "Just browse")
@@ -76,6 +67,18 @@ internal fun EightBallModeChoice(
             }) {
                 FaPlay(Modifier.attrsModifier { classes("daily-option-icon") })
                 SpanText("Just browse", Modifier.attrsModifier { classes("daily-option-label") })
+                FaArrowRight()
+            }
+
+            P(attrs = { classes("daily-muted"); style { property("align-self", "center") } }) { Text("or") }
+
+            Button(attrs = {
+                classes("daily-option", "daily-option-primary")
+                attr("aria-label", "Daily challenge")
+                onClick { onDailyChallenge() }
+            }) {
+                FaTrophy(Modifier.attrsModifier { classes("daily-option-icon") })
+                SpanText("Daily challenge", Modifier.attrsModifier { classes("daily-option-label") })
                 FaArrowRight()
             }
             /* Parked YouTube experiment. To resume: uncomment this link and enable

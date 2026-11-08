@@ -35,6 +35,7 @@ internal fun browseShotGroups(shots: List<EightBallShot>): List<List<EightBallSh
             shot.matchPath() != previous.matchPath() ||
             shot.entry.id.substringBefore('/') != previous.entry.id.substringBefore('/') ||
             playerKey(shot.meta.player) != playerKey(previous.meta.player) ||
+            (previous.meta.group in 1..2 && shot.meta.group in 0..2 && shot.meta.group != previous.meta.group) ||
             time == null || previousTime == null || time - previousTime > 180
         if (newGroup) groups.add(mutableListOf(shot)) else groups.last().add(shot)
     }

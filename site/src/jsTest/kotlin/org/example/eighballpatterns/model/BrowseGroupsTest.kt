@@ -6,9 +6,23 @@ import kotlin.test.assertTrue
 
 class BrowseGroupsTest {
     private fun shot(time: String, player: String = "Erik", breakShot: Boolean = false,
-                     match: String = "match", video: String = "8RgRvKQFZvI", archived: Boolean = false): EightBallShot =
+                     match: String = "match", video: String = "8RgRvKQFZvI", archived: Boolean = false,
+                     ballGroup: Int = 1): EightBallShot =
         EightBallShot(EightBallEntry("$video/$time", "/8ball/OBK/$video/$match/$time/meta.json?v=abc", "layout.jpg", "clip.mp4"),
-            EightBallMeta(player, "", 1, 1, "", isBreak = breakShot, archived = archived))
+            EightBallMeta(player, "", ballGroup, 1, "", isBreak = breakShot, archived = archived))
+
+    @Test fun assignedBallGroupChangesSplitRunsButOpenTableAssignmentDoesNot() {
+        for (before in 0..2) for (after in 0..2) {
+            val first = shot("020000", ballGroup = before)
+            val second = shot("020010", ballGroup = after)
+            val split = before in 1..2 && after != before
+            assertEquals(if (split) 2 else 1, browseShotGroups(listOf(second, first)).size,
+                "Ball group $before -> $after")
+        }
+        val run = listOf(shot("020000", ballGroup = 0), shot("020010", ballGroup = 1),
+            shot("020020", ballGroup = 1), shot("020030", ballGroup = 2))
+        assertEquals(listOf(run.take(3), run.takeLast(1)), browseShotGroups(run))
+    }
 
     @Test fun allFiveBoundariesCreateGroupsAndExactlyThreeMinutesDoesNot() {
         val a = shot("020000")
