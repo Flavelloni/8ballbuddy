@@ -139,12 +139,12 @@ object ball; this is an explanatory notice only.
 Match-specific ball colors can also be set once in that `source-info.json`:
 
 ```json
-"ballColors": { "12": "#F4A6C1" }
+"ballColors": { "4": "#F4A6C1", "12": "#F4A6C1" }
 ```
 
 The build inherits this map into each shot's public metadata. It changes the
-12 ball's stripe to light pink in both the introduction and picker, without
-changing the standard palette for other matches or the solid 4 ball. Individual
+4 ball and 12 ball's stripe to light pink in both the introduction and picker,
+without changing the standard palette for other matches. Individual
 shot `meta.json` files can supply their own `ballColors` map (`{}` restores the
 standard palette). Keys are ball numbers 1–15; values must be `#RRGGBB` colors.
 There is no broadcaster-name hardcoding: a different OBK match can use its own

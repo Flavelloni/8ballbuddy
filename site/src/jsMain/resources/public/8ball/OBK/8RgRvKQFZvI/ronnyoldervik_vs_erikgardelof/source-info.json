@@ -4,6 +4,6 @@
   "broadcaster": "Oslo Biljardklubb",
   "videoLink": "https://www.youtube.com/watch?v=8RgRvKQFZvI",
   "matchup": "Ronny Oldervik vs Erik Gårdelöf",
-  "ballColors": { "12": "#F4A6C1" },
+  "ballColors": { "4": "#F4A6C1", "12": "#F4A6C1" },
   "browseOrder": -100
 }

@@ -43,9 +43,9 @@ class ReelMetadataTest {
 
     @Test
     fun matchBallColorsOverrideOnlyExplicitlyConfiguredBalls() {
-        val obk = parseEightBallMeta("""{"source":"OBK","ballColors":{"12":"#F4A6C1"}}""")
-        assertEquals(mapOf(12 to 0xF4A6C1), obk.ballColors)
-        assertNull(obk.ballColors[4])
+        val obk = parseEightBallMeta("""{"source":"OBK","ballColors":{"4":"#F4A6C1","12":"#F4A6C1"}}""")
+        assertEquals(mapOf(4 to 0xF4A6C1, 12 to 0xF4A6C1), obk.ballColors)
+        assertNull(obk.ballColors[5])
         val magicCity = parseEightBallMeta("""{"source":"MagicCitySlate"}""")
         assertEquals(emptyMap(), magicCity.ballColors)
         assertEquals(emptyMap(), parseEightBallMeta("""{"source":"OBK"}""").ballColors)
