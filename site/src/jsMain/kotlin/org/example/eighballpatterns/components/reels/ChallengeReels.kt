@@ -72,6 +72,7 @@ internal fun EightBallModeChoice(
 
             P(attrs = { classes("daily-muted"); style { property("align-self", "center") } }) { Text("or") }
 
+
             Button(attrs = {
                 classes("daily-option", "daily-option-primary")
                 attr("aria-label", "Daily challenge")
