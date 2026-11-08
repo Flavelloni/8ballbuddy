@@ -21,6 +21,7 @@ internal data class EightBallMeta(
     val ballColors: Map<Int, Int> = emptyMap(),
     val browseOrder: Int = 0,
     val ballInHand: Boolean = false,
+    val matchYear: Int? = null,
 ) {
     // Normal answers use 0 for no pot; breaks use 0..4 for the count potted.
     val correctAnswer: Int get() = if (isBreak) ballsPotted ?: -1 else ball

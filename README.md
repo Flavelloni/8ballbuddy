@@ -120,8 +120,13 @@ detail line otherwise. Choosing a player puts all of that player's shuffled
 groups first, then continues with shuffled groups from the remaining players.
 Every active shot appears once before the feed loops; groups stay intact in
 both sections. Daily challenges are unaffected.
-Browsing shows the player introduction only at each group's start. Within a
-group, a completed reveal automatically opens the next layout. At the end of
+Browsing shows the player introduction only at each group's start. For each
+new group after the first, a **New rack** reel precedes that introduction.
+The first group opens directly with the player, and daily shots do not show rack notices.
+`matchYear` in a match's `source-info.json` is inherited by its shots and shown
+discreetly as **Match · 2023** beneath the player's name. Omit it if unknown;
+a shot's own `matchYear` can override the match default.
+Within a group, a completed reveal automatically opens the next layout. At the end of
 a group, swipe to the next group's introduction. Manual forward/back navigation
 also skips introductions inside runs. Daily shots remain independent and retain
 their individual introductions and explicit Next shot / See results controls.

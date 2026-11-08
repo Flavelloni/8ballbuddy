@@ -8,6 +8,13 @@ import org.example.eighballpatterns.model.EightBallShot
 import org.example.eighballpatterns.model.browseEightBallShots
 
 class ReelMetadataTest {
+    @Test fun matchYearIsOptionalAndRejectsInvalidValues() {
+        assertEquals(2023, parseEightBallMeta("""{"matchYear":2023}""").matchYear)
+        for (json in listOf("{}", """{"matchYear":null}""", """{"matchYear":"2023"}""",
+            """{"matchYear":0}""", """{"matchYear":2200}""")) {
+            assertNull(parseEightBallMeta(json).matchYear)
+        }
+    }
     @Test fun explicitNullMeansNoPotButMissingBallStaysUnknown() {
         val meta = parseEightBallMeta("""{"group":1,"ball":null}""")
         assertEquals(0, meta.correctAnswer)

@@ -76,6 +76,7 @@ internal fun parseEightBallMeta(text: String): EightBallMeta {
         ballColors = parseBallColors(item.ballColors),
         browseOrder = (item.browseOrder as? Int) ?: 0,
         ballInHand = (item.ballInHand as? Boolean) ?: false,
+        matchYear = (item.matchYear as? Int)?.takeIf { it in 1900..2100 },
     )
 }
 

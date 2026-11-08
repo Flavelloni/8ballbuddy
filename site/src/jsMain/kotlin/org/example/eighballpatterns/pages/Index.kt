@@ -29,6 +29,7 @@ import org.example.eighballpatterns.components.reels.EightBallPlayerIntro
 import org.example.eighballpatterns.components.reels.EightBallPlayerChoice
 import org.example.eighballpatterns.components.reels.EightBallReelIntro
 import org.example.eighballpatterns.components.reels.PoolLoading
+import org.example.eighballpatterns.components.reels.EightBallNewRack
 import org.example.eighballpatterns.components.reels.EightBallReelMessage
 import org.example.eighballpatterns.components.reels.EightBallReelShot
 import org.example.eighballpatterns.components.reels.EightBallReelsShell
@@ -80,6 +81,7 @@ fun ShotPredictionPage() {
     var challengeMode by remember { mutableStateOf(false) }
     val browseSeed = remember { Random.nextInt() }
     var selectedPlayer by remember { mutableStateOf<String?>(null) }
+    var advancedBrowseGroup by remember { mutableStateOf(false) }
     val daily = remember { FirebaseChallengeRepository() }
     var challengeError by remember { mutableStateOf<String?>(null) }
 
@@ -181,11 +183,15 @@ fun ShotPredictionPage() {
         if (position.stage in listOf(ReelStage.ModeChoice, ReelStage.PlayerChoice, ReelStage.ChallengeEntry, ReelStage.ChallengeResults)) return
         if (challengeMode && (daily.busy || delta < 0 || (position.stage == ReelStage.Shot && selectedBall == null))) return
         isAdvancing = true
+        if (!challengeMode && delta > 0 && position.stage == ReelStage.Shot &&
+            startsGroup((position.shotIndex + 1) % shotCount)) advancedBrowseGroup = true
         resetPrediction()
         position = if (challengeMode && position.stage == ReelStage.Shot && position.shotIndex == shotCount - 1) {
             ReelPosition(ReelStage.ChallengeResults)
-        } else if (delta > 0) position.next(shotCount, startsGroup((position.shotIndex + 1) % shotCount))
-        else position.previous(startsGroup(position.shotIndex))
+        } else if (delta > 0) position.next(shotCount, startsGroup((position.shotIndex + 1) % shotCount),
+            announceRack = !challengeMode)
+        else position.previous(startsGroup(position.shotIndex),
+            announceRack = !challengeMode && (position.shotIndex != 0 || advancedBrowseGroup), shotCount = shotCount)
         window.setTimeout({ isAdvancing = false }, EIGHT_BALL_SLIDE_DURATION_MS)
     }
 
@@ -194,6 +200,7 @@ fun ShotPredictionPage() {
         challengeMode = false
         stats = EightBallReelStats()
         selectedPlayer = player
+        advancedBrowseGroup = false
         position = ReelPosition(ReelStage.Player)
         isAdvancing = false
     }
@@ -336,6 +343,7 @@ fun ShotPredictionPage() {
                     onLoadMore = { daily.loadLeaderboard(more = true) },
                     breakShotIds = loadedShots.orEmpty().filter { it.meta.isBreak }.map { it.entry.id }.toSet(),
                 )
+                position.stage == ReelStage.NewRack -> EightBallNewRack()
                 position.stage == ReelStage.Player && currentShot != null -> EightBallPlayerIntro(
                     shot = currentShot,
                     player = players[currentShot.meta.player.trim().lowercase()],

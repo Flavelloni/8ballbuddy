@@ -58,7 +58,7 @@ val generateEightBallManifest = tasks.register("generateEightBallManifest") {
                     val credits = ancestor.resolve("source-info.json")
                     if (credits.isFile) {
                         val info = JsonSlurper().parse(credits) as Map<*, *>
-                        for (field in listOf("source", "videoLink", "ballColors", "browseOrder")) {
+                        for (field in listOf("source", "videoLink", "ballColors", "browseOrder", "matchYear")) {
                             val missing = meta[field] == null || (meta[field] is String && (meta[field] as String).isBlank())
                             if (missing && info.containsKey(field)) meta[field] = info[field]
                         }

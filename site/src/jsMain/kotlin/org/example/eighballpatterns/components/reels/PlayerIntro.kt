@@ -132,6 +132,10 @@ internal fun EightBallPlayerIntro(shot: EightBallShot, player: PlayerProfile?, c
                     ) {
                         Text(shot.meta.player)
                     }
+                    shot.meta.matchYear?.let { year ->
+                        SpanText("Match · $year", Modifier.fontSize(0.75.cssRem)
+                            .color(Color.rgba(255, 255, 255, 0.45f)))
+                    }
                     if (player?.fargoRating != null) {
                         Column(
                             Modifier.gap(2.px),
