@@ -25,6 +25,7 @@ internal fun parsePlayerProfiles(text: String): Map<String, PlayerProfile> {
             fargoRating = (item.FargoRating as? Int)?.takeIf { it > 0 },
             fargoSource = (item.FargoSource as? String).orEmpty(),
             fargoDate = (item.FargoDate as? String).orEmpty(),
+            club = (item.Club as? String).orEmpty(),
         )
     }
 }

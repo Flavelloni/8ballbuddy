@@ -24,21 +24,25 @@
   "Emil André Gangfløt": {
     "FargoRating": 773,
     "FargoSource": "Fargo App",
-    "FargoDate": "Nov 2026"
+    "FargoDate": "Nov 2026",
+    "Club": "OBK"
   },
   "Erik Gårdelöf": {
     "FargoRating": 723,
     "FargoSource": "Fargo App",
-    "FargoDate": "Nov 2026"
+    "FargoDate": "Nov 2026",
+    "Club": "OBK"
   },
   "Kim Soo Garmark": {
     "FargoRating": 677,
     "FargoSource": "Fargo App",
-    "FargoDate": "Nov 2026"
+    "FargoDate": "Nov 2026",
+    "Club": "OBK"
   },
   "Ole Kristian Rudshavn": {
     "FargoRating": 737,
     "FargoSource": "Fargo App",
-    "FargoDate": "Nov 2026"
+    "FargoDate": "Nov 2026",
+    "Club": "OBK"
   }
 }

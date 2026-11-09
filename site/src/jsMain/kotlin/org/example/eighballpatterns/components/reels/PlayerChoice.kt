@@ -32,6 +32,7 @@ import com.varabyte.kobweb.silk.components.icons.fa.FaShuffle
 import com.varabyte.kobweb.silk.components.icons.fa.FaChevronRight
 import com.varabyte.kobweb.silk.components.text.SpanText
 import org.example.eighballpatterns.model.PlayerProfile
+import org.example.eighballpatterns.model.orderPlayerChoices
 import org.jetbrains.compose.web.css.LineStyle
 import org.jetbrains.compose.web.css.percent
 import org.jetbrains.compose.web.css.cssRem
@@ -51,7 +52,7 @@ internal fun EightBallPlayerChoice(players: List<String>, profiles: Map<String, 
             Modifier.fontSize(0.9.cssRem).color(Color.rgb(0x94C9B5)))
         Column(Modifier.fillMaxWidth().maxWidth(480.px).gap(12.px)) {
             PlayerChoiceCard("Any player", null, anyPlayer = true) { onSelected(null) }
-            for (name in players) {
+            for (name in orderPlayerChoices(players, profiles)) {
                 val detail = profiles[name.trim().lowercase()]?.fargoRating?.let { "Fargo $it" }
                 PlayerChoiceCard(name, detail) { onSelected(name) }
             }

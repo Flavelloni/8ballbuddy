@@ -61,7 +61,7 @@ internal fun EightBallModeChoice(
         Column(Modifier.attrsModifier { classes("daily-options") }) {
 
             Button(attrs = {
-                classes("daily-option")
+                classes("daily-option", "daily-option-primary")
                 attr("aria-label", "Just browse")
                 onClick { onBrowse() }
             }) {

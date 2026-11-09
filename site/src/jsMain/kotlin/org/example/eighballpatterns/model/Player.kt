@@ -9,4 +9,10 @@ internal data class PlayerProfile(
     val fargoRating: Int? = null,
     val fargoSource: String = "",
     val fargoDate: String = "",
+    val club: String = "",
 )
+
+internal fun orderPlayerChoices(players: List<String>, profiles: Map<String, PlayerProfile>): List<String> =
+    players.sortedBy { name ->
+        if (profiles[name.trim().lowercase()]?.club?.trim().equals("OBK", ignoreCase = true)) 0 else 1
+    }
