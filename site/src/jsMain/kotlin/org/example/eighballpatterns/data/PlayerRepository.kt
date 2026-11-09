@@ -26,6 +26,8 @@ internal fun parsePlayerProfiles(text: String): Map<String, PlayerProfile> {
             fargoSource = (item.FargoSource as? String).orEmpty(),
             fargoDate = (item.FargoDate as? String).orEmpty(),
             club = (item.Club as? String).orEmpty(),
+            country = (item.country as? String).orEmpty(),
+            countryFlagUrl = (item.countryFlagUrl as? String).orEmpty(),
         )
     }
 }

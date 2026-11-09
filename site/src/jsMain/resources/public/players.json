@@ -22,12 +22,22 @@
     "FargoDate": "Nov 2026"
   },
   "Emil André Gangfløt": {
+    "imageUrl": "/images/players/emil-andre-gangflot.png",
+    "imageCredit": "CueScore",
+    "imageSourceUrl": "https://cuescore.com/player/Emil+Andr%C3%A9+Gangfl%C3%B8t/1006214",
+    "country": "Norway",
+    "countryFlagUrl": "/images/flags/no.png",
     "FargoRating": 773,
     "FargoSource": "Fargo App",
     "FargoDate": "Nov 2026",
     "Club": "OBK"
   },
   "Erik Gårdelöf": {
+    "imageUrl": "/images/players/erik-gardelof.png",
+    "imageCredit": "CueScore",
+    "imageSourceUrl": "https://cuescore.com/player/Erik+G%C3%A5rdel%C3%B6f/1006220",
+    "country": "Sweden",
+    "countryFlagUrl": "/images/flags/se.png",
     "FargoRating": 723,
     "FargoSource": "Fargo App",
     "FargoDate": "Nov 2026",

@@ -17,6 +17,7 @@ import com.varabyte.kobweb.compose.ui.graphics.Colors
 import com.varabyte.kobweb.compose.ui.modifiers.color
 import com.varabyte.kobweb.compose.ui.modifiers.fillMaxSize
 import com.varabyte.kobweb.compose.ui.modifiers.fillMaxWidth
+import com.varabyte.kobweb.compose.ui.modifiers.flexShrink
 import com.varabyte.kobweb.compose.ui.modifiers.fontSize
 import com.varabyte.kobweb.compose.ui.modifiers.fontWeight
 import com.varabyte.kobweb.compose.ui.modifiers.gap
@@ -30,6 +31,7 @@ import com.varabyte.kobweb.compose.ui.styleModifier
 import com.varabyte.kobweb.compose.ui.toAttrs
 import com.varabyte.kobweb.navigation.BasePath
 import com.varabyte.kobweb.silk.components.icons.fa.FaUser
+import com.varabyte.kobweb.silk.components.graphics.Image
 import com.varabyte.kobweb.silk.components.layout.SimpleGrid
 import com.varabyte.kobweb.silk.components.layout.numColumns
 import com.varabyte.kobweb.silk.components.text.SpanText
@@ -124,13 +126,23 @@ internal fun EightBallPlayerIntro(shot: EightBallShot, player: PlayerProfile?, c
                         .styleModifier { property("flex-shrink", "0") },
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    H2(
-                        Modifier.margin(0.px).fontSize(1.85.cssRem).fontWeight(FontWeight.Bold)
-                            .lineHeight(1.2).color(Colors.White)
-                            .styleModifier { property("text-align", "center") }
-                            .toAttrs()
-                    ) {
-                        Text(shot.meta.player)
+                    Row(Modifier.gap(10.px), verticalAlignment = Alignment.CenterVertically) {
+                        H2(
+                            Modifier.margin(0.px).fontSize(1.85.cssRem).fontWeight(FontWeight.Bold)
+                                .lineHeight(1.2).color(Colors.White)
+                                .styleModifier { property("text-align", "center") }
+                                .toAttrs()
+                        ) {
+                            Text(shot.meta.player)
+                        }
+                        if (player != null && player.countryFlagUrl.isNotBlank() && player.country.isNotBlank()) {
+                            Image(
+                                src = BasePath.prependTo(player.countryFlagUrl),
+                                alt = "${player.country} flag",
+                                modifier = Modifier.width(32.px).height(24.px).flexShrink(0)
+                                    .attrsModifier { attr("title", player.country) },
+                            )
+                        }
                     }
                     shot.meta.matchYear?.let { year ->
                         SpanText("Match · $year", Modifier.fontSize(0.75.cssRem)

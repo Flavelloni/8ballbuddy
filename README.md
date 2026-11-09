@@ -179,6 +179,17 @@ time after the layout image loads, and resets when entering another attempt.
 
 ## Player Photos
 
+Erik Gårdelöf and Emil André Gangfløt use locally stored CueScore portraits
+(reuse permission confirmed by the site owner). Their profile links are recorded
+in `players.json`; the introduction keeps a CueScore credit link. Optional
+`country` and `countryFlagUrl` fields display a small accessible national flag
+beside the name. CueScore lists Erik as Sweden and Emil as Norway. Portraits and
+flags are served locally, not hotlinked. Original portrait downloads:
+
+- Erik: https://img.cuescore.com/image/e/4/e1266df8dfc9edb21a9816bb8c812135.png?t=1569668287
+- Emil: https://img.cuescore.com/image/9/4/963ffedb0da7bc8fa83237386abda13b.png?t=1771601925
+- Flags: CueScore `/img/flags/png-country-4x2-none/res-40x30/se.png` and `no.png`.
+
 `site/src/jsMain/resources/public/players.json` maps player names from shot
 metadata to `imageUrl`, `imageCredit`, `imageSourceUrl`, and `imagePosition`.
 Names are matched without regard to case. Use an HTTPS image URL or a local

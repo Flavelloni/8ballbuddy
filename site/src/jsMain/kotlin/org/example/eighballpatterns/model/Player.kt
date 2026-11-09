@@ -10,6 +10,8 @@ internal data class PlayerProfile(
     val fargoSource: String = "",
     val fargoDate: String = "",
     val club: String = "",
+    val country: String = "",
+    val countryFlagUrl: String = "",
 )
 
 internal fun orderPlayerChoices(players: List<String>, profiles: Map<String, PlayerProfile>): List<String> =
