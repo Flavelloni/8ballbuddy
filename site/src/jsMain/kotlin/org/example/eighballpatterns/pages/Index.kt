@@ -164,8 +164,8 @@ fun ShotPredictionPage() {
     fun resetPrediction() {
         answerClock?.pause()
         videoElement?.let { video ->
+            // Keep the outgoing frame until the new reel replaces it; rewind only on play/replay.
             video.pause()
-            video.currentTime = 0.0
         }
         selectedBall = null
         feedback = null
@@ -237,6 +237,15 @@ fun ShotPredictionPage() {
     // Warm only the current layout while its player intro is visible, not the whole library.
     LaunchedEffect(currentShot?.entry?.imagePath) {
         currentShot?.let { (document.createElement("img") as HTMLImageElement).src = BasePath.prependTo(it.entry.imagePath) }
+    }
+
+    // While revealing, warm just the next layout, never the next clip or the full library.
+    LaunchedEffect(position, selectedBall, challengeMode) {
+        if (position.stage == ReelStage.Shot && selectedBall != null) {
+            val next = reelShots?.getOrNull(position.shotIndex + 1)
+                ?: if (!challengeMode) reelShots?.firstOrNull() else null
+            next?.let { (document.createElement("img") as HTMLImageElement).src = BasePath.prependTo(it.entry.imagePath) }
+        }
     }
 
     fun playVideo(video: HTMLVideoElement) {

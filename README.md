@@ -209,6 +209,10 @@ automatically. The shot manifest is revalidated on each page load. Media uses th
 browser's normal HTTP cache and native video range requests, without downloading
 the entire library. GitHub Pages currently serves media with a ten-minute cache
 lifetime; this does not provide guaranteed offline playback or permanent storage.
+The current layout is warmed ahead of display. Once a reveal starts, only the
+next layout image is prefetched; the next video is not. Daily prefetch stops
+at the final shot. Leaving a reveal pauses its video without rewinding it,
+avoiding a flash of the first frame before the next layout appears.
 
 ## Daily Challenge
 
