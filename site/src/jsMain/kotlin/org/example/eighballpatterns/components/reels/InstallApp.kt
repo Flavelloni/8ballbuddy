@@ -10,6 +10,8 @@ import com.varabyte.kobweb.compose.ui.modifiers.*
 import com.varabyte.kobweb.navigation.BasePath
 import com.varabyte.kobweb.silk.components.forms.Button
 import com.varabyte.kobweb.silk.components.text.SpanText
+import com.varabyte.kobweb.silk.components.icons.fa.FaDownload
+import com.varabyte.kobweb.silk.components.icons.fa.FaChevronDown
 import kotlinx.browser.document
 import kotlinx.browser.window
 import org.jetbrains.compose.web.css.px
@@ -44,7 +46,7 @@ internal fun prepareAppInstallation(): () -> Unit {
 internal fun InstallAppButton() {
     var instructions by remember { mutableStateOf(false) }
     if(appInstalled) return
-    Column(Modifier.gap(8.px).styleModifier {property("max-width","320px")},horizontalAlignment=Alignment.CenterHorizontally) {
+    Column(Modifier.gap(10.px).attrsModifier {classes("reel-install")},horizontalAlignment=Alignment.CenterHorizontally) {
         Button(onClick={
             val prompt=installPrompt
             if(prompt!=null) {
@@ -56,16 +58,19 @@ internal fun InstallAppButton() {
                     },{ _: dynamic -> instructions=true })
                 } catch(_: Throwable) { instructions=true }
             } else instructions=!instructions
-        },modifier=Modifier.borderRadius(999.px).attrsModifier {
+        },modifier=Modifier.attrsModifier {
+            classes("reel-subtle-button")
             attr("aria-label","Install 8-Ball Buddy");attr("aria-expanded",instructions.toString())
-        }) { SpanText("Install app ↗") }
+        }) { FaDownload();SpanText("Install app");FaChevronDown() }
         if(instructions) {
             val apple=js("/iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)") as Boolean
+            Column(Modifier.gap(8.px).attrsModifier {classes("reel-install-instructions")}) {
             SpanText(if(apple) "On iPhone or iPad: open in Safari, tap Share, then Add to Home Screen and Open as Web App (if offered)."
-                else "Use your browser menu → Install app or Add to Home screen. On desktop, look for the install icon in the address bar. If unavailable, keep using the website normally.",
+                else "In your browser menu, choose Install app or Add to Home screen. On desktop, look for the install icon in the address bar. You can always keep playing in the browser.",
                 Modifier.styleModifier {property("font-size",".78rem");property("line-height","1.45");property("color","#adcabc")}
                     .attrsModifier {attr("role","status")})
             SpanText("Free · No app store needed · Internet required",Modifier.styleModifier {property("font-size",".7rem");property("color","#88a597")})
+            }
         }
     }
 }

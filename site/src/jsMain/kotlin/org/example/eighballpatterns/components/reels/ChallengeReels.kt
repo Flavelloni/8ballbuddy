@@ -15,7 +15,8 @@ import com.varabyte.kobweb.navigation.BasePath
 import com.varabyte.kobweb.silk.components.icons.fa.FaArrowLeft
 import com.varabyte.kobweb.silk.components.icons.fa.FaArrowRight
 import com.varabyte.kobweb.silk.components.icons.fa.FaCheck
-import com.varabyte.kobweb.silk.components.icons.fa.FaPlay
+import com.varabyte.kobweb.silk.components.icons.fa.FaXmark
+import com.varabyte.kobweb.silk.components.icons.fa.FaLayerGroup
 import com.varabyte.kobweb.silk.components.icons.fa.FaRotateRight
 import com.varabyte.kobweb.silk.components.icons.fa.FaTrophy
 import com.varabyte.kobweb.silk.components.text.SpanText
@@ -62,15 +63,16 @@ internal fun EightBallModeChoice(
 
             Button(attrs = {
                 classes("daily-option", "daily-option-primary")
-                attr("aria-label", "Just browse")
+                attr("aria-label", "Scroll")
                 onClick { onBrowse() }
             }) {
-                FaPlay(Modifier.attrsModifier { classes("daily-option-icon") })
-                SpanText("Just browse", Modifier.attrsModifier { classes("daily-option-label") })
+                FaLayerGroup(Modifier.attrsModifier { classes("daily-option-icon") })
+                Column(Modifier.attrsModifier {classes("daily-option-label")}) {
+                    SpanText("Scroll")
+                }
                 FaArrowRight()
             }
 
-            P(attrs = { classes("daily-muted"); style { property("align-self", "center") } }) { Text("or") }
 
 
             Button(attrs = {
@@ -79,7 +81,9 @@ internal fun EightBallModeChoice(
                 onClick { onDailyChallenge() }
             }) {
                 FaTrophy(Modifier.attrsModifier { classes("daily-option-icon") })
-                SpanText("Daily challenge", Modifier.attrsModifier { classes("daily-option-label") })
+                Column(Modifier.attrsModifier {classes("daily-option-label")}) {
+                    SpanText("Daily challenge")
+                }
                 FaArrowRight()
             }
             /* Parked YouTube experiment. To resume: uncomment this link and enable
@@ -133,6 +137,7 @@ internal fun EightBallChallengeEntry(
             attr("height", "80")
         })
         H2 { Text("Daily challenge") }
+        P(attrs={classes("daily-muted")}) {Text("Three random shots. Make every read count.")}
         Column(Modifier.attrsModifier { classes("daily-options") }) {
             Form(attrs = {
                 classes("daily-alias-form")
@@ -243,7 +248,6 @@ internal fun EightBallChallengeResults(
     leaderboardError: String?,
     onRefresh: () -> Unit,
     onLoadMore: () -> Unit,
-    breakShotIds: Set<String> = emptySet(),
 ) {
     Column(
         Modifier.attrsModifier { classes("daily-challenge-page", "daily-results") },
@@ -268,12 +272,11 @@ internal fun EightBallChallengeResults(
                 SpanText("Answer time", Modifier.attrsModifier { classes("daily-muted") })
             }
         }
-        EightBallLeaderboard(leaderboard, playerUid, leaderboardBusy, leaderboardError, onRefresh, onLoadMore)
         H3 { Text("Your shots") }
         Table(attrs = { classes("daily-breakdown"); attr("aria-label", "Challenge answers") }) {
             Thead {
                 Tr {
-                    listOf("Shot", "Pick", "Answer", "Time").forEach { label ->
+                    listOf("Shot", "Result", "Time").forEach { label ->
                         Th(attrs = { attr("scope", "col") }) { Text(label) }
                     }
                 }
@@ -283,10 +286,12 @@ internal fun EightBallChallengeResults(
                     Tr {
                         Td { Text((index + 1).toString()) }
                         Td(attrs = { classes(if (answer.correct) "daily-correct" else "daily-incorrect") }) {
-                            Text(if(answer.selectedBall == -2) "Other ball" else if (answer.selectedBall == 0 && answer.shotId !in breakShotIds) "No ball" else answer.selectedBall.toString())
-                            if (answer.correct) FaCheck(Modifier.attrsModifier { attr("aria-label", "Correct") })
+                            Row(Modifier.attrsModifier {classes("daily-shot-outcome")},verticalAlignment=Alignment.CenterVertically) {
+                                if(answer.correct) FaCheck(Modifier.attrsModifier {attr("aria-hidden","true")})
+                                else FaXmark(Modifier.attrsModifier {attr("aria-hidden","true")})
+                                SpanText(if(answer.correct) "Correct" else "Incorrect")
+                            }
                         }
-                        Td { Text(if (answer.correctBall == 0 && answer.shotId !in breakShotIds) "No ball" else answer.correctBall.toString()) }
                         Td { Text(formatChallengeTime(answer.elapsedMs)) }
                     }
                 }
@@ -296,6 +301,7 @@ internal fun EightBallChallengeResults(
             Text("Keep browsing")
             FaArrowRight()
         }
+        EightBallLeaderboard(leaderboard, playerUid, leaderboardBusy, leaderboardError, onRefresh, onLoadMore)
     }
 }
 

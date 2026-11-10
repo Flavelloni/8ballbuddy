@@ -43,7 +43,7 @@ internal fun PredictionSoundToggle() {
     var enabled by remember { mutableStateOf(predictionSoundEnabled()) }
     Button(onClick={ enabled=!enabled;setPredictionSound(enabled);if(enabled) primePredictionAudio() },
         modifier=Modifier.width(34.px).height(34.px).padding(6.px).borderRadius(999.px)
-            .attrsModifier { attr("aria-label",if(enabled) "Mute feedback sounds" else "Enable feedback sounds");attr("aria-pressed",enabled.toString()) }) {
+            .attrsModifier { classes("reel-utility-button");attr("aria-label",if(enabled) "Mute feedback sounds" else "Enable feedback sounds");attr("aria-pressed",enabled.toString()) }) {
         if(enabled) FaVolumeHigh() else FaVolumeXmark()
     }
 }

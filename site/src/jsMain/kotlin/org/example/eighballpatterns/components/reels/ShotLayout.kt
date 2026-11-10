@@ -29,7 +29,6 @@ import com.varabyte.kobweb.compose.ui.modifiers.margin
 import com.varabyte.kobweb.compose.ui.modifiers.padding
 import com.varabyte.kobweb.compose.ui.modifiers.position
 import com.varabyte.kobweb.compose.ui.modifiers.width
-import com.varabyte.kobweb.compose.ui.modifiers.zIndex
 import com.varabyte.kobweb.compose.ui.styleModifier
 import com.varabyte.kobweb.compose.ui.toAttrs
 import com.varabyte.kobweb.navigation.BasePath
@@ -42,9 +41,12 @@ import org.example.eighballpatterns.model.EightBallReelStats
 import org.example.eighballpatterns.model.AnswerClock
 import org.example.eighballpatterns.model.EightBallShot
 import org.example.eighballpatterns.model.ImagePoint
+import org.example.eighballpatterns.model.PlayerProfile
+import com.varabyte.kobweb.silk.components.graphics.Image
+import com.varabyte.kobweb.silk.components.forms.Button as SilkButton
+import com.varabyte.kobweb.silk.components.icons.fa.FaUser
 import org.example.eighballpatterns.model.ballLabel
 import org.example.eighballpatterns.model.eightBallReelPickerBalls
-import org.example.eighballpatterns.model.eightBallReelTitle
 import org.jetbrains.compose.web.css.FlexWrap
 import org.jetbrains.compose.web.css.LineStyle
 import org.jetbrains.compose.web.css.Position
@@ -61,17 +63,16 @@ import org.w3c.dom.HTMLVideoElement
 @Composable
 internal fun EightBallReelShot(
     shot: EightBallShot,
+    player: PlayerProfile? = null,
     selectedBall: Int?,
     feedback: String?,
     videoEnded: Boolean,
     videoPaused: Boolean,
     stats: EightBallReelStats,
     liked: Boolean,
-    likesLabel: String,
     onImageFullscreen: () -> Unit,
     onLike: () -> Unit,
     onShare: () -> Unit,
-    onChooseMode: (() -> Unit)?,
     onBallSelected: (Int) -> Unit,
     onVideoElement: (HTMLVideoElement?) -> Unit,
     onVideoEnded: () -> Unit,
@@ -128,6 +129,7 @@ internal fun EightBallReelShot(
         if (!hasPrediction) {
             EightBallReelLayoutOverlay(
                 shot = shot,
+                player = player,
                 onImageFullscreen = onImageFullscreen,
                 onBallSelected = onBallSelected,
                 answerClock = answerClock,
@@ -146,10 +148,8 @@ internal fun EightBallReelShot(
         EightBallReelActions(
             stats = stats,
             liked = liked,
-            likesLabel = likesLabel,
             onLike = onLike,
             onShare = onShare,
-            onChooseMode = onChooseMode,
         )
     }
 }
@@ -157,6 +157,7 @@ internal fun EightBallReelShot(
 @Composable
 internal fun EightBallReelLayoutOverlay(
     shot: EightBallShot,
+    player: PlayerProfile? = null,
     onImageFullscreen: () -> Unit,
     onBallSelected: (Int) -> Unit,
     answerClock: AnswerClock?,
@@ -188,68 +189,71 @@ internal fun EightBallReelLayoutOverlay(
                 property("z-index", "2")
                 property("display", "grid")
                 property("grid-template-rows", "auto minmax(0, 1fr) auto")
-                property("background", "#020303")
-            }
+                property("background", "#080f0c")
+            }.attrsModifier {classes("shot-layout-overlay")}
     ) {
-        Row(
+        SimpleGrid(
+            numColumns = numColumns(3),
             modifier = Modifier
                 .position(Position.Relative)
                 .styleModifier {
-                    property("display", "flex")
+                    property("display", "grid")
+                    property("grid-template-columns", "44px minmax(0, 1fr) 44px")
                     property("align-items", "center")
-                    property("justify-content", "center")
-                    property("min-height", "84px")
-                    property("padding", if (answerClock != null) "calc(52px + env(safe-area-inset-top)) 64px 8px" else "max(12px, env(safe-area-inset-top)) 64px 8px")
+                    property("justify-content", "space-between")
+                    property("gap", "10px")
+                    property("padding", if (answerClock != null) "calc(98px + env(safe-area-inset-top)) 12px 8px" else "calc(66px + env(safe-area-inset-top)) 12px 8px")
                     property("box-sizing", "border-box")
                 }
         ) {
-            Box(Modifier.position(Position.Absolute).styleModifier {
-                property("left","12px");property("top",if(answerClock!=null) "calc(52px + env(safe-area-inset-top))" else "12px")
-            }) { PredictionSoundToggle() }
+            Box(Modifier.attrsModifier { classes("shot-player-avatar") },contentAlignment=Alignment.Center) {
+                var failed by remember(player?.imageUrl) { mutableStateOf(false) }
+                val image=player?.imageUrl?.takeIf {it.isNotBlank() && !failed}
+                if(image==null) FaUser() else Image(
+                    if(image.startsWith("http")) image else BasePath.prependTo(image),"${shot.meta.player} portrait",
+                    Modifier.attrsModifier { addEventListener("error") { failed=true } })
+            }
             Column(
-                Modifier.gap(4.px),
+                Modifier.gap(3.px).styleModifier {property("min-width","0")}.attrsModifier {classes("shot-heading")},
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                if (answerClock != null) {
-                    ShotClock(running = layoutReady && clockRunning, answerClock = answerClock)
-                }
                 if (!layoutReady) PoolLoading("Loading table…")
                 P(
                     attrs = Modifier.margin(0.px)
                         .styleModifier {
-                            property("color", "rgba(245,248,245,.76)")
-                            property("font-size", ".84rem")
-                            property("font-weight", "650")
+                            property("color", "#e8f2ea")
+                            property("font-size", ".92rem")
+                            property("font-weight", "700")
                             property("line-height", "1.25")
                             property("text-align", "center")
                         }
                         .toAttrs()
                 ) {
-                    Text(eightBallReelTitle(shot.meta))
+                    Text(shot.meta.player)
                 }
+                SpanText(org.example.eighballpatterns.model.eightBallPlayerStatus(shot.meta),
+                    Modifier.fontSize(.74.cssRem).color(Color.rgb(0x9FBEAA)))
                 if (shot.meta.ballInHand) {
                     SpanText("Ball in hand", Modifier.fontSize(0.9.cssRem).fontWeight(FontWeight.Bold)
                         .color(Color.rgb(0x94C9B5)))
+                }
+                if (answerClock != null) {
+                    ShotClock(running = layoutReady && clockRunning, answerClock = answerClock)
                 }
                 if (requestBusy || requestError != null) {
                     EightBallChallengeRequestStatus(requestBusy, requestError, onRetry,
                         if (clockRunning) "Saving guess…" else "Starting shot clock…")
                 }
             }
-
-            Button(
-                attrs = Modifier
-                    .position(Position.Absolute)
-                    .zIndex(4)
+            SilkButton(onClick={onImageFullscreen()},modifier=Modifier
                     .styleModifier {
-                        property("top", if (answerClock != null) "calc(50px + env(safe-area-inset-top))" else "max(10px, env(safe-area-inset-top))")
-                        property("right", "14px")
-                        property("width", "40px")
-                        property("height", "40px")
+                        property("width", "32px")
+                        property("height", "32px")
+                        property("min-width", "32px")
                         property("padding", "0")
-                        property("border", "1px solid rgba(255,255,255,.18)")
+                        property("border", "1px solid rgba(255,255,255,.1)")
                         property("border-radius", "999px")
-                        property("background", "rgba(0,0,0,.56)")
+                        property("background", "#13241a")
                         property("color", "white")
                         property("font-size", "20px")
                         property("cursor", "pointer")
@@ -258,10 +262,9 @@ internal fun EightBallReelLayoutOverlay(
                         property("justify-content", "center")
                         property("backdrop-filter", "blur(8px)")
                     }
-                    .toAttrs {
+                    .attrsModifier {
                         attr("aria-label", "View image fullscreen")
-                        title("View image fullscreen")
-                        onClick { onImageFullscreen() }
+                        attr("title", "View image fullscreen")
                     }
             ) {
                 FaExpand()
@@ -284,7 +287,7 @@ internal fun EightBallReelLayoutOverlay(
                 modifier = Modifier
                     .position(Position.Relative)
                     .styleModifier {
-                        property("width", "calc(100% - 28px)")
+                        property("width", "100%")
                         property("height", "100%")
                         property("min-height", "0")
                         property("overflow", "hidden")

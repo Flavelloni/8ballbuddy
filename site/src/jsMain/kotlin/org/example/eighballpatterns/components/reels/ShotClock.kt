@@ -41,15 +41,16 @@ internal fun ShotClock(running: Boolean, answerClock: AnswerClock) {
     val minutes = (seconds / 60).toString().padStart(2, '0')
     val remainder = (seconds % 60).toString().padStart(2, '0')
     Row(
-        Modifier.width(144.px).height(44.px).gap(10.px).color(Color.rgb(0xD5F5E4))
-            .fontSize(1.4.cssRem)
+        Modifier.width(84.px).height(32.px).gap(5.px).color(Color.rgb(0xD5F5E4))
+            .fontSize(.9.cssRem)
             .styleModifier {
+                property("flex-shrink", "0")
                 property("justify-content", "center")
                 property("font-variant-numeric", "tabular-nums")
                 property("font-weight", "750")
                 property("background", "#10271f")
-                property("border", "1px solid #648d7b")
-                property("border-radius", "8px")
+                property("border", "1px solid #344d3c")
+                property("border-radius", "12px")
                 property("box-sizing", "border-box")
             }
             .attrsModifier {

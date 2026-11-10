@@ -33,6 +33,7 @@ import com.varabyte.kobweb.compose.ui.modifiers.minHeight
 import com.varabyte.kobweb.compose.ui.modifiers.overflow
 import com.varabyte.kobweb.compose.ui.modifiers.padding
 import com.varabyte.kobweb.compose.ui.styleModifier
+import com.varabyte.kobweb.compose.ui.toAttrs
 import com.varabyte.kobweb.navigation.BasePath
 import com.varabyte.kobweb.silk.components.forms.Button
 import com.varabyte.kobweb.silk.components.graphics.Image
@@ -46,19 +47,19 @@ import org.jetbrains.compose.web.css.LineStyle
 import org.jetbrains.compose.web.css.percent
 import org.jetbrains.compose.web.css.cssRem
 import org.jetbrains.compose.web.css.px
+import org.jetbrains.compose.web.dom.H2
+import org.jetbrains.compose.web.dom.Text
 
 @Composable
 internal fun EightBallPlayerChoice(players: List<String>, profiles: Map<String, PlayerProfile>,
     onSelected: (String?) -> Unit, onBack: () -> Unit) {
     Column(
         Modifier.fillMaxSize().minHeight(0.px).overflow(Overflow.Auto)
-            .padding(topBottom = 64.px, leftRight = 24.px).gap(16.px)
-            .attrsModifier { attr("aria-label", "Choose a player") },
+            .gap(16.px)
+            .attrsModifier { classes("reel-player-choice");attr("aria-label", "Choose a player") },
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        SpanText("Choose a player", Modifier.fontSize(1.8.cssRem).fontWeight(FontWeight.Bold))
-        SpanText("Watch everyone, or follow one player's shots.",
-            Modifier.fontSize(0.9.cssRem).color(Color.rgb(0x94C9B5)))
+        H2 { Text("Choose a player") }
         Column(Modifier.fillMaxWidth().maxWidth(480.px).gap(12.px)) {
             PlayerChoiceCard("Any player", null, anyPlayer = true) { onSelected(null) }
             for (name in orderPlayerChoices(players, profiles)) {
@@ -67,8 +68,7 @@ internal fun EightBallPlayerChoice(players: List<String>, profiles: Map<String, 
                 PlayerChoiceCard(name, detail, profile = profile) { onSelected(name) }
             }
         }
-        Button(onClick = { onBack() }, modifier = Modifier.padding(12.px)
-            .backgroundColor(Color.rgb(0x101C17)).color(Color.rgb(0x94C9B5)).borderRadius(12.px)) { SpanText("Back") }
+        Button(onClick = { onBack() }, modifier = Modifier.attrsModifier {classes("reel-subtle-button")}) { SpanText("Back to choices") }
     }
 }
 
@@ -81,10 +81,10 @@ private fun PlayerChoiceCard(name: String, detail: String?, anyPlayer: Boolean =
     }
     var imageReady by remember(imageUrl) { mutableStateOf(false) }
     var imageFailed by remember(imageUrl) { mutableStateOf(false) }
-    Button(onClick = { onClick() }, modifier = Modifier.fillMaxWidth().minHeight(82.px)
-        .padding(16.px).borderRadius(18.px)
+    Button(onClick = { onClick() }, modifier = Modifier.fillMaxWidth().minHeight(78.px)
+        .padding(15.px).borderRadius(18.px)
         .backgroundColor(Color.rgb(if (anyPlayer) 0x142D23 else 0x101C17))
-        .border(1.px, LineStyle.Solid, if (anyPlayer) mint else Color.rgb(0x2F493E))
+        .border(1.px, LineStyle.Solid, Color.rgb(if(anyPlayer) 0x4E7960 else 0x233D2D))
         .color(Color.rgb(0xF5FAF7))
         .attrsModifier { classes("player-choice-card"); attr("aria-label", if (anyPlayer) "Any player" else "Watch $name") }) {
         Row(Modifier.fillMaxWidth().gap(14.px), verticalAlignment = Alignment.CenterVertically) {
@@ -111,7 +111,7 @@ private fun PlayerChoiceCard(name: String, detail: String?, anyPlayer: Boolean =
                     }
                 }
             }
-            Column(Modifier.flexGrow(1).gap(5.px), horizontalAlignment = Alignment.Start) {
+            Column(Modifier.flexGrow(1).gap(5.px).styleModifier {property("min-width","0")}, horizontalAlignment = Alignment.Start) {
                 SpanText(name, Modifier.fontSize(1.cssRem).fontWeight(FontWeight.Bold))
                 if (detail != null) SpanText(detail, Modifier.fontSize(0.75.cssRem).fontWeight(FontWeight.Normal).color(mint))
             }

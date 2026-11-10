@@ -34,9 +34,10 @@ import org.example.eighballpatterns.components.reels.EightBallReelMessage
 import org.example.eighballpatterns.components.reels.EightBallReelShot
 import org.example.eighballpatterns.components.reels.EightBallReelsShell
 import org.example.eighballpatterns.components.reels.EightBallShareSheet
-import org.example.eighballpatterns.components.reels.eightBallReelLikeLabel
 import org.example.eighballpatterns.components.reels.ensureEightBallReelsStyles
 import org.example.eighballpatterns.components.reels.PredictionFeedback
+import org.example.eighballpatterns.components.reels.ReelPager
+import org.example.eighballpatterns.components.reels.ReelPreview
 import org.example.eighballpatterns.browser.primePredictionAudio
 import org.example.eighballpatterns.browser.playPredictionFeedback
 import org.example.eighballpatterns.data.loadEightBallShots
@@ -58,9 +59,6 @@ import org.example.eighballpatterns.model.availableBrowsePlayers
 import org.example.eighballpatterns.model.browseShotGroups
 import kotlin.random.Random
 import org.w3c.dom.HTMLVideoElement
-
-private const val EIGHT_BALL_SLIDE_DURATION_MS = 320
-private const val EIGHT_BALL_REEL_TOUCH_THRESHOLD = 64.0
 
 @Page("/")
 @Composable
@@ -92,7 +90,7 @@ fun ShotPredictionPage() {
     var videoEnded by remember { mutableStateOf(false) }
     var videoPaused by remember { mutableStateOf(false) }
     var videoElement by remember { mutableStateOf<HTMLVideoElement?>(null) }
-    var touchStartY by remember { mutableStateOf<Double?>(null) }
+    val pager = remember { ReelPager() }
     var isAdvancing by remember { mutableStateOf(false) }
     var imageFullscreen by remember { mutableStateOf(false) }
     var likedShotIds by remember { mutableStateOf(emptySet<String>()) }
@@ -202,28 +200,37 @@ fun ShotPredictionPage() {
         feedback = null
         videoEnded = false
         videoPaused = false
-        touchStartY = null
     }
 
     fun startsGroup(index: Int): Boolean = challengeMode || index == 0 ||
         reelShots?.getOrNull(index)?.entry?.id in browseGroupStarts
 
-    fun moveReel(delta: Int) {
-        val shotCount = reelShots?.size ?: return
-        if (shotCount == 0 || isAdvancing || imageFullscreen || shareShot != null || resultFlash != null) return
-        if (position.stage in listOf(ReelStage.ModeChoice, ReelStage.PlayerChoice, ReelStage.ChallengeEntry, ReelStage.ChallengeResults)) return
-        if (challengeMode && (daily.busy || delta < 0 || (position.stage == ReelStage.Shot && selectedBall == null))) return
-        isAdvancing = true
-        if (!challengeMode && delta > 0 && position.stage == ReelStage.Shot &&
-            startsGroup((position.shotIndex + 1) % shotCount)) advancedBrowseGroup = true
-        resetPrediction()
-        position = if (challengeMode && position.stage == ReelStage.Shot && position.shotIndex == shotCount - 1) {
+    fun destination(delta: Int): ReelPosition {
+        val shotCount = reelShots.orEmpty().size
+        if (shotCount == 0) return position
+        return if (challengeMode && position.stage == ReelStage.Shot && position.shotIndex == shotCount - 1) {
             ReelPosition(ReelStage.ChallengeResults)
         } else if (delta > 0) position.next(shotCount, startsGroup((position.shotIndex + 1) % shotCount),
             announceRack = !challengeMode)
         else position.previous(startsGroup(position.shotIndex),
             announceRack = !challengeMode && (position.shotIndex != 0 || advancedBrowseGroup), shotCount = shotCount)
-        window.setTimeout({ isAdvancing = false }, EIGHT_BALL_SLIDE_DURATION_MS)
+    }
+
+    fun moveReel(delta: Int, animate: Boolean = true) {
+        val shotCount = reelShots?.size ?: return
+        if (shotCount == 0 || isAdvancing || imageFullscreen || shareShot != null || resultFlash != null) return
+        if (position.stage in listOf(ReelStage.ModeChoice, ReelStage.PlayerChoice, ReelStage.ChallengeEntry, ReelStage.ChallengeResults)) return
+        if (challengeMode && (daily.busy || delta < 0 || (position.stage == ReelStage.Shot && selectedBall == null))) return
+        isAdvancing = true
+        val target = destination(delta)
+        val commit = {
+            if (!challengeMode && delta > 0 && position.stage == ReelStage.Shot &&
+                startsGroup((position.shotIndex + 1) % shotCount)) advancedBrowseGroup = true
+            resetPrediction()
+            position = target
+            isAdvancing = false
+        }
+        if (animate) pager.navigate(delta, commit) else commit()
     }
 
     fun browse(player: String?) {
@@ -362,30 +369,39 @@ fun ShotPredictionPage() {
         }
     }
 
+    val scrollEnabled = loadedShots!=null && resultFlash==null && !imageFullscreen && shareShot==null &&
+        position.stage !in listOf(ReelStage.ModeChoice,ReelStage.PlayerChoice,ReelStage.ChallengeEntry,ReelStage.ChallengeResults)
+    val canScrollNext = scrollEnabled && (!challengeMode || (!daily.busy && (position.stage!=ReelStage.Shot || selectedBall!=null)))
+    val canScrollPrevious = scrollEnabled && !challengeMode && position.stage!=ReelStage.Welcome
+
     EightBallReelsShell(
+        pager = pager,
+        pageKey = position,
+        previousKey = if(canScrollPrevious) destination(-1) else null,
+        nextKey = if(canScrollNext) destination(1) else null,
+        scrollLocked = resultFlash!=null || imageFullscreen || shareShot!=null || (challengeMode && daily.busy),
+        onSettled = { moveReel(it, animate=false) },
+        preview = { value ->
+            val target = value as ReelPosition
+            val shot = reelShots?.getOrNull(target.shotIndex)
+            ReelPreview(target, shot, players[shot?.meta?.player?.trim()?.lowercase()], challengeMode, displayedStats)
+        },
+        onHome = if(position.stage==ReelStage.Welcome) null else ({
+            if(!daily.busy && resultFlash==null) {
+                resetPrediction()
+                challengeMode=false
+                position=ReelPosition()
+                isAdvancing=false
+            }
+        }),
+        homeEnabled = !daily.busy && resultFlash==null && !imageFullscreen && shareShot==null,
+        showSound = position.stage==ReelStage.Shot,
         onNext = { moveReel(1) },
         onPrevious = { moveReel(-1) },
-        canNext = loadedShots!=null && !isAdvancing && resultFlash==null && !imageFullscreen && shareShot==null &&
-            position.stage !in listOf(ReelStage.ModeChoice,ReelStage.PlayerChoice,ReelStage.ChallengeEntry,ReelStage.ChallengeResults) &&
-            (!challengeMode || (!daily.busy && (position.stage!=ReelStage.Shot || selectedBall!=null))),
-        canPrevious = !challengeMode && !isAdvancing && resultFlash==null && !imageFullscreen && shareShot==null &&
-            position.stage !in listOf(ReelStage.Welcome,ReelStage.ModeChoice,ReelStage.PlayerChoice,ReelStage.ChallengeEntry,ReelStage.ChallengeResults),
-        allowContentScroll = position.stage in listOf(ReelStage.ModeChoice, ReelStage.PlayerChoice, ReelStage.ChallengeEntry, ReelStage.ChallengeResults),
-        onTouchStart = { y -> touchStartY = y },
-        onTouchCancel = { touchStartY = null },
-        onTouchEnd = { y ->
-            val startY = touchStartY
-            touchStartY = null
-            if (startY != null) {
-                val deltaY = y - startY
-                when {
-                    deltaY <= -EIGHT_BALL_REEL_TOUCH_THRESHOLD -> moveReel(1)
-                    deltaY >= EIGHT_BALL_REEL_TOUCH_THRESHOLD -> moveReel(-1)
-                }
-            }
-        },
+        canNext = canScrollNext && !isAdvancing,
+        canPrevious = canScrollPrevious && !isAdvancing,
     ) {
-        key(challengeMode, position.stage, currentShot?.entry?.id) {
+        key(challengeMode, position.stage, if(position.stage in listOf(ReelStage.Player,ReelStage.Shot,ReelStage.NewRack)) currentShot?.entry?.id else null) {
             when {
                 loadError != null -> EightBallReelMessage(loadError ?: "Could not load shots.")
                 loadedShots?.isEmpty() == true -> EightBallReelMessage("No shots.")
@@ -426,7 +442,6 @@ fun ShotPredictionPage() {
                     leaderboardError = daily.leaderboardError,
                     onRefresh = { daily.loadLeaderboard() },
                     onLoadMore = { daily.loadLeaderboard(more = true) },
-                    breakShotIds = loadedShots.orEmpty().filter { it.meta.isBreak }.map { it.entry.id }.toSet(),
                 )
                 position.stage == ReelStage.NewRack -> EightBallNewRack()
                 position.stage == ReelStage.Player && currentShot != null -> EightBallPlayerIntro(
@@ -437,13 +452,13 @@ fun ShotPredictionPage() {
                 currentShot != null -> {
                     EightBallReelShot(
                         shot = currentShot,
+                        player = players[currentShot.meta.player.trim().lowercase()],
                         selectedBall = selectedBall,
                         feedback = feedback,
                         videoEnded = videoEnded,
                         videoPaused = videoPaused,
                         stats = displayedStats,
                         liked = currentShot.entry.id in likedShotIds,
-                        likesLabel = eightBallReelLikeLabel(currentShot.entry.id),
                         onImageFullscreen = { imageFullscreen = true },
                         onLike = {
                             likedShotIds = if (currentShot.entry.id in likedShotIds) {
@@ -458,10 +473,6 @@ fun ShotPredictionPage() {
                                 shareCopied = false
                             }
                         },
-                        onChooseMode = if (challengeMode) null else ({
-                            resetPrediction()
-                            position = ReelPosition(ReelStage.ModeChoice)
-                        }),
                         onBallSelected = { ball ->
                             if (selectedBall != null || resultFlash!=null) return@EightBallReelShot
                             primePredictionAudio()
@@ -479,7 +490,10 @@ fun ShotPredictionPage() {
                             val correct = ball == currentShot.meta.correctAnswer
                             showAnswer(correct,ball)
                         },
-                        onVideoElement = { videoElement = it },
+                        onVideoElement = { element ->
+                            if (element != null) videoElement = element
+                            else if (videoElement?.getAttribute("src") == BasePath.prependTo(currentShot.entry.videoPath)) videoElement = null
+                        },
                         onVideoEnded = {
                             videoEnded = true
                             videoPaused = false
@@ -531,7 +545,7 @@ fun ShotPredictionPage() {
         resultFlash?.let { PredictionFeedback(it) }
 
         if (challengeMode && (position.stage == ReelStage.Player || position.stage == ReelStage.Shot) && currentShot != null && !imageFullscreen && shareShot == null) {
-            EightBallChallengeHeader(position.shotIndex + 1, reelShots.orEmpty().size, onLeave = { leaveChallenge() })
+            EightBallChallengeHeader(position.shotIndex + 1, reelShots.orEmpty().size, onLeave = { if(!daily.busy && resultFlash==null) leaveChallenge() })
         }
 
         shareShot?.let { shot ->

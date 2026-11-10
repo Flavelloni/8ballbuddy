@@ -7,6 +7,10 @@ import com.varabyte.kobweb.compose.foundation.layout.Row
 import com.varabyte.kobweb.compose.ui.Alignment
 import com.varabyte.kobweb.compose.ui.Modifier
 import com.varabyte.kobweb.compose.ui.attrsModifier
+import org.jetbrains.compose.web.dom.H2
+import org.jetbrains.compose.web.dom.Text
+import com.varabyte.kobweb.compose.ui.modifiers.width
+import com.varabyte.kobweb.compose.ui.modifiers.height
 import com.varabyte.kobweb.compose.ui.graphics.Color
 import com.varabyte.kobweb.compose.ui.modifiers.fillMaxSize
 import com.varabyte.kobweb.compose.ui.modifiers.padding
@@ -22,13 +26,17 @@ import org.jetbrains.compose.web.css.px
 
 @Composable
 internal fun EightBallNewRack() {
-    Box(Modifier.fillMaxSize().padding(32.px).attrsModifier { attr("aria-label", "New rack") },
+    Box(Modifier.fillMaxSize().padding(top=90.px,bottom=32.px,leftRight=32.px).attrsModifier { classes("reel-rack");attr("aria-label", "New rack") },
         contentAlignment = Alignment.Center) {
         Column(Modifier.gap(20.px), horizontalAlignment = Alignment.CenterHorizontally) {
-            Row(Modifier.gap(8.px)) { for (ball in listOf(1, 8, 12)) PoolBall(ball) }
-            SpanText("New rack", Modifier.fontSize(2.4.cssRem).fontWeight(FontWeight.Bold))
-            SpanText("A fresh table. Take another look.", Modifier.fontSize(0.95.cssRem).color(Color.rgb(0x94C9B5)))
-            SpanText("Swipe to meet the player", Modifier.fontSize(0.8.cssRem).color(Color.rgb(0xA9B5AF)))
+            SpanText("A FRESH PERSPECTIVE",Modifier.attrsModifier {classes("reel-eyebrow")})
+            Column(Modifier.gap(4.px),horizontalAlignment=Alignment.CenterHorizontally) {
+                for(row in listOf(listOf(1),listOf(4,8),listOf(12,3,10))) Row(Modifier.gap(4.px)) {
+                    row.forEach {ball -> Box(Modifier.width(30.px).height(30.px)) {PoolBall(ball,fillParent=true)} }
+                }
+            }
+            H2 {Text("New rack")}
+            SpanText("New positions. New possibilities.", Modifier.fontSize(.88.cssRem).color(Color.rgb(0xA1BDAA)))
         }
     }
 }

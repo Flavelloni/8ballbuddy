@@ -74,10 +74,11 @@ internal fun EightBallPlayerIntro(shot: EightBallShot, player: PlayerProfile?, c
             .styleModifier {
                 property("grid-template-rows", "minmax(0, 1fr) auto")
                 property("box-sizing", "border-box")
-                property("padding-top", if (challenge) "calc(52px + env(safe-area-inset-top))" else "max(16px, env(safe-area-inset-top))")
+                property("padding-top", if (challenge) "calc(104px + env(safe-area-inset-top))" else "calc(78px + env(safe-area-inset-top))")
                 property("padding-bottom", "max(18px, env(safe-area-inset-bottom))")
             }
             .attrsModifier {
+                classes("reel-player-intro")
                 attr("role", "article")
                 attr("aria-label", "Player introduction")
             },
@@ -92,7 +93,7 @@ internal fun EightBallPlayerIntro(shot: EightBallShot, player: PlayerProfile?, c
                         property("height", if(detailsOpen) "min(24dvh,200px)" else "min(38dvh,310px)")
                         property("flex-shrink", "1")
                         property("position", "relative")
-                    },
+                    }.attrsModifier {classes("player-portrait")},
                     contentAlignment = Alignment.Center,
                 ) {
                     if (!imageReady || imageFailed) {
@@ -130,7 +131,7 @@ internal fun EightBallPlayerIntro(shot: EightBallShot, player: PlayerProfile?, c
                         .styleModifier { property("flex-shrink", "0") },
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    Row(Modifier.gap(10.px), verticalAlignment = Alignment.CenterVertically) {
+                    Row(Modifier.fillMaxWidth().gap(10.px).styleModifier {property("justify-content","center");property("flex-wrap","wrap")}, verticalAlignment = Alignment.CenterVertically) {
                         H2(
                             Modifier.margin(0.px).fontSize(1.85.cssRem).fontWeight(FontWeight.Bold)
                                 .lineHeight(1.2).color(Colors.White)
@@ -151,7 +152,9 @@ internal fun EightBallPlayerIntro(shot: EightBallShot, player: PlayerProfile?, c
                     Column(Modifier.gap(6.px), horizontalAlignment = Alignment.CenterHorizontally) {
                         SpanText(
                             eightBallPlayerStatus(shot.meta),
-                            Modifier.fontSize(1.cssRem).color(Colors.White),
+                            Modifier.fontSize(.85.cssRem).color(Color.rgb(0xB8DCC6))
+                                .padding(leftRight=14.px,topBottom=7.px)
+                                .styleModifier {property("background","#173323");property("border-radius","999px")},
                         )
                         if (shot.meta.isBreak) {
                             P(Modifier.margin(0.px).color(Colors.White).toAttrs()) {
@@ -177,11 +180,8 @@ internal fun EightBallPlayerIntro(shot: EightBallShot, player: PlayerProfile?, c
                             }
                         }
                     }
-                    Button(onClick={detailsOpen=!detailsOpen},modifier=Modifier.styleModifier {
-                        property("border-radius","999px");property("background","#11271d");property("color","#abcbb9")
-                        property("font-size",".8rem");property("gap","9px")
-                        property("display","inline-flex");property("align-items","center")
-                    }.attrsModifier {attr("aria-expanded",detailsOpen.toString());attr("aria-controls","player-more-details")}) {
+                    Button(onClick={detailsOpen=!detailsOpen},modifier=Modifier.attrsModifier {
+                        classes("reel-subtle-button");attr("aria-expanded",detailsOpen.toString());attr("aria-controls","player-more-details")}) {
                         Text(if(detailsOpen) "Less detail" else "More details")
                         if(detailsOpen) FaChevronUp() else FaChevronDown()
                     }
@@ -216,8 +216,8 @@ internal fun EightBallPlayerIntro(shot: EightBallShot, player: PlayerProfile?, c
             }
         }
 
-        Box(Modifier.fillMaxWidth().height(76.px), contentAlignment = Alignment.Center) {
-            EightBallReelSwipeHint("Swipe to the shot")
+        Box(Modifier.fillMaxWidth().height(62.px), contentAlignment = Alignment.Center) {
+            EightBallReelSwipeHint("Swipe up to the shot")
         }
     }
 }

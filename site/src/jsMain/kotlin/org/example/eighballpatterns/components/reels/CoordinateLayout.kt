@@ -17,6 +17,7 @@ import com.varabyte.kobweb.navigation.BasePath
 import com.varabyte.kobweb.silk.components.forms.Button
 import com.varabyte.kobweb.silk.components.graphics.Image
 import com.varabyte.kobweb.silk.components.text.SpanText
+import com.varabyte.kobweb.silk.components.icons.fa.FaPlay
 import org.example.eighballpatterns.model.BallTarget
 import org.example.eighballpatterns.model.ImagePoint
 import org.example.eighballpatterns.model.LayoutTapGesture
@@ -80,7 +81,7 @@ internal fun CoordinateLayout(imagePath: String, target: BallTarget, selection: 
                         if (ballSelection!=null) {
                             val ball=ballSelection.ballAt(point,14/w)
                             if (ball!=null) selectBall(ball)
-                            else pickHint="Tap nearer a ball’s centre, or zoom in."
+                            else pickHint="Tap nearer a ball’s centre."
                         } else onSelected(point)
                     }
                 }
@@ -154,11 +155,12 @@ internal fun CoordinateLayout(imagePath: String, target: BallTarget, selection: 
 
 @Composable
 internal fun CoordinateConfirm(selection: ImagePoint?, enabled: Boolean, ballMode: Boolean = false, onConfirm: () -> Unit) {
-    Column(Modifier.fillMaxWidth().padding(12.px).gap(8.px), horizontalAlignment=Alignment.CenterHorizontally) {
-        SpanText(if (selection == null) "Tap a ball. Pinch to zoom for a closer look." else if (ballMode) "Ball selected. Tap another ball to change your choice." else "Tap again to adjust. The inner circle is your scoring area.")
+    Column(Modifier.fillMaxWidth().padding(leftRight=14.px,topBottom=10.px).gap(8.px).attrsModifier {classes("coordinate-confirm")}, horizontalAlignment=Alignment.CenterHorizontally) {
+        SpanText(if (selection == null) "Tap the ball you think goes in." else if (ballMode) "Ball selected. Tap another to change your pick." else "Tap again to adjust your scoring circle.")
         Button(onClick={onConfirm()}, enabled=enabled && selection != null,
-            modifier=Modifier.fillMaxWidth().minHeight(46.px).borderRadius(16.px)) {
-            SpanText("I am happy with my choice")
+            modifier=Modifier.fillMaxWidth().attrsModifier {classes("reel-primary-button");attr("aria-label","Reveal shot")}) {
+            FaPlay()
+            SpanText("Reveal")
         }
     }
 }

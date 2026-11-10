@@ -13,18 +13,12 @@ import com.varabyte.kobweb.compose.foundation.layout.Column
 import com.varabyte.kobweb.compose.ui.Alignment
 import com.varabyte.kobweb.compose.ui.Modifier
 import com.varabyte.kobweb.compose.ui.attrsModifier
-import com.varabyte.kobweb.compose.ui.graphics.Color
 import com.varabyte.kobweb.compose.ui.graphics.Colors
-import com.varabyte.kobweb.compose.ui.modifiers.backgroundColor
-import com.varabyte.kobweb.compose.ui.modifiers.border
-import com.varabyte.kobweb.compose.ui.modifiers.borderRadius
 import com.varabyte.kobweb.compose.ui.modifiers.color
-import com.varabyte.kobweb.compose.ui.modifiers.fontSize
 import com.varabyte.kobweb.compose.ui.modifiers.fontWeight
 import com.varabyte.kobweb.compose.ui.modifiers.height
 import com.varabyte.kobweb.compose.ui.modifiers.lineHeight
 import com.varabyte.kobweb.compose.ui.modifiers.margin
-import com.varabyte.kobweb.compose.ui.modifiers.padding
 import com.varabyte.kobweb.compose.ui.modifiers.position
 import com.varabyte.kobweb.compose.ui.modifiers.touchAction
 import com.varabyte.kobweb.compose.ui.modifiers.width
@@ -34,15 +28,13 @@ import com.varabyte.kobweb.navigation.BasePath
 import com.varabyte.kobweb.silk.components.icons.fa.FaAnglesUp
 import com.varabyte.kobweb.silk.components.icons.fa.FaArrowUp
 import com.varabyte.kobweb.silk.components.icons.fa.FaArrowDown
+import com.varabyte.kobweb.silk.components.icons.fa.FaChevronDown
 import com.varabyte.kobweb.silk.components.forms.Button as SilkButton
 import kotlinx.browser.document
 import kotlinx.browser.window
-import org.jetbrains.compose.web.css.LineStyle
 import org.jetbrains.compose.web.css.Position
-import org.jetbrains.compose.web.css.cssRem
 import org.jetbrains.compose.web.css.percent
 import org.jetbrains.compose.web.css.px
-import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.H1
 import org.jetbrains.compose.web.dom.Img
 import org.jetbrains.compose.web.dom.P
@@ -52,28 +44,6 @@ import org.w3c.dom.events.Event
 
 // VisualViewport is not exposed by the project's Kotlin DOM bindings.
 private fun reelViewportScale(): Double = (window.asDynamic().visualViewport?.scale as? Double) ?: 1.0
-
-private const val EIGHT_BALL_WHEEL_THRESHOLD = 56.0
-private const val EIGHT_BALL_WHEEL_GESTURE_GAP_MS = 500.0
-private const val EIGHT_BALL_WHEEL_COOLDOWN_MS = 500.0
-
-private class WheelGesture {
-    private var accumulatedY = 0.0
-    private var lastEventAt = 0.0
-    private var lastNavigationAt = Double.NEGATIVE_INFINITY
-
-    fun direction(deltaY: Double, timeStamp: Double): Int {
-        if (timeStamp - lastEventAt > EIGHT_BALL_WHEEL_GESTURE_GAP_MS) accumulatedY = 0.0
-        lastEventAt = timeStamp
-        if (timeStamp - lastNavigationAt < EIGHT_BALL_WHEEL_COOLDOWN_MS) return 0
-        accumulatedY += deltaY
-        if (accumulatedY < EIGHT_BALL_WHEEL_THRESHOLD && accumulatedY > -EIGHT_BALL_WHEEL_THRESHOLD) return 0
-        val direction = if (accumulatedY > 0) 1 else -1
-        accumulatedY = 0.0
-        lastNavigationAt = timeStamp
-        return direction
-    }
-}
 
 internal fun ensureEightBallReelsStyles() {
     if (document.getElementById("eight-ball-reels-styles") != null) return
@@ -92,17 +62,13 @@ internal fun ensureEightBallReelsStyles() {
         .prediction-pop { animation: predictionPop .6s cubic-bezier(.2,.8,.2,1) both; }
         .desktop-reel-navigation { display: none; }
         @media (min-width: 760px) and (hover: hover) and (pointer: fine) {
-          .desktop-reel-navigation { display: flex; position: absolute; top: 50%; left: calc(50% + 258px); transform: translateY(-50%); gap: 18px; z-index: 20; }
+          .desktop-reel-navigation { display: flex; position: absolute; top: 50%; left: calc(50% + min(50vw, 340px) + 20px); transform: translateY(-50%); gap: 18px; z-index: 20; }
         }
         .desktop-reel-navigation button { width: 54px; height: 54px; padding: 0; border: 1px solid #52735f; border-radius: 50%; color: #daffea; background: radial-gradient(circle at 30% 20%, #416350, #102219 75%); box-shadow: 0 6px 18px #0009, inset 0 1px 2px #ffffff33; }
         .desktop-reel-navigation button:hover { border-color: #b7ffe0; }
         .player-more-details { max-height: 180px; overflow-y: auto; }
         @media (prefers-reduced-motion: reduce) { .ball-selection-pulse { display: none; } .prediction-pop { animation: none; } }
         @media (prefers-reduced-motion: reduce) { .pool-loading-ball { animation: none; } }
-        @keyframes eightBallReelPulse {
-          0%, 100% { opacity: .42; transform: translateY(7px); }
-          50% { opacity: 1; transform: translateY(-7px); }
-        }
         .eight-ball-reel-intro { gap: 24px; padding: 32px; }
         .eight-ball-reel-brand { gap: 16px; }
         .eight-ball-reel-logo { width: 128px; height: 128px; flex-shrink: 0; }
@@ -118,10 +84,8 @@ internal fun ensureEightBallReelsStyles() {
           .eight-ball-reel-intro { gap: 10px; padding: 12px; }
           .eight-ball-reel-brand { flex-direction: row; align-items: center; }
           .eight-ball-reel-logo { width: 48px; height: 48px; }
-          .eight-ball-reel-actions { gap: 8px !important; }
-          .eight-ball-reel-actions button { width: 42px !important; height: 42px !important; }
         }
-    """.trimIndent() + "\n" + dailyChallengeStyles
+    """.trimIndent() + "\n" + dailyChallengeStyles + "\n" + reelDesignStyles
     document.head?.appendChild(style)
 }
 
@@ -158,11 +122,10 @@ internal fun EightBallReelIntro(onStart: () -> Unit, canStart: Boolean = true) {
             H1(
                 attrs = Modifier
                     .margin(0.px)
-                    .fontSize(2.05.cssRem)
                     .lineHeight(1.05)
                     .fontWeight(FontWeight.Bold)
                     .color(Colors.White)
-                    .toAttrs()
+                    .attrsModifier {classes("reel-hero-title")}.toAttrs()
             ) {
                 Text("8-Ball Buddy")
             }
@@ -178,7 +141,7 @@ internal fun EightBallReelIntro(onStart: () -> Unit, canStart: Boolean = true) {
                 }
                 .toAttrs()
         ) {
-            Text("Can you predict the expert's next move?")
+            Text("Do you think like the expert?")
         }
         P(
             attrs = Modifier
@@ -190,31 +153,17 @@ internal fun EightBallReelIntro(onStart: () -> Unit, canStart: Boolean = true) {
                     property("line-height", "1.42")
                     property("color", "rgba(246,250,246,.68)")
                 }
-                .toAttrs()
+                .attrsModifier { classes("reel-hero-copy") }.toAttrs()
         ) {
-            Text("Tap a ball on the table, confirm your prediction, then watch the reveal. For breaks, guess how many balls drop.")
+            Text("Real matches. Your prediction. Tap a ball on the table, then watch the shot unfold.")
         }
 
-        Button(
-            attrs = Modifier
-                .borderRadius(999.px)
-                .border(1.px, LineStyle.Solid, Color.rgba(126, 218, 116, 0.34f))
-                .backgroundColor(Color.rgba(126, 218, 116, 0.14f))
-                .color(Colors.White)
-                .padding(leftRight = 1.15.cssRem, topBottom = 0.72.cssRem)
-                .fontWeight(FontWeight.Bold)
-                .styleModifier {
-                    property("cursor", if (canStart) "pointer" else "wait")
-                    property("opacity", if (canStart) "1" else ".5")
-                }
-                .toAttrs {
-                    if (!canStart) attr("disabled", "")
-                    onClick { onStart() }
-                }
-        ) {
-            Text("Start")
+        SilkButton(onClick={onStart()},enabled=canStart,modifier=Modifier
+            .attrsModifier { classes("reel-start-cue");attr("aria-label","Scroll to start") }) {
+            com.varabyte.kobweb.silk.components.text.SpanText("Scroll to start",Modifier.attrsModifier {classes("reel-scroll-label")})
+            com.varabyte.kobweb.silk.components.text.SpanText("Swipe up to start",Modifier.attrsModifier {classes("reel-touch-label")})
+            FaChevronDown()
         }
-        EightBallReelSwipeHint("Swipe to start")
         InstallAppButton()
     }
 }
@@ -223,35 +172,37 @@ internal fun EightBallReelIntro(onStart: () -> Unit, canStart: Boolean = true) {
 internal fun EightBallReelsShell(
     onNext: () -> Unit,
     onPrevious: () -> Unit,
-    onTouchStart: (Double) -> Unit,
-    onTouchEnd: (Double) -> Unit,
-    onTouchCancel: () -> Unit,
-    allowContentScroll: Boolean = false,
+    pager: ReelPager,
+    pageKey: Any,
+    previousKey: Any?,
+    nextKey: Any?,
+    preview: @Composable (Any) -> Unit,
+    onSettled: (Int) -> Unit,
+    scrollLocked: Boolean = false,
     canNext: Boolean = true,
     canPrevious: Boolean = true,
+    onHome: (() -> Unit)? = null,
+    homeEnabled: Boolean = true,
+    showSound: Boolean = false,
     content: @Composable () -> Unit,
 ) {
-    val wheelGesture = remember { WheelGesture() }
-    val touchGesture = remember { ReelTouchGesture() }
     var viewportScale by remember { mutableStateOf(reelViewportScale()) }
     DisposableEffect(Unit) {
         val viewport = window.asDynamic().visualViewport
-        val onResize: (Event) -> Unit = { viewportScale = reelViewportScale() }
+        val onResize: (Event) -> Unit = { viewportScale = reelViewportScale(); pager.resize() }
         viewport?.addEventListener("resize", onResize)
-        onDispose { viewport?.removeEventListener("resize", onResize) }
+        window.addEventListener("resize", onResize)
+        onDispose {
+            viewport?.removeEventListener("resize", onResize)
+            window.removeEventListener("resize", onResize)
+        }
     }
     Box(
         contentAlignment = Alignment.TopCenter,
         modifier = Modifier
             .position(Position.Relative)
             .width(100.percent)
-            .touchAction(
-                when {
-                    isReelViewportZoomed(viewportScale) -> TouchAction.Manipulation
-                    allowContentScroll -> TouchAction.of(TouchAction.PanY, pinchZoom = true)
-                    else -> TouchAction.PinchZoom
-                }
-            )
+            .touchAction(TouchAction.of(TouchAction.PanY, pinchZoom = true))
             .styleModifier {
                 property("height", "100dvh")
                 property("min-height", "100dvh")
@@ -259,47 +210,7 @@ internal fun EightBallReelsShell(
                 property("overflow", "hidden")
             }
             .attrsModifier {
-                onWheel { event ->
-                    if (allowContentScroll || event.ctrlKey || event.metaKey || isReelViewportZoomed(reelViewportScale())) return@onWheel
-                    event.preventDefault()
-                    val deltaY = event.deltaY * when (event.deltaMode) {
-                        1 -> 16.0
-                        2 -> window.innerHeight.toDouble()
-                        else -> 1.0
-                    }
-                    when (wheelGesture.direction(deltaY, window.performance.now())) {
-                        1 -> onNext()
-                        -1 -> onPrevious()
-                    }
-                }
-                onTouchStart { event ->
-                    if (allowContentScroll) return@onTouchStart
-                    if (!touchGesture.start(event.touches.length, reelViewportScale())) {
-                        onTouchCancel()
-                        return@onTouchStart
-                    }
-                    val touch = event.touches.item(0) ?: return@onTouchStart
-                    onTouchStart(touch.clientY.toDouble())
-                }
-                onTouchMove { event ->
-                    if (event.touches.length != 1 || isReelViewportZoomed(reelViewportScale())) {
-                        touchGesture.cancel()
-                        onTouchCancel()
-                    }
-                }
-                onTouchEnd { event ->
-                    if (allowContentScroll) return@onTouchEnd
-                    if (!touchGesture.end(event.touches.length, event.changedTouches.length, reelViewportScale())) {
-                        onTouchCancel()
-                        return@onTouchEnd
-                    }
-                    val touch = event.changedTouches.item(0) ?: return@onTouchEnd
-                    onTouchEnd(touch.clientY.toDouble())
-                }
-                onTouchCancel {
-                    touchGesture.cancel()
-                    onTouchCancel()
-                }
+                classes("eight-ball-app")
             }
     ) {
         Box(
@@ -307,16 +218,17 @@ internal fun EightBallReelsShell(
                 .position(Position.Relative)
                 .height(100.percent)
                 .styleModifier {
-                    property("width", "min(100vw, 460px)")
+                    property("width", "min(100vw, 680px)")
                     property("min-height", "100dvh")
-                    property("background", "#020303")
                     property("overflow", "hidden")
                     property("box-shadow", "0 0 80px rgba(0,0,0,.58)")
-                }
+                }.attrsModifier { classes("reel-canvas") }
         ) {
-            content()
+            ReelScrollPages(pager,pageKey,previousKey,nextKey,
+                scrollLocked || isReelViewportZoomed(viewportScale),onSettled,preview,content)
+            onHome?.let { ReelBrandHeader(it,homeEnabled,showSound) }
         }
-        Column(Modifier.attrsModifier { classes("desktop-reel-navigation");attr("aria-label","Reel navigation") }) {
+        if(nextKey != null || previousKey != null) Column(Modifier.attrsModifier { classes("desktop-reel-navigation");attr("aria-label","Reel navigation") }) {
             SilkButton(onClick={onPrevious()},enabled=canPrevious,modifier=Modifier.attrsModifier {attr("aria-label","Previous reel page");attr("title","Previous reel page")}) { FaArrowUp() }
             SilkButton(onClick={onNext()},enabled=canNext,modifier=Modifier.attrsModifier {attr("aria-label","Next reel page");attr("title","Next reel page")}) { FaArrowDown() }
         }
@@ -348,13 +260,11 @@ internal fun EightBallReelSwipeHint(text: String) {
             .styleModifier {
                 property("min-width", "96px")
                 property("height", "64px")
-                property("display", "flex")
                 property("flex-direction", "column")
                 property("align-items", "center")
                 property("justify-content", "center")
                 property("gap", "7px")
-                property("animation", "eightBallReelPulse 1.15s ease-in-out infinite")
-            }
+            }.attrsModifier {classes("reel-swipe-hint")}
     ) {
         FaAnglesUp(
             Modifier

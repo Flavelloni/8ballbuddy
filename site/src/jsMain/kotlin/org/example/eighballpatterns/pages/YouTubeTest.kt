@@ -31,6 +31,7 @@ import org.example.eighballpatterns.components.reels.EightBallPlayerIntro
 import org.example.eighballpatterns.components.reels.EightBallReelLayoutOverlay
 import org.example.eighballpatterns.components.reels.EightBallReelMessage
 import org.example.eighballpatterns.components.reels.EightBallReelsShell
+import org.example.eighballpatterns.components.reels.ReelPager
 import org.example.eighballpatterns.components.reels.YouTubeReveal
 import org.example.eighballpatterns.components.reels.YouTubeTestButton
 import org.example.eighballpatterns.components.reels.ensureEightBallReelsStyles
@@ -56,7 +57,7 @@ fun YouTubeTestPage() {
     var stage by remember { mutableStateOf(0) } // Player intro -> layout -> reveal.
     var selectedBall by remember { mutableStateOf<Int?>(null) }
     var fullscreen by remember { mutableStateOf(false) }
-    var startY by remember { mutableStateOf<Double?>(null) }
+    val pager = remember { ReelPager() }
     LaunchedEffect(Unit) {
         ensureEightBallReelsStyles()
         if (ENABLE_YOUTUBE_EXPERIMENT) {
@@ -76,12 +77,8 @@ fun YouTubeTestPage() {
     }
     EightBallReelsShell(
         onNext = { next() }, onPrevious = { previous() },
-        allowContentScroll = stage == 2,
-        onTouchStart = { startY = it }, onTouchCancel = { startY = null },
-        onTouchEnd = { y ->
-            startY?.let { start -> if (y - start <= -64) next() else if (y - start >= 64) previous() }
-            startY = null
-        },
+        pager = pager, pageKey = stage, previousKey = null, nextKey = null,
+        preview = {}, onSettled = {},
     ) {
         Column(Modifier.fillMaxSize()) {
             Row(

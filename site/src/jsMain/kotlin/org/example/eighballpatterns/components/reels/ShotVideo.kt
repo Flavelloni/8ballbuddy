@@ -11,12 +11,14 @@ import com.varabyte.kobweb.compose.ui.modifiers.width
 import com.varabyte.kobweb.compose.ui.modifiers.zIndex
 import com.varabyte.kobweb.compose.ui.styleModifier
 import com.varabyte.kobweb.compose.ui.toAttrs
+import com.varabyte.kobweb.compose.ui.attrsModifier
 import com.varabyte.kobweb.navigation.BasePath
 import com.varabyte.kobweb.silk.components.icons.fa.FaPause
 import com.varabyte.kobweb.silk.components.icons.fa.FaPlay
 import com.varabyte.kobweb.silk.components.icons.fa.FaRotateRight
 import com.varabyte.kobweb.silk.components.icons.fa.FaThumbsDown
 import com.varabyte.kobweb.silk.components.icons.fa.FaThumbsUp
+import com.varabyte.kobweb.silk.components.icons.fa.FaArrowUpRightFromSquare
 import com.varabyte.kobweb.silk.components.layout.SimpleGrid
 import com.varabyte.kobweb.silk.components.layout.numColumns
 import org.example.eighballpatterns.model.EightBallShot
@@ -34,7 +36,6 @@ import org.w3c.dom.HTMLVideoElement
 private const val EIGHT_BALL_REEL_VIDEO_SIDE_CROP_PERCENT = 22.0
 private const val EIGHT_BALL_REEL_VIDEO_ZOOM = 1.05
 private const val EIGHT_BALL_REEL_VIDEO_SOURCE_ASPECT = 16.0 / 9.0
-private const val EIGHT_BALL_REEL_VIDEO_AVAILABLE_HEIGHT_PX = 260.0
 
 @Composable
 internal fun EightBallReelVideoLayer(
@@ -63,32 +64,33 @@ internal fun EightBallReelVideoLayer(
             .styleModifier {
                 property("inset", "0")
                 property("display", "grid")
-                property("grid-template-rows", if (onChallengeNext != null) "156px minmax(0, 1fr) 112px" else "112px minmax(0, 1fr) 112px")
-                property("background", "#020303")
+                property("grid-template-rows", "auto minmax(0, 1fr) auto")
+                property("background", "#080f0c")
             }
     ) {
         Column(
             modifier = Modifier
                 .styleModifier {
                     property("display", "flex")
-                    property("flex-direction", "column")
+                    property("flex-direction", "row")
                     property("align-items", "center")
-                    property("justify-content", "end")
-                    property("gap", "4px")
-                    property("padding", "max(14px, env(safe-area-inset-top)) 18px 10px")
+                    property("justify-content", "center")
+                    property("gap", "10px")
+                    property("padding", if(onChallengeNext!=null) "calc(98px + env(safe-area-inset-top)) 12px 10px" else "calc(66px + env(safe-area-inset-top)) 12px 10px")
                     property("opacity", if (showFeedback) "1" else "0")
-                }
+                }.attrsModifier {attr("aria-hidden",(!showFeedback).toString())}
         ) {
             Span(
                 attrs = Modifier
                     .styleModifier {
-                        property("width", "46px")
-                        property("height", "46px")
+                        property("width", "32px")
+                        property("height", "32px")
+                        property("flex-shrink", "0")
                         property("border-radius", "999px")
                         property("display", "flex")
                         property("align-items", "center")
                         property("justify-content", "center")
-                        property("font-size", "1.45rem")
+                        property("font-size", "1rem")
                         property("background", if (correct) "rgba(31, 151, 78, .24)" else "rgba(203, 50, 50, .23)")
                         property("border", if (correct) "1px solid rgba(102, 232, 151, .45)" else "1px solid rgba(255, 115, 115, .45)")
                         property("color", if (correct) "#79e69c" else "#ff7373")
@@ -119,21 +121,6 @@ internal fun EightBallReelVideoLayer(
                     } else if (coordinateResult) "Correct pick!" else "Not quite. Watch the reveal."
                 } else eightBallReelResultText(selectedBall, shot.meta))
             }
-            if (feedback != null) {
-                Span(
-                    attrs = Modifier
-                        .styleModifier {
-                            property("color", "rgba(245,248,245,.62)")
-                            property("font-size", ".78rem")
-                            property("font-weight", "600")
-                            property("text-align", "center")
-                            property("line-height", "1.25")
-                        }
-                        .toAttrs()
-                ) {
-                    Text(feedback)
-                }
-            }
         }
 
         Row(
@@ -144,17 +131,18 @@ internal fun EightBallReelVideoLayer(
                     property("justify-content", "center")
                     property("min-height", "0")
                     property("overflow", "hidden")
+                    property("container-type","size")
                 }
         ) {
             Box(
                 modifier = Modifier
                     .position(Position.Relative)
                     .styleModifier {
-                        property("width", eightBallReelVideoFrameWidth(onChallengeNext != null))
+                        property("width", eightBallReelVideoFrameWidth())
                         property("aspect-ratio", eightBallReelVideoFrameAspect().toString())
                         property("overflow", "hidden")
                         property("background", "#020303")
-                    }
+                    }.attrsModifier {classes("reel-video-frame")}
             ) {
                 Video(
                     attrs = Modifier
@@ -202,7 +190,7 @@ internal fun EightBallReelVideoLayer(
                     property("align-items", "center")
                     property("justify-content", "start")
                     property("gap", "10px")
-                    property("padding", "12px 18px max(18px, env(safe-area-inset-bottom))")
+                    property("padding", "10px 14px calc(60px + env(safe-area-inset-bottom))")
                     property("opacity", if (showFeedback) "1" else "0")
                     property("pointer-events", if (showFeedback) "auto" else "none")
                 }
@@ -215,19 +203,18 @@ internal fun EightBallReelVideoLayer(
                         property("font-size", ".8rem")
                         property("color", "rgba(245,248,245,.8)")
                         property("text-align", "center")
-                    }.toAttrs {
+                    }.attrsModifier {classes("reel-source-link")}.toAttrs {
                         attr("target", "_blank")
                         attr("rel", "noopener noreferrer")
                         onClick { it.stopPropagation() }
                     },
                 ) {
-                    Text("Source: ${shot.meta.source} · Original video")
+                    Text("${shot.meta.source} · Original video")
+                    FaArrowUpRightFromSquare()
                 }
             }
             if (onChallengeNext != null && showFeedback) {
                 EightBallChallengeNext(challengeLastShot, onChallengeNext)
-            } else if (showSwipeHint) {
-                EightBallReelSwipeHint("Swipe next")
             }
         }
     }
@@ -285,9 +272,7 @@ private fun eightBallReelVideoFrameAspect(): Double {
     return EIGHT_BALL_REEL_VIDEO_SOURCE_ASPECT * EIGHT_BALL_REEL_VIDEO_ZOOM * visibleWidth
 }
 
-private fun eightBallReelVideoFrameWidth(challenge: Boolean): String {
+private fun eightBallReelVideoFrameWidth(): String {
     val aspect = eightBallReelVideoFrameAspect()
-    val heightLimitedDvh = aspect * 100.0
-    val heightLimitedPx = aspect * (EIGHT_BALL_REEL_VIDEO_AVAILABLE_HEIGHT_PX + if (challenge) 44.0 else 0.0)
-    return "min(calc(100% - 28px), calc(${heightLimitedDvh}dvh - ${heightLimitedPx}px), 460px)"
+    return "min(100cqw, ${aspect*100}cqh)"
 }
