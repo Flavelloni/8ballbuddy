@@ -22,6 +22,8 @@ internal data class EightBallMeta(
     val browseOrder: Int = 0,
     val ballInHand: Boolean = false,
     val matchYear: Int? = null,
+    val target: BallTarget? = null,
+    val ballSelection: BallSelection? = null,
 ) {
     // Normal answers use 0 for no pot; breaks use 0..4 for the count potted.
     val correctAnswer: Int get() = if (isBreak) ballsPotted ?: -1 else ball

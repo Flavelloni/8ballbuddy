@@ -123,12 +123,18 @@ internal class FirebaseChallengeRepository {
         requestAttempt("submitChallengeAnswer", shotId, selectedBall, onAccepted)
     }
 
-    private fun requestAttempt(name: String, shotId: String, selectedBall: Int? = null, onReady: () -> Unit = {}) {
+    fun answerBall(shotId: String, selectedBallId: String, onAccepted: () -> Unit) {
+        if (busy || !clockStarted) return
+        requestAttempt("submitChallengeAnswer",shotId,onReady=onAccepted,selectedBallId=selectedBallId)
+    }
+
+    private fun requestAttempt(name: String, shotId: String, selectedBall: Int? = null, onReady: () -> Unit = {}, selectedBallId: String? = null) {
         val active = attempt ?: return
         val input = js("({})")
         input.date = active.challenge.date
         input.shotId = shotId
         if (selectedBall != null) input.selectedBall = selectedBall
+        if (selectedBallId != null) input.selectedBallId = selectedBallId
         busy = true
         error = null
         retry = null
@@ -139,7 +145,7 @@ internal class FirebaseChallengeRepository {
         }.catch { failure ->
             busy = false
             error = firebaseErrorMessage(failure)
-            retry = { requestAttempt(name, shotId, selectedBall, onReady) }
+            retry = { requestAttempt(name, shotId, selectedBall, onReady, selectedBallId) }
         }
     }
 
@@ -150,7 +156,7 @@ internal class FirebaseChallengeRepository {
         attempt = DailyChallengeAttempt(
             DailyChallenge(data.date as String, (data.shotIds as Array<String>).toList()),
             (data.answers as Array<dynamic>).map { answer ->
-                ChallengeAnswer(answer.shotId as String, answer.selectedBall as Int, answer.correctBall as Int, answer.elapsedMs as Int)
+                ChallengeAnswer(answer.shotId as String, answer.selectedBall as Int, answer.correctBall as Int, answer.elapsedMs as Int, answer.correct as? Boolean)
             },
             data.currentShotElapsedMs as Int,
         )

@@ -21,6 +21,7 @@ import org.example.eighballpatterns.browser.eightBallReelsShareUrl
 import org.example.eighballpatterns.browser.openEightBallEmailShare
 import org.example.eighballpatterns.browser.openEightBallWhatsAppShare
 import org.example.eighballpatterns.model.EightBallShot
+import org.example.eighballpatterns.model.ImagePoint
 import org.example.eighballpatterns.model.eightBallReelTitle
 import org.jetbrains.compose.web.css.FlexWrap
 import org.jetbrains.compose.web.css.Position
@@ -148,6 +149,13 @@ private fun EightBallShareButton(label: String, onClick: () -> Unit) {
 internal fun EightBallFullscreenImage(
     shot: EightBallShot?,
     onClose: () -> Unit,
+    pointSelection: ImagePoint? = null,
+    onPointSelected: ((ImagePoint) -> Unit)? = null,
+    onPointConfirmed: (() -> Unit)? = null,
+    inputEnabled: Boolean = true,
+    requestBusy: Boolean = false,
+    requestError: String? = null,
+    onRetry: () -> Unit = {},
 ) {
     if (shot == null) return
 
@@ -166,7 +174,16 @@ internal fun EightBallFullscreenImage(
                 property("overflow", "hidden")
             }
     ) {
-        Img(
+        val imageTarget=shot.meta.ballSelection?.imageTarget ?: shot.meta.target
+        if (!shot.meta.isBreak && imageTarget != null && onPointSelected != null && onPointConfirmed != null) {
+            Column(Modifier.width(100.percent).styleModifier { property("height", "100dvh"); property("padding-top", "70px"); property("box-sizing", "border-box") }) {
+                Row(Modifier.fillMaxWidth().styleModifier { property("flex", "1"); property("min-height", "0") }) {
+                    CoordinateLayout(shot.entry.imagePath, imageTarget, pointSelection, inputEnabled, onPointSelected, {}, shot.meta.ballSelection)
+                }
+                if(requestBusy || requestError!=null) EightBallChallengeRequestStatus(requestBusy,requestError,onRetry,"Saving guess…")
+                CoordinateConfirm(pointSelection, inputEnabled, ballMode=shot.meta.ballSelection!=null) { onPointConfirmed() }
+            }
+        } else Img(
             src = BasePath.prependTo(shot.entry.imagePath),
             attrs = Modifier
                 .styleModifier {

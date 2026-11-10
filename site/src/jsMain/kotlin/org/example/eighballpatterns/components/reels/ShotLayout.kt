@@ -41,6 +41,7 @@ import org.example.eighballpatterns.components.widgets.PoolBall
 import org.example.eighballpatterns.model.EightBallReelStats
 import org.example.eighballpatterns.model.AnswerClock
 import org.example.eighballpatterns.model.EightBallShot
+import org.example.eighballpatterns.model.ImagePoint
 import org.example.eighballpatterns.model.ballLabel
 import org.example.eighballpatterns.model.eightBallReelPickerBalls
 import org.example.eighballpatterns.model.eightBallReelTitle
@@ -86,9 +87,13 @@ internal fun EightBallReelShot(
     requestError: String? = null,
     requestBusy: Boolean = false,
     onRetry: () -> Unit = {},
+    pointSelection: ImagePoint? = null,
+    coordinateResult: Boolean? = null,
+    onPointSelected: ((ImagePoint) -> Unit)? = null,
+    onPointConfirmed: (() -> Unit)? = null,
 ) {
     val hasPrediction = selectedBall != null
-    val correct = selectedBall == shot.meta.correctAnswer
+    val correct = coordinateResult ?: (selectedBall == shot.meta.correctAnswer)
 
     Box(
         modifier = Modifier
@@ -117,6 +122,7 @@ internal fun EightBallReelShot(
             onVideoToggle = onVideoToggle,
             onChallengeNext = onChallengeNext,
             challengeLastShot = challengeLastShot,
+            coordinateResult = coordinateResult,
         )
 
         if (!hasPrediction) {
@@ -131,6 +137,9 @@ internal fun EightBallReelShot(
                 requestError = requestError,
                 requestBusy = requestBusy,
                 onRetry = onRetry,
+                pointSelection = pointSelection,
+                onPointSelected = onPointSelected,
+                onPointConfirmed = onPointConfirmed,
             )
         }
 
@@ -157,7 +166,12 @@ internal fun EightBallReelLayoutOverlay(
     requestError: String?,
     requestBusy: Boolean,
     onRetry: () -> Unit,
+    pointSelection: ImagePoint? = null,
+    onPointSelected: ((ImagePoint) -> Unit)? = null,
+    onPointConfirmed: (() -> Unit)? = null,
 ) {
+    val imageTarget=shot.meta.ballSelection?.imageTarget ?: shot.meta.target
+    val coordinatePicking = !shot.meta.isBreak && imageTarget != null && onPointSelected != null && onPointConfirmed != null
     var layoutReady by remember(shot.entry.id) { mutableStateOf(false) }
     LaunchedEffect(layoutReady) {
         if (layoutReady) onLayoutReady()
@@ -189,6 +203,9 @@ internal fun EightBallReelLayoutOverlay(
                     property("box-sizing", "border-box")
                 }
         ) {
+            Box(Modifier.position(Position.Absolute).styleModifier {
+                property("left","12px");property("top",if(answerClock!=null) "calc(52px + env(safe-area-inset-top))" else "12px")
+            }) { PredictionSoundToggle() }
             Column(
                 Modifier.gap(4.px),
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -276,7 +293,10 @@ internal fun EightBallReelLayoutOverlay(
                         property("justify-content", "center")
                     }
             ) {
-                Img(
+                if (coordinatePicking) {
+                    CoordinateLayout(shot.entry.imagePath, imageTarget!!, pointSelection,
+                        inputEnabled, { onPointSelected?.invoke(it) }, { layoutReady = true }, shot.meta.ballSelection)
+                } else Img(
                     src = BasePath.prependTo(shot.entry.imagePath),
                     attrs = Modifier
                         .styleModifier {
@@ -300,7 +320,9 @@ internal fun EightBallReelLayoutOverlay(
             }
         }
 
-        EightBallReelBallTray(
+        if (coordinatePicking) {
+            CoordinateConfirm(pointSelection, layoutReady && inputEnabled, ballMode=shot.meta.ballSelection!=null) { onPointConfirmed?.invoke() }
+        } else EightBallReelBallTray(
             balls = eightBallReelPickerBalls(shot),
             isBreak = shot.meta.isBreak,
             ballColors = shot.meta.ballColors,
@@ -334,7 +356,7 @@ private fun EightBallReelBallTray(balls: List<Int>, isBreak: Boolean, ballColors
                 .styleModifier { property("text-transform", "uppercase") }
                 .toAttrs()
         ) {
-            Text(if (isBreak) "How many balls will drop on the break?" else "Which ball will the expert pot? Or choose no ball:")
+            Text(if (isBreak) "How many balls will drop on the break?" else "Which ball will the expert pot?")
         }
         Row(
             Modifier
@@ -348,7 +370,7 @@ private fun EightBallReelBallTray(balls: List<Int>, isBreak: Boolean, ballColors
             balls.forEach { ball ->
                 Button(
                     attrs = Modifier
-                        .width(if (!isBreak && ball == 0) 84.px else 44.px)
+                        .width(44.px)
                         .height(44.px)
                         .padding(5.px)
                         .borderRadius(999.px)
@@ -357,14 +379,14 @@ private fun EightBallReelBallTray(balls: List<Int>, isBreak: Boolean, ballColors
                         .styleModifier {
                             property("box-sizing", "border-box")
                             property("cursor", "pointer")
-                            if (isBreak || ball == 0) {
+                            if (isBreak) {
                                 property("color", "white")
                                 property("font-size", "1.2rem")
                                 property("font-weight", "750")
                             }
                         }
                         .toAttrs {
-                            val label = if (isBreak) "$ball ${if (ball == 1) "ball" else "balls"} potted" else if (ball == 0) "No ball" else "${ballLabel(ball)} ball"
+                            val label = if (isBreak) "$ball ${if (ball == 1) "ball" else "balls"} potted" else "${ballLabel(ball)} ball"
                             title(label)
                             attr("aria-label", label)
                             if (!enabled) attr("disabled", "")
@@ -372,7 +394,6 @@ private fun EightBallReelBallTray(balls: List<Int>, isBreak: Boolean, ballColors
                         }
                 ) {
                     if (isBreak) Text(ball.toString())
-                    else if (ball == 0) Text("No ball")
                     else PoolBall(ball, Modifier.width(100.percent).height(100.percent), fillParent = true,
                         colorOverride = ballColors[ball]?.let { Color.rgb(it) })
                 }

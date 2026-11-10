@@ -38,6 +38,18 @@ class DailyChallengeTest {
     }
 
     @Test
+    fun regionAnswersUseTheServersScoreAndKeepLegacyNumberedAnswers() {
+        assertFalse(ChallengeAnswer("wrong-region",-2,6,100,scoredCorrect=false).correct)
+        assertTrue(ChallengeAnswer("right-region",-2,6,100,scoredCorrect=true).correct)
+        assertTrue(ChallengeAnswer("legacy",6,6,100).correct)
+        val attempt=DailyChallengeAttempt(DailyChallenge("2026-11-10",listOf("a","b")),listOf(
+            ChallengeAnswer("a",-2,6,100,scoredCorrect=true),
+            ChallengeAnswer("b",-2,6,200,scoredCorrect=false)))
+        assertEquals(1,attempt.correctCount)
+        assertTrue(attempt.complete)
+    }
+
+    @Test
     fun clockCountsOnlyRunningTimeAndResumesSavedTime() {
         var now = 1000.0
         val clock = AnswerClock({ now }, initialElapsedMs = 2000)

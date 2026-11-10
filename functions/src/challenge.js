@@ -23,12 +23,13 @@ export function pickerBalls(group) {
   if (group === 1) return [1, 2, 3, 4, 5, 6, 7];
   if (group === 2) return [9, 10, 11, 12, 13, 14, 15];
   if (group === 0) return [...pickerBalls(1), ...pickerBalls(2)];
+  if (group === 3) return [8];
   return [];
 }
 
 export function answerChoices(shot) {
   const balls = pickerBalls(shot.group);
-  return shot.isBreak === true ? [0, 1, 2, 3, 4] : balls.length ? [...balls, 0] : [];
+  return shot.isBreak === true ? [0, 1, 2, 3, 4] : balls;
 }
 
 export function utcDate(now) {
@@ -108,17 +109,31 @@ export function startShot(challenge, attempt, shotId, now) {
   };
 }
 
-export function submitAnswer(challenge, attempt, shotId, selectedBall, now) {
-  if (!Number.isInteger(selectedBall)) {
-    throw new ChallengeError("invalid-argument", "Choose a valid ball.");
-  }
+export function submitAnswer(challenge, attempt, shotId, selectedBall, now, selectedBallId = null, currentCatalog = []) {
   // Retrying an accepted answer returns its original result, including after a lost response.
   if (attempt.answers.some(answer => answer.shotId === shotId)) return attempt;
   const shot = challenge.shots[attempt.answers.length];
   if (!shot || shot.id !== shotId) {
     throw new ChallengeError("failed-precondition", "Please continue with the current shot.");
   }
-  if (!answerChoices(shot).includes(selectedBall)) {
+  let regionAnswer = null;
+  if (selectedBallId != null) {
+    // Existing frozen rounds predate ball regions. Use today's reviewed region
+    // mapping only when its answer number still matches that frozen answer.
+    const selection = shot.ballSelection ?? currentCatalog.find(item => item.id === shotId)?.ballSelection;
+    if (shot.isBreak === true || typeof selectedBallId !== "string" || selectedBallId.length > 40 ||
+        !selection?.ids.includes(selectedBallId)) {
+      throw new ChallengeError("invalid-argument", "Tap a valid ball on the table.");
+    }
+    if (selection.correctNumber !== shot.correctBall) {
+      throw new ChallengeError("failed-precondition", "This shot's annotation changed. Please reload the page.");
+    }
+    const correct = selectedBallId === selection.correctBallId;
+    regionAnswer = { selectedBallId, correct };
+    selectedBall = correct ? shot.correctBall : -2;
+  } else if (!Number.isInteger(selectedBall)) {
+    throw new ChallengeError("invalid-argument", "Choose a valid ball.");
+  } else if (!answerChoices(shot).includes(selectedBall)) {
     throw new ChallengeError("invalid-argument", shot.isBreak === true
       ? "Choose a break count from 0 to 4." : "Choose a ball from this player's group.");
   }
@@ -128,6 +143,7 @@ export function submitAnswer(challenge, attempt, shotId, selectedBall, now) {
   const answer = {
     shotId, selectedBall, correctBall: shot.correctBall,
     elapsedMs: Math.max(1, now - attempt.currentShotStartedAtMs),
+    ...(regionAnswer ?? {}),
   };
   return {
     ...attempt, answers: [...attempt.answers, answer],
@@ -148,7 +164,7 @@ export function completedResult(challenge, attempt) {
   if (attempt.answers.length !== challenge.shotIds.length) return null;
   return {
     uid: attempt.uid, displayName: attempt.displayName,
-    correctCount: attempt.answers.filter(answer => answer.selectedBall === answer.correctBall).length,
+    correctCount: attempt.answers.filter(answer => answer.correct ?? (answer.selectedBall === answer.correctBall)).length,
     totalElapsedMs: attempt.answers.reduce((total, answer) => total + answer.elapsedMs, 0),
     shotCount: challenge.shotIds.length, finishedAtMs: attempt.updatedAtMs,
   };

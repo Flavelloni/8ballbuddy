@@ -51,6 +51,15 @@ val generateEightBallManifest = tasks.register("generateEightBallManifest") {
                 val parts = path.split('/')
                 @Suppress("UNCHECKED_CAST")
                 val meta = (JsonSlurper().parse(shotDir.resolve("meta.json")) as Map<String, Any?>).toMutableMap()
+                require(meta["isBreak"] == true || !(meta.containsKey("ball") && meta["ball"] == null)) {
+                    "Non-break ball:null shots must be removed from the website: $path"
+                }
+                ((meta["ballSelection"] ?: meta["target"]) as? Map<*, *>)?.let { target ->
+                    val hash = MessageDigest.getInstance("SHA-256").digest(shotDir.resolve("layout.jpg").readBytes())
+                    require(target["imageSha256"] == HexFormat.of().formatHex(hash)) {
+                        "Annotation belongs to a different crop/image. Re-annotate: $path"
+                    }
+                }
                 val id = meta["id"] as? String ?: if (parts.size == 4) "${parts[1]}/${parts[3]}" else path
                 require(idPattern.matches(id)) { "Invalid shot ID/folder structure: $path" }
                 var ancestor: File? = shotDir.parentFile

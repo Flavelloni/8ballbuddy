@@ -44,6 +44,11 @@
     "Club": "OBK"
   },
   "Kim Soo Garmark": {
+    "imageUrl": "/images/players/kim-soo-garmark.png",
+    "imageCredit": "CueScore",
+    "imageSourceUrl": "https://cuescore.com/player/Kim+Soo+Garmark/6600268",
+    "country": "Norway",
+    "countryFlagUrl": "/images/flags/no.png",
     "FargoRating": 677,
     "FargoSource": "Fargo App",
     "FargoDate": "Nov 2026",

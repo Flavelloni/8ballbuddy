@@ -1,5 +1,39 @@
 {
-	"player": "Ole Kristian Rudshavn",
-	"group": 2,
-	"ball": 10
+  "player": "Ole Kristian Rudshavn",
+  "group": 2,
+  "ball": 10,
+  "ballSelection": {
+    "schemaVersion": 1,
+    "balls": [
+      {
+        "id": "b1",
+        "x": 0.6411824202626641,
+        "y": 0.139674,
+        "radius": 0.010412757973733585
+      },
+      {
+        "id": "b2",
+        "x": 0.5924017729831145,
+        "y": 0.170109,
+        "radius": 0.011913236397748593
+      },
+      {
+        "id": "b3",
+        "x": 0.3194188273921201,
+        "y": 0.233152,
+        "radius": 0.011444662288930584
+      },
+      {
+        "id": "b4",
+        "x": 0.5389301782363977,
+        "y": 0.285326,
+        "radius": 0.009005994371482176
+      }
+    ],
+    "correctBallId": "b4",
+    "correctNumber": 10,
+    "imageWidth": 1066,
+    "imageHeight": 920,
+    "imageSha256": "c7d844e461b0f5a1502245986abea9248988c7ab7c215202f61205ff7cda6626"
+  }
 }

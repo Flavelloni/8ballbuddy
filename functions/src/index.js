@@ -115,7 +115,7 @@ export const startChallengeShot = callable((data, identity) => updateAttempt(dat
   (challenge, attempt, input, now) => startShot(challenge, attempt, input.shotId, now)));
 
 export const submitChallengeAnswer = callable((data, identity) => updateAttempt(data, identity,
-  (challenge, attempt, input, now) => submitAnswer(challenge, attempt, input.shotId, input.selectedBall, now)));
+  (challenge, attempt, input, now) => submitAnswer(challenge, attempt, input.shotId, input.selectedBall, now, input.selectedBallId, catalog)));
 
 async function count(query) {
   return (await query.count().get()).data().count;

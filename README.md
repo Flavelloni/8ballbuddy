@@ -67,12 +67,45 @@ Metadata uses the same format as the original site:
 ```
 
 `group` is `0` for an open table, `1` for solids, and `2` for stripes.
-For non-break shots, explicit `"ball": null` means no ball was potted. The
-picker always offers **No ball**, scored internally as answer `0` (also accepted
-by the daily-challenge backend). A missing `ball` is not treated as a no-pot answer.
+Non-break `"ball": null` shots are excluded from the website; the numbered picker
+no longer offers **No ball**. Missing `ball` metadata is not a no-pot answer.
 Breaks still use `ballsPotted` and the count picker instead.
 The build generates the shot manifest from complete shot directories.
 Links such as `/?shot=AMDgls4nJhQ%2F051958` open a specific shot directly.
+
+### Ball selection and annotation
+
+The tools repo's `tools/annotate_shots.py` serves the editor at
+`http://127.0.0.1:8766`. It proposes ball regions on the final `layout.jpg`, lets
+the author correct them, mark the answer and choose its number, then saves
+`ballSelection` plus `ball` into metadata. Media is unchanged. See the tools
+repo's `tools/shot_annotation/README.md` for the schema and editing workflow.
+
+In **Just browse and daily challenges**, reviewed ball regions become selectable
+ball buttons with a one-time selection pulse, a steady outline and optional
+vibration. Confirmation shows a short animated thumbs-up/down and synthesized
+sound before the reveal; the speaker button mutes sounds. Reduced-motion
+preferences disable pulse/pop animations. Daily ball IDs are scored by the
+server, including frozen rounds created before annotations. Deploy the updated
+functions/catalog before releasing the frontend. Older numbered clients remain
+supported. Zoom and fullscreen keep the hit areas aligned. Ambiguous overlapping
+targets require a clearer tap. Unannotated shots keep numbered buttons; breaks
+keep 0–4 counts. The local editor's
+`annotationBalls` preview link tests a draft immediately on the modified local
+website without rebuilding; saved catalog changes need a resource rebuild.
+The current 59 non-break shots are reviewed; the five break shots remain counts.
+
+### Installation and navigation
+
+The welcome page offers **Install app**. Supported browsers show their native
+installation prompt; iPhone/iPad users get Add to Home Screen instructions.
+The web manifest uses relative URLs so repository-base-path deployments work.
+PNG icons are rendered from the existing vector logo. There is no service
+worker or offline video cache: installed users still need internet, and receive
+normal website updates. Unsupported browsers can continue using the website.
+Desktop users also get circular previous/next reel buttons. Player introductions
+show identity, ball group and ball-in-hand status first, with Fargo rating,
+match year and photo attribution under **More details**.
 
 Shot IDs remain `<video-id>/<timestamp>` even when files move into broadcaster
 and matchup folders. This preserves shared links and frozen daily challenges.

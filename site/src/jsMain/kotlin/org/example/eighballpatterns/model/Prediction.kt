@@ -68,7 +68,7 @@ internal fun eightBallReelPickerBalls(shot: EightBallShot): List<Int> {
         2 -> (9..15).toList()
         0 -> (1..15).filter { it != 8 }
         else -> (8..10).toList()
-    } + 0
+    }
 }
 
 internal fun eightBallReelTitle(meta: EightBallMeta): String {

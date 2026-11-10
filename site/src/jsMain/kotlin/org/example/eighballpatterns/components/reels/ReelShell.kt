@@ -32,6 +32,9 @@ import com.varabyte.kobweb.compose.ui.styleModifier
 import com.varabyte.kobweb.compose.ui.toAttrs
 import com.varabyte.kobweb.navigation.BasePath
 import com.varabyte.kobweb.silk.components.icons.fa.FaAnglesUp
+import com.varabyte.kobweb.silk.components.icons.fa.FaArrowUp
+import com.varabyte.kobweb.silk.components.icons.fa.FaArrowDown
+import com.varabyte.kobweb.silk.components.forms.Button as SilkButton
 import kotlinx.browser.document
 import kotlinx.browser.window
 import org.jetbrains.compose.web.css.LineStyle
@@ -82,6 +85,19 @@ internal fun ensureEightBallReelsStyles() {
         .pool-loading-ball { animation: poolLoading 1.4s infinite; }
         .player-choice-card.player-choice-card:hover { background: #203f32; border-color: #94c9b5; }
         .player-choice-card:focus-visible { outline: 2px solid #94c9b5; outline-offset: 3px; }
+        .layout-ball-button:focus-visible { outline: 2px solid #b7ffe0; outline-offset: 2px; }
+        @keyframes ballSelectionPulse { from { transform: translate(-50%,-50%) scale(.85); opacity: 1; } to { transform: translate(-50%,-50%) scale(2.5); opacity: 0; } }
+        .ball-selection-pulse { animation: ballSelectionPulse .48s ease-out both; }
+        @keyframes predictionPop { 0% { transform: scale(.45); opacity: 0; } 45% { transform: scale(1.12); opacity: 1; } 70%,100% { transform: scale(1); opacity: 1; } }
+        .prediction-pop { animation: predictionPop .6s cubic-bezier(.2,.8,.2,1) both; }
+        .desktop-reel-navigation { display: none; }
+        @media (min-width: 760px) and (hover: hover) and (pointer: fine) {
+          .desktop-reel-navigation { display: flex; position: absolute; top: 50%; left: calc(50% + 258px); transform: translateY(-50%); gap: 18px; z-index: 20; }
+        }
+        .desktop-reel-navigation button { width: 54px; height: 54px; padding: 0; border: 1px solid #52735f; border-radius: 50%; color: #daffea; background: radial-gradient(circle at 30% 20%, #416350, #102219 75%); box-shadow: 0 6px 18px #0009, inset 0 1px 2px #ffffff33; }
+        .desktop-reel-navigation button:hover { border-color: #b7ffe0; }
+        .player-more-details { max-height: 180px; overflow-y: auto; }
+        @media (prefers-reduced-motion: reduce) { .ball-selection-pulse { display: none; } .prediction-pop { animation: none; } }
         @media (prefers-reduced-motion: reduce) { .pool-loading-ball { animation: none; } }
         @keyframes eightBallReelPulse {
           0%, 100% { opacity: .42; transform: translateY(7px); }
@@ -176,7 +192,7 @@ internal fun EightBallReelIntro(onStart: () -> Unit, canStart: Boolean = true) {
                 }
                 .toAttrs()
         ) {
-            Text("Predict the expert's next shot or break, then watch the reveal.")
+            Text("Tap a ball on the table, confirm your prediction, then watch the reveal. For breaks, guess how many balls drop.")
         }
 
         Button(
@@ -199,6 +215,7 @@ internal fun EightBallReelIntro(onStart: () -> Unit, canStart: Boolean = true) {
             Text("Start")
         }
         EightBallReelSwipeHint("Swipe to start")
+        InstallAppButton()
     }
 }
 
@@ -210,6 +227,8 @@ internal fun EightBallReelsShell(
     onTouchEnd: (Double) -> Unit,
     onTouchCancel: () -> Unit,
     allowContentScroll: Boolean = false,
+    canNext: Boolean = true,
+    canPrevious: Boolean = true,
     content: @Composable () -> Unit,
 ) {
     val wheelGesture = remember { WheelGesture() }
@@ -296,6 +315,10 @@ internal fun EightBallReelsShell(
                 }
         ) {
             content()
+        }
+        Column(Modifier.attrsModifier { classes("desktop-reel-navigation");attr("aria-label","Reel navigation") }) {
+            SilkButton(onClick={onPrevious()},enabled=canPrevious,modifier=Modifier.attrsModifier {attr("aria-label","Previous reel page");attr("title","Previous reel page")}) { FaArrowUp() }
+            SilkButton(onClick={onNext()},enabled=canNext,modifier=Modifier.attrsModifier {attr("aria-label","Next reel page");attr("title","Next reel page")}) { FaArrowDown() }
         }
     }
 }

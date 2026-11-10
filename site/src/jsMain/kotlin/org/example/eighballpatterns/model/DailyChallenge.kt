@@ -7,8 +7,9 @@ internal data class ChallengeAnswer(
     val selectedBall: Int,
     val correctBall: Int,
     val elapsedMs: Int,
+    val scoredCorrect: Boolean? = null,
 ) {
-    val correct: Boolean get() = selectedBall == correctBall
+    val correct: Boolean get() = scoredCorrect ?: (selectedBall == correctBall)
 }
 
 internal data class DailyChallengeAttempt(

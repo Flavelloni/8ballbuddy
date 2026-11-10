@@ -283,7 +283,7 @@ internal fun EightBallChallengeResults(
                     Tr {
                         Td { Text((index + 1).toString()) }
                         Td(attrs = { classes(if (answer.correct) "daily-correct" else "daily-incorrect") }) {
-                            Text(if (answer.selectedBall == 0 && answer.shotId !in breakShotIds) "No ball" else answer.selectedBall.toString())
+                            Text(if(answer.selectedBall == -2) "Other ball" else if (answer.selectedBall == 0 && answer.shotId !in breakShotIds) "No ball" else answer.selectedBall.toString())
                             if (answer.correct) FaCheck(Modifier.attrsModifier { attr("aria-label", "Correct") })
                         }
                         Td { Text(if (answer.correctBall == 0 && answer.shotId !in breakShotIds) "No ball" else answer.correctBall.toString()) }

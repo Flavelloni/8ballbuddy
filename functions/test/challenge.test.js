@@ -8,14 +8,47 @@ import {
 const date = "2026-10-16";
 const catalog = Array.from({ length: 30 }, (_, i) => ({ id: `shot-${i + 1}`, group: 1, correctBall: 6 }));
 
-test("no-pot answers are accepted and scored without confusing break counts", () => {
+test("annotated daily shots score opaque ball IDs on the server, including wrong picks", () => {
+  const shot={id:'annotated',group:1,correctBall:6,ballSelection:{ids:['cue','six','other'],correctBallId:'six',correctNumber:6}};
+  const challenge=createDailyChallenge(date,[shot]);
+  const attempt=startShot(challenge,createAttempt(challenge,'uid','Player',0),shot.id,100);
+  for(const [id,correct] of [['six',true],['cue',false],['other',false]]) {
+    const result=submitAnswer(challenge,attempt,shot.id,undefined,200,id);
+    assert.equal(result.answers[0].correct,correct);
+    assert.equal(result.answers[0].selectedBallId,id);
+    assert.equal(result.answers[0].correctBall,6);
+    assert.equal(completedResult(challenge,result).correctCount,correct?1:0);
+    assert.equal(result.answers[0].elapsedMs,100);
+    assert.equal(submitAnswer(challenge,result,shot.id,undefined,999,'six'),result,'Retries must not change the score');
+  }
+  for(const id of ['missing','',7,{},'a'.repeat(41)])
+    assert.throws(()=>submitAnswer(challenge,attempt,shot.id,6,200,id),error=>error.code==='invalid-argument');
+});
+
+test("frozen numbered rounds accept new region answers without resetting progress", () => {
+  const shot={id:'legacy',group:2,correctBall:12};
+  const latest={...shot,ballSelection:{ids:['a','b'],correctBallId:'b',correctNumber:12}};
+  const challenge=createDailyChallenge(date,[shot]);
+  const attempt=startShot(challenge,createAttempt(challenge,'uid','Player',0),shot.id,100);
+  assert.equal(submitAnswer(challenge,attempt,shot.id,undefined,200,'b',[latest]).answers[0].correct,true);
+  assert.equal(submitAnswer(challenge,attempt,shot.id,undefined,200,'a',[latest]).answers[0].correct,false);
+  assert.throws(()=>submitAnswer(challenge,attempt,shot.id,undefined,200,'b',[{...latest,ballSelection:{...latest.ballSelection,correctNumber:11}}]),error=>error.code==='failed-precondition');
+  const breakShot={...shot,isBreak:true,correctBall:1};
+  const breakRound=createDailyChallenge(date,[breakShot]);
+  const breakAttempt=startShot(breakRound,createAttempt(breakRound,'uid','Player',0),shot.id,100);
+  assert.throws(()=>submitAnswer(breakRound,breakAttempt,shot.id,1,200,'b',[latest]),error=>error.code==='invalid-argument');
+  assert.equal(submitAnswer(challenge,attempt,shot.id,12,200).answers[0].selectedBall,12,'Old clients still work');
+});
+
+test("eight-ball-only turns allow the eight ball",()=>{
+  assert.deepEqual(answerChoices({group:3}),[8]);
+});
+
+test("normal no-pot choices are removed without confusing break counts", () => {
   const shot = { id: "miss", group: 1, correctBall: 0 };
-  const challenge = createDailyChallenge(date, [shot]);
-  const attempt = startShot(challenge, createAttempt(challenge, "uid", "Player", 0), "miss", 100);
-  const answered = submitAnswer(challenge, attempt, "miss", 0, 200);
-  assert.equal(completedResult(challenge, answered).correctCount, 1);
-  assert.equal(completedResult(challenge, submitAnswer(challenge, attempt, "miss", 2, 200)).correctCount, 0);
-  assert.deepEqual(answerChoices({group: 2}), [...pickerBalls(2), 0]);
+  assert.throws(() => createDailyChallenge(date, [shot]), error => error.code === "failed-precondition");
+  assert.deepEqual(answerChoices({group: 2}), pickerBalls(2));
+  assert.deepEqual(answerChoices({isBreak: true}), [0,1,2,3,4]);
   assert.deepEqual(answerChoices({group: "invalid"}), []);
 });
 
@@ -65,7 +98,7 @@ test("daily selection excludes unsupported break counts and keeps normal shots u
     { id: "normal", group: 1, correctBall: 6 },
   ];
   assert.deepEqual(new Set(createDailyChallenge(date, shots).shotIds), new Set(["zero", "four", "normal"]));
-  assert.deepEqual(answerChoices(shots[3]), [...pickerBalls(1), 0]);
+  assert.deepEqual(answerChoices(shots[3]), pickerBalls(1));
 });
 
 test("aliases are normalized and allow international letters and duplicate display names", () => {

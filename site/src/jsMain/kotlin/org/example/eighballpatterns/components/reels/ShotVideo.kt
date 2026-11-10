@@ -52,6 +52,7 @@ internal fun EightBallReelVideoLayer(
     onVideoToggle: () -> Unit,
     onChallengeNext: (() -> Unit)? = null,
     challengeLastShot: Boolean = false,
+    coordinateResult: Boolean? = null,
 ) {
     SimpleGrid(
         numColumns = numColumns(1),
@@ -111,7 +112,12 @@ internal fun EightBallReelVideoLayer(
                     }
                     .toAttrs()
             ) {
-                Text(eightBallReelResultText(selectedBall, shot.meta))
+                Text(if (coordinateResult != null) {
+                    val number=shot.meta.ballSelection?.correctNumber
+                    if (number!=null) {
+                        if (coordinateResult) "Yes, the $number ball it was!" else "Not quite — it was the $number ball."
+                    } else if (coordinateResult) "Correct pick!" else "Not quite. Watch the reveal."
+                } else eightBallReelResultText(selectedBall, shot.meta))
             }
             if (feedback != null) {
                 Span(

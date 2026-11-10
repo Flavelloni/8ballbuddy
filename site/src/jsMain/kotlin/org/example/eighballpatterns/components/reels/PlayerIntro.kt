@@ -31,6 +31,9 @@ import com.varabyte.kobweb.compose.ui.styleModifier
 import com.varabyte.kobweb.compose.ui.toAttrs
 import com.varabyte.kobweb.navigation.BasePath
 import com.varabyte.kobweb.silk.components.icons.fa.FaUser
+import com.varabyte.kobweb.silk.components.icons.fa.FaChevronDown
+import com.varabyte.kobweb.silk.components.icons.fa.FaChevronUp
+import com.varabyte.kobweb.silk.components.forms.Button
 import com.varabyte.kobweb.silk.components.graphics.Image
 import com.varabyte.kobweb.silk.components.layout.SimpleGrid
 import com.varabyte.kobweb.silk.components.layout.numColumns
@@ -54,6 +57,7 @@ internal fun EightBallPlayerIntro(shot: EightBallShot, player: PlayerProfile?, c
     }
     var imageReady by remember(imageUrl) { mutableStateOf(false) }
     var imageFailed by remember(imageUrl) { mutableStateOf(false) }
+    var detailsOpen by remember(shot.entry.id) { mutableStateOf(false) }
     val balls = if (shot.meta.isBreak) emptyList() else when (shot.meta.group) {
         0 -> (1..15).filter { it != 8 }
         1 -> (1..7).toList()
@@ -85,7 +89,7 @@ internal fun EightBallPlayerIntro(shot: EightBallShot, player: PlayerProfile?, c
             ) {
                 Box(
                     Modifier.fillMaxWidth().minHeight(0.px).styleModifier {
-                        property("aspect-ratio", "1")
+                        property("height", if(detailsOpen) "min(24dvh,200px)" else "min(38dvh,310px)")
                         property("flex-shrink", "1")
                         property("position", "relative")
                     },
@@ -144,32 +148,6 @@ internal fun EightBallPlayerIntro(shot: EightBallShot, player: PlayerProfile?, c
                             )
                         }
                     }
-                    shot.meta.matchYear?.let { year ->
-                        SpanText("Match · $year", Modifier.fontSize(0.75.cssRem)
-                            .color(Color.rgba(255, 255, 255, 0.45f)))
-                    }
-                    if (player?.fargoRating != null) {
-                        Column(
-                            Modifier.gap(2.px),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                        ) {
-                            P(Modifier.margin(0.px).color(Colors.White).toAttrs()) {
-                                SpanText("Fargo Rating ", Modifier.fontSize(0.95.cssRem))
-                                SpanText(
-                                    player.fargoRating.toString(),
-                                    Modifier.fontSize(1.4.cssRem).fontWeight(FontWeight.Bold)
-                                        .color(Color.rgb(0x94C9B5)),
-                                )
-                            }
-                            val attribution = listOf(player.fargoSource, player.fargoDate).filter { it.isNotBlank() }
-                            if (attribution.isNotEmpty()) {
-                                SpanText(
-                                    "(${attribution.joinToString(" ")})",
-                                    Modifier.fontSize(0.65.cssRem).color(Color.rgba(255, 255, 255, 0.45f)),
-                                )
-                            }
-                        }
-                    }
                     Column(Modifier.gap(6.px), horizontalAlignment = Alignment.CenterHorizontally) {
                         SpanText(
                             eightBallPlayerStatus(shot.meta),
@@ -199,7 +177,29 @@ internal fun EightBallPlayerIntro(shot: EightBallShot, player: PlayerProfile?, c
                             }
                         }
                     }
-                    if (imageReady && !imageFailed && !player?.imageSourceUrl.isNullOrBlank()) {
+                    Button(onClick={detailsOpen=!detailsOpen},modifier=Modifier.styleModifier {
+                        property("border-radius","999px");property("background","#11271d");property("color","#abcbb9")
+                        property("font-size",".8rem");property("gap","9px")
+                        property("display","inline-flex");property("align-items","center")
+                    }.attrsModifier {attr("aria-expanded",detailsOpen.toString());attr("aria-controls","player-more-details")}) {
+                        Text(if(detailsOpen) "Less detail" else "More details")
+                        if(detailsOpen) FaChevronUp() else FaChevronDown()
+                    }
+                    if(detailsOpen) Column(Modifier.fillMaxWidth().gap(7.px).attrsModifier {
+                        id("player-more-details");classes("player-more-details")
+                    },horizontalAlignment=Alignment.CenterHorizontally) {
+                        player?.fargoRating?.let { rating ->
+                            Row(Modifier.gap(7.px),verticalAlignment=Alignment.CenterVertically) {
+                                SpanText("Fargo Rating",Modifier.fontSize(.85.cssRem))
+                                SpanText(rating.toString(),Modifier.fontSize(1.35.cssRem).fontWeight(FontWeight.Bold).color(Color.rgb(0x94C9B5)))
+                            }
+                            SpanText(listOf(player.fargoSource,player.fargoDate).filter {it.isNotBlank()}.joinToString(" · "),
+                                Modifier.fontSize(.65.cssRem).color(Color.rgba(255,255,255,.45f)))
+                        }
+                        shot.meta.matchYear?.let {year ->
+                            SpanText("Match · $year",Modifier.fontSize(.75.cssRem).color(Color.rgba(255,255,255,.55f)))
+                        }
+                        if (imageReady && !imageFailed && !player?.imageSourceUrl.isNullOrBlank()) {
                         A(
                             href = player.imageSourceUrl,
                             attrs = Modifier.fontSize(0.65.cssRem).color(Color.rgba(255, 255, 255, 0.5f))
@@ -209,6 +209,7 @@ internal fun EightBallPlayerIntro(shot: EightBallShot, player: PlayerProfile?, c
                                 },
                         ) {
                             Text("Photo: ${player.imageCredit}")
+                        }
                         }
                     }
                 }

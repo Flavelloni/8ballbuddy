@@ -1,5 +1,45 @@
 {
-	"player": "Emil André Gangfløt",
-	"group": 1,
-	"ball": 7
+  "player": "Emil André Gangfløt",
+  "group": 1,
+  "ball": 7,
+  "ballSelection": {
+    "schemaVersion": 1,
+    "balls": [
+      {
+        "id": "b1",
+        "x": 0.4197936491557223,
+        "y": 0.12663,
+        "radius": 0.009849427767354597
+      },
+      {
+        "id": "b2",
+        "x": 0.4432452626641651,
+        "y": 0.209239,
+        "radius": 0.011069803001876172
+      },
+      {
+        "id": "b3",
+        "x": 0.3034706472795497,
+        "y": 0.229891,
+        "radius": 0.011444662288930584
+      },
+      {
+        "id": "b4",
+        "x": 0.6505632739212007,
+        "y": 0.307065,
+        "radius": 0.010412757973733585
+      },
+      {
+        "id": "b5",
+        "x": 0.22464744629198896,
+        "y": 0.7831306350959163,
+        "radius": 0.02080885553470919
+      }
+    ],
+    "correctBallId": "b2",
+    "correctNumber": 7,
+    "imageWidth": 1066,
+    "imageHeight": 920,
+    "imageSha256": "dda1c3a687db4e5ed396f07f0dbddd3880d69c03a65711a506be5102c83f949a"
+  }
 }

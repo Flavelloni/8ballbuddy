@@ -25,7 +25,11 @@ internal fun updateEightBallChallengeUrl(date: String) {
 internal fun updateEightBallReelsUrl(shotId: String?, playerIntro: Boolean) {
     val baseUrl = "${window.location.origin}${BasePath.prependTo("/")}"
     val view = if (playerIntro) "&view=player" else ""
-    val nextUrl = if (shotId == null) baseUrl else "$baseUrl?shot=${encodeUriComponent(shotId)}$view"
+    val draft = js("new URLSearchParams(window.location.search).get('annotationTarget')") as? String
+    val draftSuffix = if (draft != null && shotId == currentEightBallReelsShotId()) "&annotationTarget=${encodeUriComponent(draft)}" else ""
+    val balls=js("new URLSearchParams(window.location.search).get('annotationBalls')") as? String
+    val ballsSuffix=if (balls!=null && shotId==currentEightBallReelsShotId()) "&annotationBalls=${encodeUriComponent(balls)}" else ""
+    val nextUrl = if (shotId == null) baseUrl else "$baseUrl?shot=${encodeUriComponent(shotId)}$view$draftSuffix$ballsSuffix"
     js("window.history.replaceState(null, '', nextUrl)")
 }
 

@@ -19,6 +19,8 @@ async function visit(directory) {
     publishedShotIds.push(id);
     // Preserve media/metadata for frozen rounds, but never select archived shots again.
     if (meta.archived === true) return;
+    // Coordinate-only shots are a browse pilot until daily point scoring is introduced.
+    if (meta.target && !Object.hasOwn(meta, "ball") && meta.isBreak !== true) return;
     const correctAnswer = meta.isBreak === true ? meta.ballsPotted : meta.ball === null ? 0 : meta.ball;
     if (!Number.isInteger(correctAnswer) || !answerChoices(meta).includes(correctAnswer)) {
       throw new Error(`Invalid answer or group: ${directory}`);
@@ -28,6 +30,13 @@ async function visit(directory) {
       group: meta.group,
       correctBall: correctAnswer,
       isBreak: meta.isBreak === true,
+      ...(meta.ballSelection && meta.isBreak !== true ? {
+        ballSelection: {
+          ids: meta.ballSelection.balls.map(ball => ball.id),
+          correctBallId: meta.ballSelection.correctBallId,
+          correctNumber: meta.ballSelection.correctNumber,
+        },
+      } : {}),
     });
     return;
   }

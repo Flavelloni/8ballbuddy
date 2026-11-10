@@ -4,5 +4,69 @@
   "group": 2,
   "ball": 15,
   "source": "MagicCitySlate",
-  "videoLink": "https://www.youtube.com/watch?v=AMDgls4nJhQ"
+  "videoLink": "https://www.youtube.com/watch?v=AMDgls4nJhQ",
+  "ballSelection": {
+    "schemaVersion": 1,
+    "balls": [
+      {
+        "id": "b1",
+        "x": 0.4734375,
+        "y": 0.414,
+        "radius": 0.016145833333333335
+      },
+      {
+        "id": "b2",
+        "x": 0.2765625,
+        "y": 0.540667,
+        "radius": 0.01875
+      },
+      {
+        "id": "b3",
+        "x": 0.2296875,
+        "y": 0.548667,
+        "radius": 0.017604166666666667
+      },
+      {
+        "id": "b4",
+        "x": 0.20677083333333332,
+        "y": 0.567333,
+        "radius": 0.016458333333333335
+      },
+      {
+        "id": "b5",
+        "x": 0.39947916666666666,
+        "y": 0.627333,
+        "radius": 0.0165625
+      },
+      {
+        "id": "b6",
+        "x": 0.4546875,
+        "y": 0.658,
+        "radius": 0.019895833333333335
+      },
+      {
+        "id": "b7",
+        "x": 0.1296875,
+        "y": 0.79,
+        "radius": 0.022291666666666668
+      },
+      {
+        "id": "b8",
+        "x": 0.8140625,
+        "y": 0.808667,
+        "radius": 0.01885416666666667
+      },
+      {
+        "id": "b9",
+        "x": 0.8807291666666667,
+        "y": 0.816667,
+        "radius": 0.022291666666666668
+      }
+    ],
+    "correctBallId": "b7",
+    "correctNumber": 15,
+    "imageWidth": 960,
+    "imageHeight": 750,
+    "imageSha256": "3d71fced935fbef34d0aae91d5a3996620f79af765c13228e28c142c95cae855"
+  }
 }

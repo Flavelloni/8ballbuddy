@@ -4,5 +4,51 @@
   "group": 1,
   "ball": 7,
   "source": "MagicCitySlate",
-  "videoLink": "https://www.youtube.com/watch?v=AMDgls4nJhQ"
+  "videoLink": "https://www.youtube.com/watch?v=AMDgls4nJhQ",
+  "ballSelection": {
+    "schemaVersion": 1,
+    "balls": [
+      {
+        "id": "b1",
+        "x": 0.4734375,
+        "y": 0.415333,
+        "radius": 0.016458333333333335
+      },
+      {
+        "id": "b2",
+        "x": 0.24947916666666667,
+        "y": 0.495333,
+        "radius": 0.019270833333333334
+      },
+      {
+        "id": "b3",
+        "x": 0.2078125,
+        "y": 0.567333,
+        "radius": 0.017604166666666667
+      },
+      {
+        "id": "b4",
+        "x": 0.4546875,
+        "y": 0.658,
+        "radius": 0.019895833333333335
+      },
+      {
+        "id": "b5",
+        "x": 0.8182291666666667,
+        "y": 0.808667,
+        "radius": 0.022291666666666668
+      },
+      {
+        "id": "b6",
+        "x": 0.8807291666666667,
+        "y": 0.818,
+        "radius": 0.022291666666666668
+      }
+    ],
+    "correctBallId": "b3",
+    "correctNumber": 7,
+    "imageWidth": 960,
+    "imageHeight": 750,
+    "imageSha256": "0295e23a3a4ddffd8e08fedb68656a36c45f8ec93c6ea84a88dc5ed47cd3e41b"
+  }
 }
