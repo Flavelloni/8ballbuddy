@@ -13,6 +13,7 @@ import com.varabyte.kobweb.compose.foundation.layout.Column
 import com.varabyte.kobweb.compose.ui.Alignment
 import com.varabyte.kobweb.compose.ui.Modifier
 import com.varabyte.kobweb.compose.ui.attrsModifier
+import com.varabyte.kobweb.compose.ui.graphics.Color
 import com.varabyte.kobweb.compose.ui.graphics.Colors
 import com.varabyte.kobweb.compose.ui.modifiers.color
 import com.varabyte.kobweb.compose.ui.modifiers.fontWeight
@@ -106,6 +107,20 @@ internal fun EightBallReelIntro(onStart: () -> Unit, canStart: Boolean = true) {
             .attrsModifier { classes("eight-ball-reel-intro") },
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
+        P(
+            attrs = Modifier
+                .margin(0.px)
+                .color(Color.rgb(0xADE7CB))
+                .styleModifier {
+                    property("max-width", "320px")
+                    property("font-size", "1.16rem")
+                    property("font-weight", "750")
+                    property("line-height", "1.32")
+                }
+                .attrsModifier { classes("reel-hero-slogan") }.toAttrs()
+        ) {
+            Text("Do you think like an expert?")
+        }
         Column(
             Modifier.attrsModifier { classes("eight-ball-reel-brand") },
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -130,19 +145,6 @@ internal fun EightBallReelIntro(onStart: () -> Unit, canStart: Boolean = true) {
             ) {
                 Text("8-Ball Buddy")
             }
-        }
-        P(
-            attrs = Modifier
-                .margin(0.px)
-                .styleModifier {
-                    property("max-width", "320px")
-                    property("font-size", "1.16rem")
-                    property("font-weight", "750")
-                    property("line-height", "1.32")
-                }
-                .toAttrs()
-        ) {
-            Text("Do you think like the expert?")
         }
         P(
             attrs = Modifier

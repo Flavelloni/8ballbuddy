@@ -269,6 +269,7 @@ internal fun EightBallChallengeResults(
                 SpanText("Answer time", Modifier.attrsModifier { classes("daily-muted") })
             }
         }
+        EightBallLeaderboard(leaderboard, playerUid, leaderboardBusy, leaderboardError, onRefresh, onLoadMore)
         H3 { Text("Your shots") }
         Table(attrs = { classes("daily-breakdown"); attr("aria-label", "Challenge answers") }) {
             Thead {
@@ -298,7 +299,6 @@ internal fun EightBallChallengeResults(
             Text("Keep browsing")
             FaArrowRight()
         }
-        EightBallLeaderboard(leaderboard, playerUid, leaderboardBusy, leaderboardError, onRefresh, onLoadMore)
     }
 }
 
