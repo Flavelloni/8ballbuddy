@@ -16,7 +16,6 @@ import com.varabyte.kobweb.compose.ui.attrsModifier
 import com.varabyte.kobweb.compose.ui.graphics.Color
 import com.varabyte.kobweb.compose.ui.modifiers.color
 import com.varabyte.kobweb.compose.ui.modifiers.backgroundColor
-import com.varabyte.kobweb.compose.ui.modifiers.border
 import com.varabyte.kobweb.compose.ui.modifiers.borderRadius
 import com.varabyte.kobweb.compose.ui.modifiers.flexGrow
 import com.varabyte.kobweb.compose.ui.modifiers.flexShrink
@@ -43,7 +42,6 @@ import com.varabyte.kobweb.silk.components.icons.fa.FaChevronRight
 import com.varabyte.kobweb.silk.components.text.SpanText
 import org.example.eighballpatterns.model.PlayerProfile
 import org.example.eighballpatterns.model.orderPlayerChoices
-import org.jetbrains.compose.web.css.LineStyle
 import org.jetbrains.compose.web.css.percent
 import org.jetbrains.compose.web.css.cssRem
 import org.jetbrains.compose.web.css.px
@@ -83,10 +81,12 @@ private fun PlayerChoiceCard(name: String, detail: String?, anyPlayer: Boolean =
     var imageFailed by remember(imageUrl) { mutableStateOf(false) }
     Button(onClick = { onClick() }, modifier = Modifier.fillMaxWidth().minHeight(78.px)
         .padding(15.px).borderRadius(18.px)
-        .backgroundColor(Color.rgb(if (anyPlayer) 0x142D23 else 0x101C17))
-        .border(1.px, LineStyle.Solid, Color.rgb(if(anyPlayer) 0x4E7960 else 0x233D2D))
         .color(Color.rgb(0xF5FAF7))
-        .attrsModifier { classes("player-choice-card"); attr("aria-label", if (anyPlayer) "Any player" else "Watch $name") }) {
+        .attrsModifier {
+            classes("player-choice-card")
+            if (anyPlayer) classes("player-choice-card-any")
+            attr("aria-label", if (anyPlayer) "Any player" else "Watch $name")
+        }) {
         Row(Modifier.fillMaxWidth().gap(14.px), verticalAlignment = Alignment.CenterVertically) {
             Box(Modifier.width(44.px).height(44.px).borderRadius(50.percent)
                 .flexShrink(0).overflow(Overflow.Hidden)

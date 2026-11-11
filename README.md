@@ -212,7 +212,7 @@ time after the layout image loads, and resets when entering another attempt.
 
 ## Player Photos
 
-Erik Gårdelöf and Emil André Gangfløt use locally stored CueScore portraits
+Erik Gårdelöf, Emil André Gangfløt, and Kim Soo Garmark use locally stored CueScore portraits
 (reuse permission confirmed by the site owner). Their profile links are recorded
 in `players.json`; the introduction keeps a CueScore credit link. Optional
 `country` and `countryFlagUrl` fields display a small accessible national flag
@@ -222,6 +222,16 @@ flags are served locally, not hotlinked. Original portrait downloads:
 - Erik: https://img.cuescore.com/image/e/4/e1266df8dfc9edb21a9816bb8c812135.png?t=1569668287
 - Emil: https://img.cuescore.com/image/9/4/963ffedb0da7bc8fa83237386abda13b.png?t=1771601925
 - Flags: CueScore `/img/flags/png-country-4x2-none/res-40x30/se.png` and `no.png`.
+
+Jayson Shaw and Albin Ouschan also use locally stored portraits (reuse permission
+confirmed by the site owner). Original downloads:
+
+- Jayson: https://worldnineballtour.com/wp-content/uploads/Jayson-Shaw-4.png
+- Albin: https://worldnineballtour.com/wp-content/uploads/albin-ouschan_profile.webp
+
+All five portraits are tracked under `site/src/jsMain/resources/public/images/players`.
+`imageUrl` selects the displayed local image; `imageSourceUrl` is only the photo
+credit link in More details and does not fetch the displayed portrait.
 
 `site/src/jsMain/resources/public/players.json` maps player names from shot
 metadata to `imageUrl`, `imageCredit`, `imageSourceUrl`, and `imagePosition`.
@@ -233,13 +243,14 @@ the featured player on the introduction. The rating is prominent; source/date
 are secondary. Missing photos do not prevent ratings displaying.
 Open-table introductions show all fourteen solids and stripes in two rows.
 
-The initial registry links to the players' World Nineball Tour profile images
-and includes source links. These are external references, not a grant of image
-reuse rights. Use photos approved for your public site. Unknown players and
-failed images fall back to a person icon without blocking the feed.
-No open reuse licence has been verified for the WNT photos. Their profile pages
-carry an "all rights reserved" notice; obtain appropriate permission or replace
-the photos with assets licensed for your intended website use before publishing.
+Unknown players and failed images fall back to a person icon without blocking
+the feed.
+
+Reel buttons share a brief visual press response and a 10 ms haptic pulse on
+browsers/devices that support vibration. Disabled buttons do not respond. Reduced
+motion keeps the brightness response but omits the press scaling and shared
+vibration. Player cards and mode choices share the same hover colors. Ball
+selection retains its existing dedicated haptic feedback.
 
 Layout containers use Kobweb Compose wrappers. Native HTML elements remain for
 headings, paragraphs, buttons, images, and video to preserve their semantics and

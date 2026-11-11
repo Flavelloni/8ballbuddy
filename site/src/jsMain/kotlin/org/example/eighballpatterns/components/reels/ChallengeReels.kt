@@ -63,12 +63,11 @@ internal fun EightBallModeChoice(
 
             Button(attrs = {
                 classes("daily-option", "daily-option-primary")
-                attr("aria-label", "Scroll")
                 onClick { onBrowse() }
             }) {
                 FaLayerGroup(Modifier.attrsModifier { classes("daily-option-icon") })
                 Column(Modifier.attrsModifier {classes("daily-option-label")}) {
-                    SpanText("Scroll")
+                    SpanText("Practice")
                 }
                 FaArrowRight()
             }
@@ -77,7 +76,6 @@ internal fun EightBallModeChoice(
 
             Button(attrs = {
                 classes("daily-option", "daily-option-primary")
-                attr("aria-label", "Daily challenge")
                 onClick { onDailyChallenge() }
             }) {
                 FaTrophy(Modifier.attrsModifier { classes("daily-option-icon") })
@@ -229,7 +227,6 @@ internal fun EightBallChallengeHeader(shotNumber: Int, total: Int, onLeave: () -
 internal fun EightBallChallengeNext(lastShot: Boolean, onNext: () -> Unit) {
     Button(attrs = {
         classes("daily-command")
-        attr("aria-label", if (lastShot) "See results" else "Next shot")
         onClick { onNext() }
     }) {
         Text(if (lastShot) "See results" else "Next shot")
@@ -297,7 +294,7 @@ internal fun EightBallChallengeResults(
                 }
             }
         }
-        Button(attrs = { classes("daily-command"); attr("aria-label", "Keep browsing"); onClick { onBrowse() } }) {
+        Button(attrs = { classes("daily-command"); onClick { onBrowse() } }) {
             Text("Keep browsing")
             FaArrowRight()
         }

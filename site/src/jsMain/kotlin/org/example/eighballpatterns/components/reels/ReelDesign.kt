@@ -39,7 +39,8 @@ internal val reelDesignStyles = """
     .eight-ball-app ::-webkit-scrollbar { width: 4px; }
     .eight-ball-app ::-webkit-scrollbar-thumb { background: #385442; border-radius: 8px; }
     .eight-ball-app ::-webkit-scrollbar-track { background: transparent; }
-    .eight-ball-app button { -webkit-tap-highlight-color: transparent; transition: background .16s, border-color .16s, box-shadow .16s; }
+    .eight-ball-app button { -webkit-tap-highlight-color: transparent; transition: background .16s, border-color .16s, box-shadow .16s, scale .1s, filter .1s; }
+    .eight-ball-app button:not(:disabled):not([aria-disabled=true]):is(:active, .reel-button-pressed) { scale: .97; filter: brightness(1.2); }
     .eight-ball-app button:focus-visible, .eight-ball-app a:focus-visible { outline: 2px solid #ade7cb; outline-offset: 4px; }
     .reel-canvas { background: radial-gradient(ellipse at 50% 0%, #16342766, transparent 58%), #080f0c; box-sizing: border-box; }
     .reel-scrollport { scrollbar-width: none; overflow-anchor: none; overscroll-behavior-y: contain; }
@@ -80,8 +81,12 @@ internal val reelDesignStyles = """
     .reel-install-instructions span { color: #adc6b7; }
     .reel-player-choice { box-sizing: border-box; padding: calc(90px + env(safe-area-inset-top)) 22px max(28px, env(safe-area-inset-bottom)); }
     .reel-player-choice h2 { margin: 0; font-size: 1.8rem; letter-spacing: -.045em; }
-    .player-choice-card.player-choice-card { box-shadow: 0 3px 16px #0000000b; }
-    .player-choice-card.player-choice-card:hover { background: #1a3024; border-color: #638c73; }
+    .player-choice-card.player-choice-card { background: #101c17; border: 1px solid #233d2d; box-shadow: 0 3px 16px #0000000b; }
+    .player-choice-card.player-choice-card-any { background: #142d23; border-color: #4e7960; }
+    @media (hover: hover) {
+      .player-choice-card.player-choice-card:hover:not(:disabled):not([aria-disabled=true]),
+      .daily-option:hover:not(:disabled) { background: #1b3027; border-color: #638c73; box-shadow: 0 8px 25px #0003; }
+    }
     .player-portrait { background: radial-gradient(ellipse, #28473566, transparent 70%); border-radius: 28px; }
     .reel-player-intro h2 { text-wrap: balance; letter-spacing: -.045em; }
     .player-more-details { padding: 14px; border: 1px solid #ffffff0e; background: #102017; border-radius: 16px; box-sizing: border-box; }
@@ -152,5 +157,9 @@ internal val reelDesignStyles = """
     @media(max-height: 650px) {
       .reel-player-intro:has([aria-expanded=true]) .player-portrait { display: none; }
     }
-    @media(prefers-reduced-motion: reduce) { .eight-ball-app button { transition: none; } .reel-swipe-hint { animation: none !important; } }
+    @media(prefers-reduced-motion: reduce) {
+      .eight-ball-app button { transition: none; }
+      .eight-ball-app button:not(:disabled):not([aria-disabled=true]):is(:active, .reel-button-pressed) { scale: none; }
+      .reel-swipe-hint { animation: none !important; }
+    }
 """.trimIndent()

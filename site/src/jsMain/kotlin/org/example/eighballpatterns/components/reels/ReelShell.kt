@@ -32,6 +32,7 @@ import com.varabyte.kobweb.silk.components.icons.fa.FaChevronDown
 import com.varabyte.kobweb.silk.components.forms.Button as SilkButton
 import kotlinx.browser.document
 import kotlinx.browser.window
+import org.example.eighballpatterns.browser.installButtonFeedback
 import org.jetbrains.compose.web.css.Position
 import org.jetbrains.compose.web.css.percent
 import org.jetbrains.compose.web.css.px
@@ -211,6 +212,10 @@ internal fun EightBallReelsShell(
             }
             .attrsModifier {
                 classes("eight-ball-app")
+                ref { root ->
+                    val disposeFeedback = installButtonFeedback(root)
+                    onDispose { disposeFeedback() }
+                }
             }
     ) {
         Box(
