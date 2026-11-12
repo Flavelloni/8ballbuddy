@@ -127,7 +127,7 @@ internal fun ReelScrollPages(
         property("display", "block")
         property("overflow-y", if (locked) "hidden" else "auto")
         property("scroll-snap-type", "y mandatory")
-        property("touch-action", "pan-y pinch-zoom")
+        property("touch-action", "pan-y")
     }.attrsModifier {
         classes("reel-scrollport")
         attr("aria-label", "Reel pages")

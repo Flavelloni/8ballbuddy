@@ -15,8 +15,6 @@ import com.varabyte.kobweb.compose.ui.modifiers.width
 import com.varabyte.kobweb.compose.ui.modifiers.zIndex
 import com.varabyte.kobweb.compose.ui.styleModifier
 import com.varabyte.kobweb.compose.ui.toAttrs
-import com.varabyte.kobweb.navigation.BasePath
-import com.varabyte.kobweb.silk.components.icons.fa.FaCompress
 import com.varabyte.kobweb.silk.components.icons.fa.FaWhatsapp
 import com.varabyte.kobweb.silk.components.icons.fa.FaEnvelope
 import com.varabyte.kobweb.silk.components.icons.fa.FaLink
@@ -30,7 +28,6 @@ import org.example.eighballpatterns.browser.eightBallReelsShareUrl
 import org.example.eighballpatterns.browser.openEightBallEmailShare
 import org.example.eighballpatterns.browser.openEightBallWhatsAppShare
 import org.example.eighballpatterns.model.EightBallShot
-import org.example.eighballpatterns.model.ImagePoint
 import org.example.eighballpatterns.model.eightBallReelTitle
 import org.jetbrains.compose.web.css.FlexWrap
 import org.jetbrains.compose.web.css.Position
@@ -38,7 +35,6 @@ import org.jetbrains.compose.web.css.cssRem
 import org.jetbrains.compose.web.css.percent
 import org.jetbrains.compose.web.css.px
 import org.jetbrains.compose.web.dom.Button
-import org.jetbrains.compose.web.dom.Img
 import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.dom.Text
 
@@ -148,90 +144,5 @@ private fun EightBallShareButton(label: String, onClick: () -> Unit) {
             else -> FaLink()
         }
         Text(label)
-    }
-}
-
-@Composable
-internal fun EightBallFullscreenImage(
-    shot: EightBallShot?,
-    onClose: () -> Unit,
-    pointSelection: ImagePoint? = null,
-    onPointSelected: ((ImagePoint) -> Unit)? = null,
-    onPointConfirmed: (() -> Unit)? = null,
-    inputEnabled: Boolean = true,
-    requestBusy: Boolean = false,
-    requestError: String? = null,
-    onRetry: () -> Unit = {},
-) {
-    if (shot == null) return
-
-    Row(
-        modifier = Modifier
-            .position(Position.Fixed)
-            .styleModifier {
-                property("inset", "0")
-                property("width", "100vw")
-                property("height", "100vh")
-                property("background", "#000")
-                property("z-index", "10000")
-                property("display", "flex")
-                property("align-items", "center")
-                property("justify-content", "center")
-                property("overflow", "hidden")
-            }.attrsModifier {classes("reel-fullscreen")}
-    ) {
-        val imageTarget=shot.meta.ballSelection?.imageTarget ?: shot.meta.target
-        if (!shot.meta.isBreak && imageTarget != null && onPointSelected != null && onPointConfirmed != null) {
-            Column(Modifier.width(100.percent).styleModifier { property("height", "100dvh"); property("padding-top", "70px"); property("box-sizing", "border-box") }) {
-                Row(Modifier.fillMaxWidth().styleModifier { property("flex", "1"); property("min-height", "0") }) {
-                    CoordinateLayout(shot.entry.imagePath, imageTarget, pointSelection, inputEnabled, onPointSelected, {}, shot.meta.ballSelection)
-                }
-                if(requestBusy || requestError!=null) EightBallChallengeRequestStatus(requestBusy,requestError,onRetry,"Saving guess…")
-                CoordinateConfirm(pointSelection, inputEnabled, ballMode=shot.meta.ballSelection!=null) { onPointConfirmed() }
-            }
-        } else Img(
-            src = BasePath.prependTo(shot.entry.imagePath),
-            attrs = Modifier
-                .styleModifier {
-                    property("width", "100vw")
-                    property("height", "100dvh")
-                    property("object-fit", "contain")
-                    property("user-select", "none")
-                    property("-webkit-user-select", "none")
-                    property("-webkit-user-drag", "none")
-                }
-                .toAttrs {
-                    attr("alt", "8-ball layout")
-                    attr("draggable", "false")
-                }
-        )
-
-        Button(
-            attrs = Modifier
-                .position(Position.Absolute)
-                .styleModifier {
-                    property("right", "18px")
-                    property("top", "18px")
-                    property("width", "48px")
-                    property("height", "48px")
-                    property("padding", "0")
-                    property("border", "none")
-                    property("border-radius", "50%")
-                    property("background", "rgba(0,0,0,0.65)")
-                    property("color", "white")
-                    property("font-size", "28px")
-                    property("cursor", "pointer")
-                    property("display", "flex")
-                    property("align-items", "center")
-                    property("justify-content", "center")
-                }
-                .toAttrs {
-                    attr("aria-label", "Close fullscreen image")
-                    title("Close fullscreen image")
-                    onClick { onClose() }
-                }
-        ) {
-            FaCompress()
-        }
     }
 }

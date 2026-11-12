@@ -2,6 +2,7 @@ package org.example.eighballpatterns.components.reels
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateOf
@@ -13,34 +14,29 @@ import com.varabyte.kobweb.compose.ui.Modifier
 import com.varabyte.kobweb.compose.ui.attrsModifier
 import com.varabyte.kobweb.compose.ui.styleModifier
 import com.varabyte.kobweb.compose.ui.modifiers.*
-import com.varabyte.kobweb.navigation.BasePath
 import com.varabyte.kobweb.silk.components.forms.Button
-import com.varabyte.kobweb.silk.components.graphics.Image
 import com.varabyte.kobweb.silk.components.text.SpanText
 import com.varabyte.kobweb.silk.components.icons.fa.FaPlay
 import org.example.eighballpatterns.model.BallTarget
 import org.example.eighballpatterns.model.ImagePoint
-import org.example.eighballpatterns.model.LayoutTapGesture
 import org.example.eighballpatterns.model.BallSelection
 import org.example.eighballpatterns.model.LayoutBall
 import kotlinx.browser.window
 import org.jetbrains.compose.web.css.Position
 import org.jetbrains.compose.web.css.px
 import org.jetbrains.compose.web.css.percent
-import org.w3c.dom.Element
-import org.w3c.dom.HTMLImageElement
-import kotlin.math.min
 
 @Composable
 internal fun CoordinateLayout(imagePath: String, target: BallTarget, selection: ImagePoint?, enabled: Boolean,
     onSelected: (ImagePoint) -> Unit, onReady: () -> Unit, ballSelection: BallSelection? = null) {
-    val gesture = remember(imagePath) { LayoutTapGesture() }
+    val currentEnabled by rememberUpdatedState(enabled)
+    val currentSelected by rememberUpdatedState(onSelected)
     val aspect=target.imageWidth.toDouble()/target.imageHeight
     var pickHint by remember(imagePath) { mutableStateOf<String?>(null) }
     var pulse by remember(imagePath) { mutableStateOf(0) }
     fun selectBall(ball: LayoutBall) {
-        if (!enabled) return
-        onSelected(ImagePoint(ball.x,ball.y))
+        if (!currentEnabled) return
+        currentSelected(ImagePoint(ball.x,ball.y))
         pulse++
         pickHint=null
         // Optional progressive enhancement; unsupported browsers still get the selection outline.
@@ -49,56 +45,15 @@ internal fun CoordinateLayout(imagePath: String, target: BallTarget, selection: 
             if (js("typeof navigator.vibrate === 'function'") as Boolean) navigator.vibrate(12)
         } catch (_: Throwable) { }
     }
-    // The inner wrapper is precisely the rendered photograph. Its percentage hit areas and
-    // selection outlines resize with CSS, without an asynchronous measurement/render race.
-    Box(Modifier.fillMaxSize().minHeight(0.px).minWidth(0.px).styleModifier {
-        property("container-type","size")
-    },contentAlignment=Alignment.Center) {
-        Box(Modifier.position(Position.Relative).styleModifier {
-            property("width","min(100cqw, ${aspect*100}cqh)")
-            property("height","min(100cqh, ${100/aspect}cqw)")
-            property("touch-action", "auto")
-            property("cursor", if (enabled && ballSelection!=null) "pointer" else if (enabled) "crosshair" else "default")
-        }.attrsModifier {
-            attr("data-coordinate-layout", "true")
-            attr("aria-label", "Tap the ball you predict will be potted")
-            addEventListener("pointerdown") { e ->
-                val p = e.nativeEvent.asDynamic()
-                if ((p.button as Int) == 0) gesture.down(p.pointerId as Int, p.clientX as Double, p.clientY as Double)
-            }
-            addEventListener("pointermove") { e -> val p=e.nativeEvent.asDynamic(); gesture.move(p.clientX as Double, p.clientY as Double) }
-            addEventListener("pointercancel") { gesture.cancel() }
-            addEventListener("pointerleave") { gesture.cancel() }
-            addEventListener("pointerup") { e ->
-                val p=e.nativeEvent.asDynamic()
-                if (gesture.up(p.pointerId as Int, p.clientX as Double, p.clientY as Double) && enabled) {
-                    val rect = (p.currentTarget as Element).getBoundingClientRect()
-                    val s=min(rect.width/target.imageWidth,rect.height/target.imageHeight)
-                    val w=target.imageWidth*s; val h=target.imageHeight*s
-                    val point = ImagePoint(((p.clientX as Double)-rect.left-(rect.width-w)/2)/w,
-                        ((p.clientY as Double)-rect.top-(rect.height-h)/2)/h)
-                    if (point.x in 0.0..1.0 && point.y in 0.0..1.0) {
-                        if (ballSelection!=null) {
-                            val ball=ballSelection.ballAt(point,14/w)
-                            if (ball!=null) selectBall(ball)
-                            else pickHint="Tap nearer a ball’s centre."
-                        } else onSelected(point)
-                    }
-                }
-            }
-        }) {
-            Image(src=BasePath.prependTo(imagePath), alt="Pool layout: tap to choose a ball",
-                modifier=Modifier.fillMaxSize().position(Position.Absolute).styleModifier {
-                    property("inset","0"); property("object-fit","contain")
-                }.attrsModifier {
-                    attr("draggable", "false")
-                    addEventListener("load") { onReady() }
-                    ref { image ->
-                        val img=image as? HTMLImageElement
-                        if (img != null && img.complete && img.naturalWidth > 0) onReady()
-                        onDispose {}
-                    }
-                })
+    ZoomableLayout(imagePath, aspect, onReady, onTap = { point, width ->
+        if (currentEnabled) {
+            if (ballSelection != null) {
+                val ball = ballSelection.ballAt(point, 14 / width)
+                if (ball != null) selectBall(ball) else pickHint = "Tap nearer a ball’s centre."
+            } else currentSelected(point)
+        }
+    }) {
+        Box(Modifier.fillMaxSize().attrsModifier { attr("data-coordinate-layout", "true") }) {
             // Real keyboard-accessible buttons; pointer picks use shared hit testing so overlapping
             // enlarged targets never depend on DOM stacking order.
             ballSelection?.balls?.forEachIndexed { index, ball ->

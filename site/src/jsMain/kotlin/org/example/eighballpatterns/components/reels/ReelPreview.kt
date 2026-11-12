@@ -21,7 +21,7 @@ internal fun ReelPreview(position: ReelPosition, shot: EightBallShot?, player: P
         ReelStage.Shot -> if (shot != null) {
             val clock = remember { AnswerClock({0.0}) }
             EightBallReelLayoutOverlay(shot=shot, player=player,
-                onImageFullscreen={}, onBallSelected={},
+                onBallSelected={},
                 answerClock=if(challenge) clock else null, inputEnabled=false, clockRunning=false,
                 onLayoutReady={}, requestError=null, requestBusy=false, onRetry={},
                 onPointSelected={}, onPointConfirmed={})

@@ -205,7 +205,7 @@ internal fun EightBallReelsShell(
         modifier = Modifier
             .position(Position.Relative)
             .width(100.percent)
-            .touchAction(TouchAction.of(TouchAction.PanY, pinchZoom = true))
+            .touchAction(TouchAction.PanY)
             .styleModifier {
                 property("height", "100dvh")
                 property("min-height", "100dvh")

@@ -24,7 +24,7 @@ The experiment is disabled and its mode-selection link is commented out. The
 code is retained for later: enable `ENABLE_YOUTUBE_EXPERIMENT` and uncomment the
 link in `ChallengeReels.kt` to resume at `/youtube-test`.
 The isolated experiment reuses Rob Hall's player introduction,
-layout image, fullscreen image viewer and ball picker for `AMDgls4nJhQ/052056`.
+layout image, image zoom and ball picker for `AMDgls4nJhQ/052056`.
 Choosing a ball automatically reveals a muted YouTube player for broadcast
 seconds **19300.4–19308.5**, equivalent to the existing MP4's 8.1-second clip.
 The iframe uses supported `controls=0` and `disablekb=1` settings. At the end of
@@ -88,12 +88,23 @@ sound before the reveal; the speaker button mutes sounds. Reduced-motion
 preferences disable pulse/pop animations. Daily ball IDs are scored by the
 server, including frozen rounds created before annotations. Deploy the updated
 functions/catalog before releasing the frontend. Older numbered clients remain
-supported. Zoom and fullscreen keep the hit areas aligned. Ambiguous overlapping
+supported. Image zoom and panning keep the hit areas aligned. Ambiguous overlapping
 targets require a clearer tap. Unannotated shots keep numbered buttons; breaks
 keep 0–4 counts. The local editor's
 `annotationBalls` preview link tests a draft immediately on the modified local
 website without rebuilding; saved catalog changes need a resource rebuild.
 The current 59 non-break shots are reviewed; the five break shots remain counts.
+
+Double-tap or double-click a layout to enlarge just the image in its existing
+frame. The enlarged image fills the available height (at least 1.5 times the
+fitted size), cropping the sides on phones. Drag with one finger or the left mouse
+button to inspect hidden areas; another double-tap/click restores the full image.
+Panning stops at the image edges. Zoom gestures and drags do not select balls;
+single taps select after a brief delay to distinguish them from double taps.
+The hint below the image explains the gesture. Keyboard users can focus the
+image, press Enter/Space to toggle zoom, use arrow keys to pan, and Escape to
+zoom out. Page pinch zoom is disabled inside the reels; normal vertical swiping
+still works outside the enlarged image. Zoom resets when changing shots.
 
 ### Installation and navigation
 
@@ -160,7 +171,8 @@ The first group opens directly with the player, and daily shots do not show rack
 discreetly as **Match · 2023** beneath the player's name. Omit it if unknown;
 a shot's own `matchYear` can override the match default.
 Within a group, a completed reveal automatically opens the next layout. At the end of
-a group, swipe to the next group's introduction. Manual forward/back navigation
+a group, it automatically scrolls to **New rack**; swipe from there to the next
+group's introduction. Manual forward/back navigation
 also skips introductions inside runs. Daily shots remain independent and retain
 their individual introductions and explicit Next shot / See results controls.
 

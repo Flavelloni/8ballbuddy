@@ -26,7 +26,6 @@ import com.varabyte.kobweb.compose.ui.toAttrs
 import com.varabyte.kobweb.core.Page
 import com.varabyte.kobweb.navigation.BasePath
 import com.varabyte.kobweb.silk.components.text.SpanText
-import org.example.eighballpatterns.components.reels.EightBallFullscreenImage
 import org.example.eighballpatterns.components.reels.EightBallPlayerIntro
 import org.example.eighballpatterns.components.reels.EightBallReelLayoutOverlay
 import org.example.eighballpatterns.components.reels.EightBallReelMessage
@@ -56,7 +55,6 @@ fun YouTubeTestPage() {
     var error by remember { mutableStateOf<String?>(null) }
     var stage by remember { mutableStateOf(0) } // Player intro -> layout -> reveal.
     var selectedBall by remember { mutableStateOf<Int?>(null) }
-    var fullscreen by remember { mutableStateOf(false) }
     val pager = remember { ReelPager() }
     LaunchedEffect(Unit) {
         ensureEightBallReelsStyles()
@@ -70,10 +68,10 @@ fun YouTubeTestPage() {
     }
     fun showLayout() { selectedBall = null; stage = 1 }
     fun next() {
-        if (!fullscreen) when (stage) { 0 -> stage = 1; 2 -> showLayout() }
+        when (stage) { 0 -> stage = 1; 2 -> showLayout() }
     }
     fun previous() {
-        if (!fullscreen) { selectedBall = null; stage = if (stage == 2) 1 else 0 }
+        selectedBall = null; stage = if (stage == 2) 1 else 0
     }
     EightBallReelsShell(
         onNext = { next() }, onPrevious = { previous() },
@@ -104,7 +102,7 @@ fun YouTubeTestPage() {
                         }
                     }
                     stage == 1 -> EightBallReelLayoutOverlay(
-                        current, onImageFullscreen = { fullscreen = true },
+                        current,
                         onBallSelected = { ball -> if (selectedBall == null) { selectedBall = ball; stage = 2 } },
                         answerClock = null, inputEnabled = true, clockRunning = false,
                         onLayoutReady = {}, requestError = null, requestBusy = false, onRetry = {},
@@ -115,6 +113,5 @@ fun YouTubeTestPage() {
                 }
             }
         }
-        if (fullscreen) EightBallFullscreenImage(shot, onClose = { fullscreen = false })
     }
 }

@@ -32,7 +32,6 @@ import com.varabyte.kobweb.compose.ui.modifiers.width
 import com.varabyte.kobweb.compose.ui.styleModifier
 import com.varabyte.kobweb.compose.ui.toAttrs
 import com.varabyte.kobweb.navigation.BasePath
-import com.varabyte.kobweb.silk.components.icons.fa.FaExpand
 import com.varabyte.kobweb.silk.components.layout.SimpleGrid
 import com.varabyte.kobweb.silk.components.layout.numColumns
 import com.varabyte.kobweb.silk.components.text.SpanText
@@ -43,7 +42,6 @@ import org.example.eighballpatterns.model.EightBallShot
 import org.example.eighballpatterns.model.ImagePoint
 import org.example.eighballpatterns.model.PlayerProfile
 import com.varabyte.kobweb.silk.components.graphics.Image
-import com.varabyte.kobweb.silk.components.forms.Button as SilkButton
 import com.varabyte.kobweb.silk.components.icons.fa.FaUser
 import org.example.eighballpatterns.model.ballLabel
 import org.example.eighballpatterns.model.eightBallReelPickerBalls
@@ -54,7 +52,6 @@ import org.jetbrains.compose.web.css.cssRem
 import org.jetbrains.compose.web.css.percent
 import org.jetbrains.compose.web.css.px
 import org.jetbrains.compose.web.dom.Button
-import org.jetbrains.compose.web.dom.Img
 import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.dom.Span
 import org.jetbrains.compose.web.dom.Text
@@ -70,7 +67,6 @@ internal fun EightBallReelShot(
     videoPaused: Boolean,
     stats: EightBallReelStats,
     liked: Boolean,
-    onImageFullscreen: () -> Unit,
     onLike: () -> Unit,
     onShare: () -> Unit,
     onBallSelected: (Int) -> Unit,
@@ -130,7 +126,6 @@ internal fun EightBallReelShot(
             EightBallReelLayoutOverlay(
                 shot = shot,
                 player = player,
-                onImageFullscreen = onImageFullscreen,
                 onBallSelected = onBallSelected,
                 answerClock = answerClock,
                 inputEnabled = inputEnabled,
@@ -158,7 +153,6 @@ internal fun EightBallReelShot(
 internal fun EightBallReelLayoutOverlay(
     shot: EightBallShot,
     player: PlayerProfile? = null,
-    onImageFullscreen: () -> Unit,
     onBallSelected: (Int) -> Unit,
     answerClock: AnswerClock?,
     inputEnabled: Boolean,
@@ -245,30 +239,7 @@ internal fun EightBallReelLayoutOverlay(
                         if (clockRunning) "Saving guess…" else "Starting shot clock…")
                 }
             }
-            SilkButton(onClick={onImageFullscreen()},modifier=Modifier
-                    .styleModifier {
-                        property("width", "32px")
-                        property("height", "32px")
-                        property("min-width", "32px")
-                        property("padding", "0")
-                        property("border", "1px solid rgba(255,255,255,.1)")
-                        property("border-radius", "999px")
-                        property("background", "#13241a")
-                        property("color", "white")
-                        property("font-size", "20px")
-                        property("cursor", "pointer")
-                        property("display", "flex")
-                        property("align-items", "center")
-                        property("justify-content", "center")
-                        property("backdrop-filter", "blur(8px)")
-                    }
-                    .attrsModifier {
-                        attr("aria-label", "View image fullscreen")
-                        attr("title", "View image fullscreen")
-                    }
-            ) {
-                FaExpand()
-            }
+            Box { }
         }
 
         Row(
@@ -299,27 +270,7 @@ internal fun EightBallReelLayoutOverlay(
                 if (coordinatePicking) {
                     CoordinateLayout(shot.entry.imagePath, imageTarget!!, pointSelection,
                         inputEnabled, { onPointSelected?.invoke(it) }, { layoutReady = true }, shot.meta.ballSelection)
-                } else Img(
-                    src = BasePath.prependTo(shot.entry.imagePath),
-                    attrs = Modifier
-                        .styleModifier {
-                            property("width", "100%")
-                            property("height", "100%")
-                            property("object-fit", "contain")
-                            property("user-select", "none")
-                            property("-webkit-user-select", "none")
-                            property("-webkit-user-drag", "none")
-                        }
-                        .toAttrs {
-                            attr("alt", "Initial 8-ball layout")
-                            attr("draggable", "false")
-                            addEventListener("load") { layoutReady = true }
-                            ref { image ->
-                                if (image.complete && image.naturalWidth > 0) layoutReady = true
-                                onDispose {}
-                            }
-                        }
-                )
+                } else ZoomableLayout(shot.entry.imagePath, onReady = { layoutReady = true })
             }
         }
 

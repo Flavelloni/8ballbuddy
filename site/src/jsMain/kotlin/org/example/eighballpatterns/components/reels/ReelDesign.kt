@@ -94,7 +94,9 @@ internal val reelDesignStyles = """
     .shot-heading { text-align: center; }
     .shot-heading p { text-wrap: balance; }
     .coordinate-confirm { box-sizing: border-box; }
-    .reel-fullscreen .coordinate-confirm { padding-bottom: max(16px, env(safe-area-inset-bottom)); }
+    .layout-zoom-hint { box-sizing: border-box; color: #95aea1; font-size: .68rem; line-height: 1.4; text-align: center; flex-shrink: 0; }
+    .layout-image-viewer:focus-visible { outline: none; }
+    .layout-image-viewer:focus-visible .layout-image-viewport { outline: 2px solid #ade7cb; outline-offset: -2px; }
     .coordinate-confirm > span { color: #9eb6a7; font-size: .76rem; text-align: center; line-height: 1.5; max-width: 300px; }
     .reel-utility-bar { position: absolute; bottom: 0; left: 16px; right: 16px; min-height: calc(50px + env(safe-area-inset-bottom));
       box-sizing: border-box; padding-bottom: env(safe-area-inset-bottom); display: flex; align-items: center; justify-content: space-between;
