@@ -90,7 +90,6 @@ fun ShotPredictionPage() {
     var videoPaused by remember { mutableStateOf(false) }
     var videoElement by remember { mutableStateOf<HTMLVideoElement?>(null) }
     val pager = remember { ReelPager() }
-    var isAdvancing by remember { mutableStateOf(false) }
     var likedShotIds by remember { mutableStateOf(emptySet<String>()) }
     var shareShot by remember { mutableStateOf<EightBallShot?>(null) }
     var shareCopied by remember { mutableStateOf(false) }
@@ -211,24 +210,24 @@ fun ShotPredictionPage() {
         } else if (delta > 0) position.next(shotCount, startsGroup((position.shotIndex + 1) % shotCount),
             announceRack = !challengeMode)
         else position.previous(startsGroup(position.shotIndex),
-            announceRack = !challengeMode && (position.shotIndex != 0 || advancedBrowseGroup), shotCount = shotCount)
+            wrapBrowse = !challengeMode && advancedBrowseGroup, shotCount = shotCount)
     }
 
-    fun moveReel(delta: Int, animate: Boolean = true) {
+    fun moveReel(delta: Int, animate: Boolean = true, automatic: Boolean = false) {
         val shotCount = reelShots?.size ?: return
-        if (shotCount == 0 || isAdvancing || shareShot != null || resultFlash != null) return
+        if (shotCount == 0 || shareShot != null || resultFlash != null) return
         if (position.stage in listOf(ReelStage.ModeChoice, ReelStage.PlayerChoice, ReelStage.ChallengeEntry, ReelStage.ChallengeResults)) return
         if (challengeMode && (daily.busy || delta < 0 || (position.stage == ReelStage.Shot && selectedBall == null))) return
-        isAdvancing = true
-        val target = destination(delta)
-        val commit = {
-            if (!challengeMode && delta > 0 && position.stage == ReelStage.Shot &&
-                startsGroup((position.shotIndex + 1) % shotCount)) advancedBrowseGroup = true
-            resetPrediction()
-            position = target
-            isAdvancing = false
+        if (animate) {
+            pager.navigate(delta, automatically = automatic)
+            return
         }
-        if (animate) pager.navigate(delta, commit) else commit()
+        val target = destination(delta)
+        if (target == position) return
+        if (!challengeMode && delta > 0 && position.stage == ReelStage.Shot &&
+            startsGroup((position.shotIndex + 1) % shotCount)) advancedBrowseGroup = true
+        resetPrediction()
+        position = target
     }
 
     fun browse(player: String?) {
@@ -238,7 +237,6 @@ fun ShotPredictionPage() {
         selectedPlayer = player
         advancedBrowseGroup = false
         position = ReelPosition(ReelStage.Player)
-        isAdvancing = false
     }
 
     fun startChallenge(alias: String) {
@@ -252,7 +250,6 @@ fun ShotPredictionPage() {
                 resetPrediction()
                 challengeMode = true
                 position = ReelPosition(if (active.complete) ReelStage.ChallengeResults else ReelStage.Player, active.answers.size)
-                isAdvancing = false
             }
         }
     }
@@ -261,12 +258,10 @@ fun ShotPredictionPage() {
         resetPrediction()
         challengeMode = false
         position = ReelPosition(ReelStage.ModeChoice)
-        isAdvancing = false
     }
 
     fun nextChallengeShot() {
         if (position.stage != ReelStage.Shot || selectedBall == null || daily.busy) return
-        isAdvancing = false
         moveReel(1)
     }
 
@@ -388,15 +383,14 @@ fun ShotPredictionPage() {
                 resetPrediction()
                 challengeMode=false
                 position=ReelPosition()
-                isAdvancing=false
             }
         }),
         homeEnabled = !daily.busy && resultFlash==null && shareShot==null,
         showSound = position.stage==ReelStage.Shot,
         onNext = { moveReel(1) },
         onPrevious = { moveReel(-1) },
-        canNext = canScrollNext && !isAdvancing,
-        canPrevious = canScrollPrevious && !isAdvancing,
+        canNext = canScrollNext,
+        canPrevious = canScrollPrevious,
     ) {
         key(challengeMode, position.stage, if(position.stage in listOf(ReelStage.Player,ReelStage.Shot,ReelStage.NewRack)) currentShot?.entry?.id else null) {
             when {
@@ -494,7 +488,7 @@ fun ShotPredictionPage() {
                             videoEnded = true
                             videoPaused = false
                             if (!challengeMode && selectedBall != null) {
-                                moveReel(1)
+                                moveReel(1, automatic = true)
                             }
                         },
                         onVideoPlay = {

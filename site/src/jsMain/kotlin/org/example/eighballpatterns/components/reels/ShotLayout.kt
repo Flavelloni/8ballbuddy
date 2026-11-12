@@ -167,7 +167,7 @@ internal fun EightBallReelLayoutOverlay(
 ) {
     val imageTarget=shot.meta.ballSelection?.imageTarget ?: shot.meta.target
     val coordinatePicking = !shot.meta.isBreak && imageTarget != null && onPointSelected != null && onPointConfirmed != null
-    var layoutReady by remember(shot.entry.id) { mutableStateOf(false) }
+    var layoutReady by remember(shot.entry.id) { mutableStateOf(isLayoutImageLoaded(shot.entry.imagePath)) }
     LaunchedEffect(layoutReady) {
         if (layoutReady) onLayoutReady()
     }

@@ -50,12 +50,14 @@ import org.jetbrains.compose.web.dom.Img
 import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.dom.Text
 
+private val loadedPlayerPortraits = mutableSetOf<String>()
+
 @Composable
 internal fun EightBallPlayerIntro(shot: EightBallShot, player: PlayerProfile?, challenge: Boolean = false) {
     val imageUrl = player?.imageUrl?.takeIf { it.isNotBlank() }?.let { url ->
         if (url.startsWith("https://") || url.startsWith("http://")) url else BasePath.prependTo(url)
     }
-    var imageReady by remember(imageUrl) { mutableStateOf(false) }
+    var imageReady by remember(imageUrl) { mutableStateOf(imageUrl != null && imageUrl in loadedPlayerPortraits) }
     var imageFailed by remember(imageUrl) { mutableStateOf(false) }
     var detailsOpen by remember(shot.entry.id) { mutableStateOf(false) }
     val balls = if (shot.meta.isBreak) emptyList() else when (shot.meta.group) {
@@ -119,7 +121,17 @@ internal fun EightBallPlayerIntro(shot: EightBallShot, player: PlayerProfile?, c
                                 .toAttrs {
                                     attr("draggable", "false")
                                     attr("referrerpolicy", "no-referrer")
-                                    addEventListener("load") { imageReady = true }
+                                    addEventListener("load") {
+                                        loadedPlayerPortraits.add(imageUrl)
+                                        imageReady = true
+                                    }
+                                    ref { image ->
+                                        if (image.complete && image.naturalWidth > 0) {
+                                            loadedPlayerPortraits.add(imageUrl)
+                                            imageReady = true
+                                        }
+                                        onDispose {}
+                                    }
                                     addEventListener("error") { imageFailed = true }
                                 },
                         )

@@ -43,7 +43,7 @@ internal val reelDesignStyles = """
     .eight-ball-app button:not(:disabled):not([aria-disabled=true]):is(:active, .reel-button-pressed) { scale: .97; filter: brightness(1.2); }
     .eight-ball-app button:focus-visible, .eight-ball-app a:focus-visible { outline: 2px solid #ade7cb; outline-offset: 4px; }
     .reel-canvas { background: radial-gradient(ellipse at 50% 0%, #16342766, transparent 58%), #080f0c; box-sizing: border-box; }
-    .reel-scrollport { scrollbar-width: none; overflow-anchor: none; overscroll-behavior-y: contain; }
+    .reel-scrollport { scrollbar-width: none; overflow-anchor: none; overscroll-behavior-y: contain; scroll-snap-type: y mandatory; }
     .reel-scrollport::-webkit-scrollbar { display: none; }
     .reel-page { position: relative; height: 100%; min-height: 100%; scroll-snap-align: start; scroll-snap-stop: always; overflow: hidden; }
     .reel-page-preview { pointer-events: none; }

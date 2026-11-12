@@ -22,6 +22,8 @@ import org.w3c.dom.HTMLImageElement
 import kotlin.math.hypot
 
 private data class PendingLayoutTap(val time: Double, val client: ImagePoint)
+private val loadedLayoutAspects = mutableMapOf<String, Double>()
+internal fun isLayoutImageLoaded(path: String): Boolean = path in loadedLayoutAspects
 
 @Composable
 internal fun ZoomableLayout(
@@ -34,7 +36,7 @@ internal fun ZoomableLayout(
     var zoomed by remember(imagePath) { mutableStateOf(false) }
     var dragging by remember(imagePath) { mutableStateOf(false) }
     var viewport by remember(imagePath) { mutableStateOf(ImagePoint(0.0, 0.0)) }
-    var aspect by remember(imagePath) { mutableStateOf(imageAspect ?: 1.0) }
+    var aspect by remember(imagePath) { mutableStateOf(imageAspect ?: loadedLayoutAspects[imagePath] ?: 1.0) }
     var pan by remember(imagePath) { mutableStateOf(ImagePoint(0.0, 0.0)) }
     val geometry = layoutImageGeometry(viewport.x, viewport.y, aspect, zoomed)
     val visiblePan = geometry.clampPan(pan)
@@ -83,6 +85,7 @@ internal fun ZoomableLayout(
     }) {
         Box(Modifier.fillMaxWidth().weight(1).minHeight(0.px).position(Position.Relative).styleModifier {
             property("overflow", "hidden")
+            property("container-type", "size")
             property("touch-action", if (zoomed) "none" else "pan-y")
             property("user-select", "none")
             property("-webkit-user-select", "none")
@@ -185,19 +188,23 @@ internal fun ZoomableLayout(
             Box(Modifier.position(Position.Absolute).styleModifier {
                 property("left", "50%")
                 property("top", "50%")
-                property("width", "${geometry.width}px")
-                property("height", "${geometry.height}px")
+                // The container has a size before ResizeObserver's first callback. Render the
+                // cached photograph immediately instead of flashing a zero-size image per reel.
+                property("width", if (viewport.x > 0) "${geometry.width}px" else "min(100cqw, ${aspect * 100}cqh)")
+                property("height", if (viewport.y > 0) "${geometry.height}px" else "min(100cqh, ${100 / aspect}cqw)")
                 property("transform", "translate(calc(-50% + ${visiblePan.x}px), calc(-50% + ${visiblePan.y}px))")
             }.attrsModifier { attr("data-layout-image", "true") }) {
                 Image(src = BasePath.prependTo(imagePath), alt = "8-ball layout",
                     modifier = Modifier.fillMaxSize().position(Position.Absolute).styleModifier {
                         property("inset", "0")
                         property("pointer-events", "none")
+                        property("object-fit", "contain")
                     }.attrsModifier {
                         attr("draggable", "false")
                         fun loaded(image: HTMLImageElement) {
                             if (image.naturalWidth > 0 && image.naturalHeight > 0) {
                                 aspect = image.naturalWidth.toDouble() / image.naturalHeight
+                                loadedLayoutAspects[imagePath] = aspect
                                 currentReady()
                             }
                         }

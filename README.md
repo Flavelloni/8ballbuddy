@@ -176,6 +176,15 @@ group's introduction. Manual forward/back navigation
 also skips introductions inside runs. Daily shots remain independent and retain
 their individual introductions and explicit Next shot / See results controls.
 
+Backward navigation skips **New rack** notices and returns from a group's player
+introduction directly to the preceding shot. Manual input takes priority over
+automatic advancement, including when scrolling backward as a reveal finishes.
+The three physical page slots stay fixed; recycling their content happens with
+scroll snapping briefly suspended so recentering cannot trigger another page
+change. Cached layouts and portraits remain visible when previews become active.
+Mouse-wheel notches advance a full page even when OS settings produce a small
+pixel delta; high-resolution wheel gestures retain native scrolling and snapping.
+
 `"ballInHand": true` in a shot's `meta.json` displays **Ball in hand** on both
 the player introduction and unanswered layout. Missing/false preserves the
 ordinary display. The cue ball is not draggable and the answer remains the
