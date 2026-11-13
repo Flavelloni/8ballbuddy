@@ -12,6 +12,7 @@ import com.varabyte.kobweb.compose.ui.modifiers.fillMaxSize
 import com.varabyte.kobweb.compose.ui.styleModifier
 import kotlinx.browser.window
 import org.w3c.dom.HTMLElement
+import org.w3c.dom.events.WheelEvent
 import kotlin.math.abs
 
 /** Only three screens are mounted. Neighbours are inert previews, never playing videos
@@ -68,6 +69,18 @@ internal class ReelPager {
             !window.matchMedia("(prefers-reduced-motion: reduce)").matches)
         scheduleSettle()
         return true
+    }
+
+    fun wheel(event: WheelEvent) {
+        if (event.ctrlKey || event.metaKey || event.deltaY == 0.0 || abs(event.deltaX) > abs(event.deltaY)) return
+        // Never mix native wheel scrolling with a programmatic page animation. Pixel deltas
+        // and the deprecated wheelDeltaY cannot reliably distinguish a mouse from a trackpad.
+        if (!event.cancelable) {
+            manualInput()
+            return
+        }
+        event.preventDefault()
+        navigate(if (event.deltaY > 0) 1 else -1)
     }
 
     /** User input supersedes automatic advancement, including a reversal mid-animation. */
@@ -206,22 +219,9 @@ internal fun ReelScrollPages(
         addEventListener("scroll") { pager.scheduleSettle() }
         addEventListener("scrollend") { pager.settle() }
         onWheel { event ->
-            if (locked || event.ctrlKey || event.metaKey ||
+            if (locked ||
                 isReelViewportZoomed((window.asDynamic().visualViewport?.scale as? Double) ?: 1.0)) return@onWheel
-            pager.manualInput()
-            val wheelDelta = (event.nativeEvent.asDynamic().wheelDeltaY as? Double) ?: 0.0
-            // A mouse notch can produce a small pixel delta depending on OS scroll settings.
-            // Use its notch value, not an arbitrary 80px cutoff, to avoid partial snap-back.
-            // High-resolution trackpad movement remains native.
-            val discrete = event.deltaMode != 0 ||
-                (abs(wheelDelta) >= 120 && abs(wheelDelta) % 120 == 0.0)
-            if (discrete && event.deltaX == 0.0) {
-                val direction = if(event.deltaY > 0) 1 else -1
-                if ((direction > 0 && nextKey != null) || (direction < 0 && previousKey != null)) {
-                    event.preventDefault()
-                    pager.navigate(direction)
-                }
-            }
+            pager.wheel(event.nativeEvent as WheelEvent)
         }
         onTouchStart { pager.touch(true) }
         onTouchEnd { if (it.touches.length == 0) pager.touch(false) }

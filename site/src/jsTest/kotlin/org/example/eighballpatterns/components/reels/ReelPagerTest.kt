@@ -8,6 +8,8 @@ import kotlin.js.Promise
 import kotlinx.browser.document
 import kotlinx.browser.window
 import org.w3c.dom.HTMLElement
+import org.w3c.dom.events.WheelEvent
+import org.w3c.dom.events.WheelEventInit
 
 class ReelPagerTest {
     private fun frames(): Promise<Unit> = Promise { resolve, _ ->
@@ -29,6 +31,61 @@ class ReelPagerTest {
         return frames().then {
             try { check(pager, port) } finally { pager.dispose(); port.remove() }
         }
+    }
+
+    @Test fun pixelWheelBurstsUseOnePageAnimationWithoutNativeScrolling(): Promise<Unit> = withPager { pager, port ->
+        val directions = mutableListOf<Int>()
+        pager.onSettled = { directions.add(it) }
+        // Synthetic WheelEvents have no legacy mouse-notch value. All packets must still
+        // be cancelled, including the small trailing packets from smooth/free-spin wheels.
+        for (delta in listOf(120.0, 45.0, 12.0, 3.0)) {
+            val event = WheelEvent("wheel", WheelEventInit(deltaY = delta, cancelable = true))
+            pager.wheel(event)
+            assertTrue(event.defaultPrevented)
+        }
+        port.scrollTop = 200.0
+        pager.settle()
+        assertEquals(listOf(1), directions)
+    }
+
+    @Test fun backwardWheelOverridesAutomaticForwardScrolling(): Promise<Unit> = withPager { pager, port ->
+        val directions = mutableListOf<Int>()
+        pager.onSettled = { directions.add(it) }
+        assertTrue(pager.navigate(1, automatically = true))
+        val event = WheelEvent("wheel", WheelEventInit(deltaY = -45.0, cancelable = true))
+        pager.wheel(event)
+        assertTrue(event.defaultPrevented)
+        port.scrollTop = 0.0
+        pager.settle()
+        assertEquals(listOf(-1), directions)
+    }
+
+    @Test fun uncancelableNativeWheelCannotStartACompetingAnimation(): Promise<Unit> = withPager { pager, port ->
+        var scrollCalls = 0
+        port.asDynamic().scrollTo = { _: dynamic -> scrollCalls++ }
+        pager.wheel(WheelEvent("wheel", WheelEventInit(deltaY = 45.0, cancelable = false)))
+        assertEquals(0, scrollCalls)
+    }
+
+    @Test fun zoomAndHorizontalWheelGesturesAreNotConsumed(): Promise<Unit> = withPager { pager, _ ->
+        val events = listOf(
+            WheelEvent("wheel", WheelEventInit(deltaY = 45.0, ctrlKey = true, cancelable = true)),
+            WheelEvent("wheel", WheelEventInit(deltaY = 45.0, metaKey = true, cancelable = true)),
+            WheelEvent("wheel", WheelEventInit(deltaX = 60.0, deltaY = 5.0, cancelable = true)),
+            WheelEvent("wheel", WheelEventInit(deltaY = 0.0, cancelable = true)),
+        )
+        for (event in events) {
+            pager.wheel(event)
+            assertFalse(event.defaultPrevented)
+        }
+    }
+
+    @Test fun wheelPacketsDuringRecenteringCannotNativelyMoveRecycledPages(): Promise<Unit> = withPager { pager, _ ->
+        pager.sync("second", true, true)
+        val event = WheelEvent("wheel", WheelEventInit(deltaY = 45.0, cancelable = true))
+        pager.wheel(event)
+        assertTrue(event.defaultPrevented)
+        assertFalse(pager.navigate(1))
     }
 
     @Test fun manualScrollWinsWhenVideoEndsDuringABackwardTransition(): Promise<Unit> = withPager { pager, port ->
