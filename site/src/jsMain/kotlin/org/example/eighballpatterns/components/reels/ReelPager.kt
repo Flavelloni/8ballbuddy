@@ -27,6 +27,10 @@ internal class ReelPager {
     private var restoreFrame: Int? = null
     private var targetDirection = 0
     private var automatic = false
+    var settledAutomatically = false
+        private set
+    var manualInputRevision = 0
+        private set
     private var queuedAutomatic: Pair<Any?, Int>? = null
     private var committing = false
     private var touching = false
@@ -85,6 +89,7 @@ internal class ReelPager {
 
     /** User input supersedes automatic advancement, including a reversal mid-animation. */
     fun manualInput() {
+        manualInputRevision++
         lastManualInput = window.performance.now()
         queuedAutomatic = null
         if (automatic) {
@@ -119,6 +124,7 @@ internal class ReelPager {
         timer?.let { window.clearTimeout(it) }
         timer = null
         targetDirection = 0
+        settledAutomatically = automatic
         automatic = false
         committing = true
         // Stop snapping before Compose changes the neighbours. Otherwise the browser can snap
@@ -126,7 +132,7 @@ internal class ReelPager {
         el.style.setProperty("scroll-snap-type", "none")
         val oldKey = pageKey
         val oldRevision = revision
-        onSettled(direction)
+        try { onSettled(direction) } finally { settledAutomatically = false }
         window.setTimeout({
             // A route may reject navigation (e.g. a challenge became busy). Never leave it locked.
             if (element === el && committing && pageKey == oldKey && revision == oldRevision) rebase(origin)

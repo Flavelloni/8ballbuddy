@@ -164,19 +164,18 @@ detail line otherwise. Choosing a player puts all of that player's shuffled
 groups first, then continues with shuffled groups from the remaining players.
 Every active shot appears once before the feed loops; groups stay intact in
 both sections. Daily challenges are unaffected.
-Browsing shows the player introduction only at each group's start. For each
-new group after the first, a **New rack** reel precedes that introduction.
-The first group opens directly with the player, and daily shots do not show rack notices.
+Browsing shows the player introduction only at each group's start, including
+when the feed loops. There is no intermediate rack notice.
 `matchYear` in a match's `source-info.json` is inherited by its shots and shown
 discreetly as **Match · 2023** beneath the player's name. Omit it if unknown;
 a shot's own `matchYear` can override the match default.
 Within a group, a completed reveal automatically opens the next layout. At the end of
-a group, it automatically scrolls to **New rack**; swipe from there to the next
-group's introduction. Manual forward/back navigation
+a group, it automatically scrolls directly to the next group's player
+introduction. Manual forward/back navigation
 also skips introductions inside runs. Daily shots remain independent and retain
 their individual introductions and explicit Next shot / See results controls.
 
-Backward navigation skips **New rack** notices and returns from a group's player
+Backward navigation returns from a group's player
 introduction directly to the preceding shot. Manual input takes priority over
 automatic advancement, including when scrolling backward as a reveal finishes.
 The three physical page slots stay fixed; recycling their content happens with
@@ -289,6 +288,13 @@ The current layout is warmed ahead of display. Once a reveal starts, only the
 next layout image is prefetched; the next video is not. Daily prefetch stops
 at the final shot. Leaving a reveal pauses its video without rewinding it,
 avoiding a flash of the first frame before the next layout appears.
+Automatic shot-to-shot advancement waits for the next layout image to load and
+decode; manual navigation can still interrupt it. The loading indicator overlays
+the table instead of resizing its header. Automatically displayed shot images
+make one slow ten-second pulse from fitted size to the existing zoomed size and
+back. Previews stay still, reduced-motion disables the pulse, and interacting
+with the image pauses it; manual zoom takes over normally. Ball hit testing uses
+the transformed image bounds so selections remain aligned during the pulse.
 
 ## Daily Challenge
 

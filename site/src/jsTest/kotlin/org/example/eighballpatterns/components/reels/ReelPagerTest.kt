@@ -12,6 +12,24 @@ import org.w3c.dom.events.WheelEvent
 import org.w3c.dom.events.WheelEventInit
 
 class ReelPagerTest {
+    @Test fun automaticArrivalIsReportedOnlyWhileCommittingThatTransition(): Promise<Unit> = withPager { pager, port ->
+        var automaticArrival = false
+        pager.onSettled = { automaticArrival = pager.settledAutomatically }
+        assertTrue(pager.navigate(1, automatically = true))
+        port.scrollTop = 200.0
+        pager.settle()
+        assertTrue(automaticArrival)
+        assertFalse(pager.settledAutomatically)
+    }
+
+    @Test fun manualArrivalDoesNotTriggerAnAutomaticImagePulse(): Promise<Unit> = withPager { pager, port ->
+        var automaticArrival = true
+        pager.onSettled = { automaticArrival = pager.settledAutomatically }
+        assertTrue(pager.navigate(1))
+        port.scrollTop = 200.0
+        pager.settle()
+        assertFalse(automaticArrival)
+    }
     private fun frames(): Promise<Unit> = Promise { resolve, _ ->
         window.requestAnimationFrame { window.requestAnimationFrame { window.requestAnimationFrame { resolve(Unit) } } }
     }

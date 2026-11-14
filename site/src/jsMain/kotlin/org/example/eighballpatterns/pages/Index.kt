@@ -10,9 +10,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import com.varabyte.kobweb.core.Page
 import kotlinx.browser.window
-import kotlinx.browser.document
 import com.varabyte.kobweb.navigation.BasePath
-import org.w3c.dom.HTMLImageElement
 import org.example.eighballpatterns.browser.copyEightBallShareUrl
 import org.example.eighballpatterns.browser.currentEightBallReelsShotId
 import org.example.eighballpatterns.browser.currentEightBallReelsPlayerIntro
@@ -28,7 +26,7 @@ import org.example.eighballpatterns.components.reels.EightBallPlayerIntro
 import org.example.eighballpatterns.components.reels.EightBallPlayerChoice
 import org.example.eighballpatterns.components.reels.EightBallReelIntro
 import org.example.eighballpatterns.components.reels.PoolLoading
-import org.example.eighballpatterns.components.reels.EightBallNewRack
+import org.example.eighballpatterns.components.reels.preloadLayoutImage
 import org.example.eighballpatterns.components.reels.EightBallReelMessage
 import org.example.eighballpatterns.components.reels.EightBallReelShot
 import org.example.eighballpatterns.components.reels.EightBallReelsShell
@@ -88,6 +86,7 @@ fun ShotPredictionPage() {
     var feedback by remember { mutableStateOf<String?>(null) }
     var videoEnded by remember { mutableStateOf(false) }
     var videoPaused by remember { mutableStateOf(false) }
+    var pulseShotId by remember { mutableStateOf<String?>(null) }
     var videoElement by remember { mutableStateOf<HTMLVideoElement?>(null) }
     val pager = remember { ReelPager() }
     var likedShotIds by remember { mutableStateOf(emptySet<String>()) }
@@ -197,6 +196,7 @@ fun ShotPredictionPage() {
         feedback = null
         videoEnded = false
         videoPaused = false
+        pulseShotId = null
     }
 
     fun startsGroup(index: Int): Boolean = challengeMode || index == 0 ||
@@ -207,8 +207,7 @@ fun ShotPredictionPage() {
         if (shotCount == 0) return position
         return if (challengeMode && position.stage == ReelStage.Shot && position.shotIndex == shotCount - 1) {
             ReelPosition(ReelStage.ChallengeResults)
-        } else if (delta > 0) position.next(shotCount, startsGroup((position.shotIndex + 1) % shotCount),
-            announceRack = !challengeMode)
+        } else if (delta > 0) position.next(shotCount, startsGroup((position.shotIndex + 1) % shotCount))
         else position.previous(startsGroup(position.shotIndex),
             wrapBrowse = !challengeMode && advancedBrowseGroup, shotCount = shotCount)
     }
@@ -219,7 +218,19 @@ fun ShotPredictionPage() {
         if (position.stage in listOf(ReelStage.ModeChoice, ReelStage.PlayerChoice, ReelStage.ChallengeEntry, ReelStage.ChallengeResults)) return
         if (challengeMode && (daily.busy || delta < 0 || (position.stage == ReelStage.Shot && selectedBall == null))) return
         if (animate) {
-            pager.navigate(delta, automatically = automatic)
+            val sourcePosition = position
+            val manualInputRevision = pager.manualInputRevision
+            val target = destination(delta)
+            val nextLayout = reelShots?.getOrNull(target.shotIndex)?.takeIf { target.stage == ReelStage.Shot }
+            if (automatic && nextLayout != null) {
+                // Keep the outgoing final frame while a cold/slow image loads and decodes.
+                // The pager still arbitrates manual input; stale completions cannot move a new reel.
+                preloadLayoutImage(nextLayout.entry.imagePath).then {
+                    if (position == sourcePosition && pager.manualInputRevision == manualInputRevision &&
+                        selectedBall != null && !challengeMode &&
+                        shareShot == null && resultFlash == null) pager.navigate(delta, automatically = true)
+                }
+            } else pager.navigate(delta, automatically = automatic)
             return
         }
         val target = destination(delta)
@@ -227,6 +238,7 @@ fun ShotPredictionPage() {
         if (!challengeMode && delta > 0 && position.stage == ReelStage.Shot &&
             startsGroup((position.shotIndex + 1) % shotCount)) advancedBrowseGroup = true
         resetPrediction()
+        if (automatic && target.stage == ReelStage.Shot) pulseShotId = reelShots?.getOrNull(target.shotIndex)?.entry?.id
         position = target
     }
 
@@ -267,7 +279,7 @@ fun ShotPredictionPage() {
 
     // Warm only the current layout while its player intro is visible, not the whole library.
     LaunchedEffect(currentShot?.entry?.imagePath) {
-        currentShot?.let { (document.createElement("img") as HTMLImageElement).src = BasePath.prependTo(it.entry.imagePath) }
+        currentShot?.let { preloadLayoutImage(it.entry.imagePath) }
     }
 
     // While revealing, warm just the next layout, never the next clip or the full library.
@@ -275,7 +287,7 @@ fun ShotPredictionPage() {
         if (position.stage == ReelStage.Shot && selectedBall != null) {
             val next = reelShots?.getOrNull(position.shotIndex + 1)
                 ?: if (!challengeMode) reelShots?.firstOrNull() else null
-            next?.let { (document.createElement("img") as HTMLImageElement).src = BasePath.prependTo(it.entry.imagePath) }
+            next?.let { preloadLayoutImage(it.entry.imagePath) }
         }
     }
 
@@ -372,7 +384,7 @@ fun ShotPredictionPage() {
         previousKey = if(canScrollPrevious) destination(-1) else null,
         nextKey = if(canScrollNext) destination(1) else null,
         scrollLocked = resultFlash!=null || shareShot!=null || (challengeMode && daily.busy),
-        onSettled = { moveReel(it, animate=false) },
+        onSettled = { moveReel(it, animate=false, automatic=pager.settledAutomatically) },
         preview = { value ->
             val target = value as ReelPosition
             val shot = reelShots?.getOrNull(target.shotIndex)
@@ -392,7 +404,7 @@ fun ShotPredictionPage() {
         canNext = canScrollNext,
         canPrevious = canScrollPrevious,
     ) {
-        key(challengeMode, position.stage, if(position.stage in listOf(ReelStage.Player,ReelStage.Shot,ReelStage.NewRack)) currentShot?.entry?.id else null) {
+        key(challengeMode, position.stage, if(position.stage in listOf(ReelStage.Player,ReelStage.Shot)) currentShot?.entry?.id else null) {
             when {
                 loadError != null -> EightBallReelMessage(loadError ?: "Could not load shots.")
                 loadedShots?.isEmpty() == true -> EightBallReelMessage("No shots.")
@@ -434,7 +446,6 @@ fun ShotPredictionPage() {
                     onRefresh = { daily.loadLeaderboard() },
                     onLoadMore = { daily.loadLeaderboard(more = true) },
                 )
-                position.stage == ReelStage.NewRack -> EightBallNewRack()
                 position.stage == ReelStage.Player && currentShot != null -> EightBallPlayerIntro(
                     shot = currentShot,
                     player = players[currentShot.meta.player.trim().lowercase()],
@@ -443,6 +454,7 @@ fun ShotPredictionPage() {
                 currentShot != null -> {
                     EightBallReelShot(
                         shot = currentShot,
+                        pulseOnReady = pulseShotId == currentShot.entry.id,
                         player = players[currentShot.meta.player.trim().lowercase()],
                         selectedBall = selectedBall,
                         feedback = feedback,

@@ -6,22 +6,20 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class DailyChallengeTest {
-    @Test fun rackNoticePrecedesGroupIntroductionsButNotTheFirstShotOrDailyShots() {
+    @Test fun groupsAdvanceDirectlyToThePlayerAndRemainReversibleAcrossTheFeedLoop() {
         val firstIntro = ReelPosition(ReelStage.Player)
         assertEquals(ReelPosition(ReelStage.ModeChoice), firstIntro.previous())
         assertEquals(ReelPosition(ReelStage.Shot), firstIntro.next(3))
         val end = ReelPosition(ReelStage.Shot, 1)
-        val notice = end.next(3, nextStartsGroup = true, announceRack = true)
-        assertEquals(ReelPosition(ReelStage.NewRack, 2), notice)
-        assertEquals(ReelPosition(ReelStage.Player, 2), notice.next(3))
-        assertEquals(end, notice.next(3).previous(shotCount = 3))
-        assertEquals(end, notice.previous(shotCount = 3))
-        assertEquals(ReelPosition(ReelStage.Shot, 2), end.next(3, nextStartsGroup = false, announceRack = true))
+        val intro = end.next(3, nextStartsGroup = true)
+        assertEquals(ReelPosition(ReelStage.Player, 2), intro)
+        assertEquals(ReelPosition(ReelStage.Shot, 2), intro.next(3))
+        assertEquals(end, intro.previous(shotCount = 3))
+        assertEquals(ReelPosition(ReelStage.Shot, 2), end.next(3, nextStartsGroup = false))
         assertEquals(ReelPosition(ReelStage.Player, 2), end.next(3))
-        val wrapped = ReelPosition(ReelStage.Shot, 2).next(3, announceRack = true)
-        assertEquals(ReelPosition(ReelStage.NewRack), wrapped)
-        assertEquals(ReelPosition(ReelStage.Shot, 2), wrapped.previous(shotCount = 3))
-        assertEquals(ReelPosition(ReelStage.Shot, 2), wrapped.next(3).previous(wrapBrowse = true, shotCount = 3))
+        val wrapped = ReelPosition(ReelStage.Shot, 2).next(3)
+        assertEquals(ReelPosition(ReelStage.Player), wrapped)
+        assertEquals(ReelPosition(ReelStage.Shot, 2), wrapped.previous(wrapBrowse = true, shotCount = 3))
     }
     @Test
     fun progressAndScoreFollowTheServerSuppliedRound() {

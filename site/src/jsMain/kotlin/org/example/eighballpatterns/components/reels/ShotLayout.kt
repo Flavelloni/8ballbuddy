@@ -86,6 +86,7 @@ internal fun EightBallReelShot(
     onRetry: () -> Unit = {},
     pointSelection: ImagePoint? = null,
     coordinateResult: Boolean? = null,
+    pulseOnReady: Boolean = false,
     onPointSelected: ((ImagePoint) -> Unit)? = null,
     onPointConfirmed: (() -> Unit)? = null,
 ) {
@@ -126,6 +127,7 @@ internal fun EightBallReelShot(
             EightBallReelLayoutOverlay(
                 shot = shot,
                 player = player,
+                pulseOnReady = pulseOnReady,
                 onBallSelected = onBallSelected,
                 answerClock = answerClock,
                 inputEnabled = inputEnabled,
@@ -164,6 +166,7 @@ internal fun EightBallReelLayoutOverlay(
     pointSelection: ImagePoint? = null,
     onPointSelected: ((ImagePoint) -> Unit)? = null,
     onPointConfirmed: (() -> Unit)? = null,
+    pulseOnReady: Boolean = false,
 ) {
     val imageTarget=shot.meta.ballSelection?.imageTarget ?: shot.meta.target
     val coordinatePicking = !shot.meta.isBreak && imageTarget != null && onPointSelected != null && onPointConfirmed != null
@@ -211,7 +214,6 @@ internal fun EightBallReelLayoutOverlay(
                 Modifier.gap(3.px).styleModifier {property("min-width","0")}.attrsModifier {classes("shot-heading")},
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                if (!layoutReady) PoolLoading("Loading table…")
                 P(
                     attrs = Modifier.margin(0.px)
                         .styleModifier {
@@ -254,6 +256,16 @@ internal fun EightBallReelLayoutOverlay(
                     property("overflow", "hidden")
                 }
         ) {
+            if (!layoutReady) {
+                // Loading must not change header height or resize the table when it disappears.
+                Box(Modifier.position(Position.Absolute).styleModifier {
+                    property("top", "8px")
+                    property("left", "0")
+                    property("right", "0")
+                    property("z-index", "3")
+                    property("pointer-events", "none")
+                }, contentAlignment = Alignment.Center) { PoolLoading("Loading table…") }
+            }
             Row(
                 modifier = Modifier
                     .position(Position.Relative)
@@ -269,8 +281,9 @@ internal fun EightBallReelLayoutOverlay(
             ) {
                 if (coordinatePicking) {
                     CoordinateLayout(shot.entry.imagePath, imageTarget!!, pointSelection,
-                        inputEnabled, { onPointSelected?.invoke(it) }, { layoutReady = true }, shot.meta.ballSelection)
-                } else ZoomableLayout(shot.entry.imagePath, onReady = { layoutReady = true })
+                        inputEnabled, { onPointSelected?.invoke(it) }, { layoutReady = true }, shot.meta.ballSelection,
+                        pulseOnReady = pulseOnReady)
+                } else ZoomableLayout(shot.entry.imagePath, onReady = { layoutReady = true }, pulseOnReady = pulseOnReady)
             }
         }
 
