@@ -86,7 +86,6 @@ internal fun EightBallReelShot(
     onRetry: () -> Unit = {},
     pointSelection: ImagePoint? = null,
     coordinateResult: Boolean? = null,
-    pulseOnReady: Boolean = false,
     onPointSelected: ((ImagePoint) -> Unit)? = null,
     onPointConfirmed: (() -> Unit)? = null,
 ) {
@@ -127,7 +126,7 @@ internal fun EightBallReelShot(
             EightBallReelLayoutOverlay(
                 shot = shot,
                 player = player,
-                pulseOnReady = pulseOnReady,
+                pulseOnReady = true,
                 onBallSelected = onBallSelected,
                 answerClock = answerClock,
                 inputEnabled = inputEnabled,

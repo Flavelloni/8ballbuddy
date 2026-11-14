@@ -64,7 +64,7 @@ internal fun ensureEightBallReelsStyles() {
           0%, 100% { transform: translate(-50%, -50%) scale(1); }
           50% { transform: translate(-50%, -50%) scale(var(--layout-pulse-scale, 1.5)); }
         }
-        .layout-arrival-pulse { animation: layoutArrivalPulse 10s ease-in-out 1; }
+        .layout-arrival-pulse { animation: layoutArrivalPulse 3s ease-in-out 1; }
         @media (prefers-reduced-motion: reduce) { .layout-arrival-pulse { animation: none; } }
         @keyframes predictionPop { 0% { transform: scale(.45); opacity: 0; } 45% { transform: scale(1.12); opacity: 1; } 70%,100% { transform: scale(1); opacity: 1; } }
         .prediction-pop { animation: predictionPop .6s cubic-bezier(.2,.8,.2,1) both; }

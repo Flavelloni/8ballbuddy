@@ -86,7 +86,6 @@ fun ShotPredictionPage() {
     var feedback by remember { mutableStateOf<String?>(null) }
     var videoEnded by remember { mutableStateOf(false) }
     var videoPaused by remember { mutableStateOf(false) }
-    var pulseShotId by remember { mutableStateOf<String?>(null) }
     var videoElement by remember { mutableStateOf<HTMLVideoElement?>(null) }
     val pager = remember { ReelPager() }
     var likedShotIds by remember { mutableStateOf(emptySet<String>()) }
@@ -196,7 +195,6 @@ fun ShotPredictionPage() {
         feedback = null
         videoEnded = false
         videoPaused = false
-        pulseShotId = null
     }
 
     fun startsGroup(index: Int): Boolean = challengeMode || index == 0 ||
@@ -238,7 +236,6 @@ fun ShotPredictionPage() {
         if (!challengeMode && delta > 0 && position.stage == ReelStage.Shot &&
             startsGroup((position.shotIndex + 1) % shotCount)) advancedBrowseGroup = true
         resetPrediction()
-        if (automatic && target.stage == ReelStage.Shot) pulseShotId = reelShots?.getOrNull(target.shotIndex)?.entry?.id
         position = target
     }
 
@@ -454,7 +451,6 @@ fun ShotPredictionPage() {
                 currentShot != null -> {
                     EightBallReelShot(
                         shot = currentShot,
-                        pulseOnReady = pulseShotId == currentShot.entry.id,
                         player = players[currentShot.meta.player.trim().lowercase()],
                         selectedBall = selectedBall,
                         feedback = feedback,

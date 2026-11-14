@@ -22,7 +22,7 @@ class ReelPagerTest {
         assertFalse(pager.settledAutomatically)
     }
 
-    @Test fun manualArrivalDoesNotTriggerAnAutomaticImagePulse(): Promise<Unit> = withPager { pager, port ->
+    @Test fun manualArrivalIsNotReportedAsAnAutomaticScroll(): Promise<Unit> = withPager { pager, port ->
         var automaticArrival = true
         pager.onSettled = { automaticArrival = pager.settledAutomatically }
         assertTrue(pager.navigate(1))
