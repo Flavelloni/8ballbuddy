@@ -29,7 +29,7 @@ import org.jetbrains.compose.web.css.percent
 @Composable
 internal fun CoordinateLayout(imagePath: String, target: BallTarget, selection: ImagePoint?, enabled: Boolean,
     onSelected: (ImagePoint) -> Unit, onReady: () -> Unit, ballSelection: BallSelection? = null,
-    pulseOnReady: Boolean = false) {
+    pulseOnReady: Boolean = false, arrivalPreview: Boolean = false) {
     val currentEnabled by rememberUpdatedState(enabled)
     val currentSelected by rememberUpdatedState(onSelected)
     val aspect=target.imageWidth.toDouble()/target.imageHeight
@@ -46,7 +46,7 @@ internal fun CoordinateLayout(imagePath: String, target: BallTarget, selection: 
             if (js("typeof navigator.vibrate === 'function'") as Boolean) navigator.vibrate(12)
         } catch (_: Throwable) { }
     }
-    ZoomableLayout(imagePath, aspect, onReady, pulseOnReady = pulseOnReady, onTap = { point, width ->
+    ZoomableLayout(imagePath, aspect, onReady, pulseOnReady = pulseOnReady, arrivalPreview = arrivalPreview, onTap = { point, width ->
         if (currentEnabled) {
             if (ballSelection != null) {
                 val ball = ballSelection.ballAt(point, 14 / width)

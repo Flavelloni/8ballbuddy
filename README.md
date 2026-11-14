@@ -291,9 +291,11 @@ avoiding a flash of the first frame before the next layout appears.
 Automatic shot-to-shot advancement waits for the next layout image to load and
 decode; manual navigation can still interrupt it. The loading indicator overlays
 the table instead of resizing its header. Every newly displayed active shot image
-makes one three-second pulse from fitted size to the existing zoomed size and
-back, including first shots, manual swipes, and daily challenges. Previews stay
-still, reduced-motion disables the pulse, and interacting
+starts at the existing zoomed size and eases back to fitted size over two seconds,
+including first shots, manual swipes, and daily challenges. Incoming previews stay
+still at the zoomed starting size, including before image loading/measurement,
+so scrolling never shows a fitted image before zooming out. Reduced-motion keeps
+previews fitted and disables the animation, and interacting
 with the image pauses it; manual zoom takes over normally. Ball hit testing uses
 the transformed image bounds so selections remain aligned during the pulse.
 

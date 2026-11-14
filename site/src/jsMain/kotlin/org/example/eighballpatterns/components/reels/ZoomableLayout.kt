@@ -60,6 +60,7 @@ internal fun ZoomableLayout(
     onReady: () -> Unit,
     onTap: ((ImagePoint, Double) -> Unit)? = null,
     pulseOnReady: Boolean = false,
+    arrivalPreview: Boolean = false,
     content: @Composable () -> Unit = {},
 ) {
     var zoomed by remember(imagePath) { mutableStateOf(false) }
@@ -74,6 +75,8 @@ internal fun ZoomableLayout(
     val visiblePan = geometry.clampPan(pan)
     val pulseScale = if (geometry.height > 0) layoutImageGeometry(viewport.x, viewport.y, aspect, true).height / geometry.height else 1.0
     val pulse = pulseOnReady && imageReady && viewport.x > 0 && viewport.y > 0 && !zoomed && !pulseDismissed
+    val arrivalStart = arrivalPreview || (pulseOnReady && !pulse && !zoomed && !pulseDismissed)
+    val arrivalGeometry = layoutImageGeometry(viewport.x, viewport.y, aspect, true)
     val gesture = remember(imagePath) { LayoutTapGesture() }
     val pointers = remember(imagePath) { mutableSetOf<Int>() }
     var dragStart by remember(imagePath) { mutableStateOf(ImagePoint(0.0, 0.0)) }
@@ -232,8 +235,16 @@ internal fun ZoomableLayout(
                 property("top", "50%")
                 // The container has a size before ResizeObserver's first callback. Render the
                 // cached photograph immediately instead of flashing a zero-size image per reel.
-                property("width", if (viewport.x > 0) "${geometry.width}px" else "min(100cqw, ${aspect * 100}cqh)")
-                property("height", if (viewport.y > 0) "${geometry.height}px" else "min(100cqh, ${100 / aspect}cqw)")
+                property("--layout-width", if (viewport.x > 0) "${geometry.width}px" else "min(100cqw, ${aspect * 100}cqh)")
+                property("--layout-height", if (viewport.y > 0) "${geometry.height}px" else "min(100cqh, ${100 / aspect}cqw)")
+                // Inert incoming previews and the first paint before measurement must match
+                // the animation's zoomed start, not flash the fitted image before zooming out.
+                if (arrivalStart) {
+                    property("--layout-arrival-width", if (viewport.x > 0) "${arrivalGeometry.width}px"
+                        else "max(${aspect * 100}cqh, min(${aspect * 150}cqh, 150cqw))")
+                    property("--layout-arrival-height", if (viewport.y > 0) "${arrivalGeometry.height}px"
+                        else "max(100cqh, min(150cqh, ${150 / aspect}cqw))")
+                }
                 property("transform", "translate(calc(-50% + ${visiblePan.x}px), calc(-50% + ${visiblePan.y}px))")
                 if (pulse) {
                     // Transform-only animation keeps layout, decoded pixels and hit targets intact.
@@ -242,6 +253,8 @@ internal fun ZoomableLayout(
                 }
             }.attrsModifier {
                 attr("data-layout-image", "true")
+                classes("layout-image-frame")
+                if (arrivalStart) classes("layout-arrival-start")
                 if (pulse) classes("layout-arrival-pulse")
             }) {
                 Image(src = BasePath.prependTo(imagePath), alt = "8-ball layout",
