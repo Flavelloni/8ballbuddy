@@ -99,6 +99,7 @@ fun ShotPredictionPage() {
     var advancedBrowseGroup by remember { mutableStateOf(false) }
     val daily = remember { FirebaseChallengeRepository() }
     var challengeError by remember { mutableStateOf<String?>(null) }
+    var editingChallengeName by remember { mutableStateOf(false) }
     var routeReady by remember { mutableStateOf(false) }
     var bootstrapRequested by remember { mutableStateOf(false) }
     var openingChallenge by remember { mutableStateOf(false) }
@@ -415,7 +416,7 @@ fun ShotPredictionPage() {
         }
     }
 
-    val scrollEnabled = routeReady && !openingChallenge && loadedShots!=null && resultFlash==null && shareShot==null && position.stage!=ReelStage.PlayerChoice
+    val scrollEnabled = routeReady && !openingChallenge && !editingChallengeName && loadedShots!=null && resultFlash==null && shareShot==null && position.stage!=ReelStage.PlayerChoice
     val canScrollNext = scrollEnabled && (if(position.stage==ReelStage.ChallengeResults) browseShots?.isNotEmpty()==true
         else !challengeMode || (!daily.busy && (position.stage!=ReelStage.Shot || selectedBall!=null)))
     val canScrollPrevious = scrollEnabled && !challengeMode && (position.stage==ReelStage.Shot ||
@@ -426,7 +427,7 @@ fun ShotPredictionPage() {
         pageKey = position,
         previousKey = if(canScrollPrevious) destination(-1) else null,
         nextKey = if(canScrollNext) destination(1) else null,
-        scrollLocked = openingChallenge || resultFlash!=null || shareShot!=null || (challengeMode && daily.busy),
+        scrollLocked = openingChallenge || editingChallengeName || resultFlash!=null || shareShot!=null || (challengeMode && daily.busy),
         onSettled = { moveReel(it, animate=false, automatic=pager.settledAutomatically) },
         preview = { value ->
             val target = value as ReelPosition
@@ -441,7 +442,7 @@ fun ShotPredictionPage() {
                 else startChallenge(showWelcome = true)
             }
         }),
-        homeEnabled = !openingChallenge && !daily.busy && resultFlash==null && shareShot==null,
+        homeEnabled = !openingChallenge && !editingChallengeName && !daily.busy && resultFlash==null && shareShot==null,
         onChoosePlayer = if(!challengeMode && routeReady && position.stage!=ReelStage.PlayerChoice) ({
             playerChoiceReturn = position
             position = ReelPosition(ReelStage.PlayerChoice)
@@ -494,6 +495,7 @@ fun ShotPredictionPage() {
                     renameBusy = daily.renameBusy,
                     renameError = daily.renameError,
                     onRename = { name, saved -> daily.rename(name, saved) },
+                    onEditingChanged = { editingChallengeName = it },
                 )
                 position.stage == ReelStage.Player && currentShot != null -> EightBallPlayerIntro(
                     shot = currentShot,

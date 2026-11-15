@@ -18,3 +18,8 @@ internal data class DailyLeaderboard(
     val nextAfterUid: String? = null,
     val ownEntry: LeaderboardEntry? = null,
 )
+
+internal fun DailyLeaderboard.withPlayerName(uid: String, name: String): DailyLeaderboard = copy(
+    entries = entries.map { if (it.uid == uid) it.copy(displayName = name) else it },
+    ownEntry = ownEntry?.let { if (it.uid == uid) it.copy(displayName = name) else it },
+)

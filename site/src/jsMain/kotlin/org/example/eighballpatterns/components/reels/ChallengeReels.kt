@@ -1,6 +1,8 @@
 package org.example.eighballpatterns.components.reels
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -13,7 +15,14 @@ import com.varabyte.kobweb.compose.ui.attrsModifier
 import com.varabyte.kobweb.silk.components.icons.fa.FaArrowLeft
 import com.varabyte.kobweb.silk.components.icons.fa.FaArrowRight
 import com.varabyte.kobweb.silk.components.icons.fa.FaRotateRight
+import com.varabyte.kobweb.silk.components.icons.fa.FaPen
+import com.varabyte.kobweb.silk.components.icons.fa.FaCalendarDay
+import com.varabyte.kobweb.silk.components.icons.fa.FaAnglesUp
+import com.varabyte.kobweb.silk.components.forms.Button as SilkButton
 import com.varabyte.kobweb.silk.components.text.SpanText
+import kotlinx.coroutines.delay
+import org.example.eighballpatterns.browser.hasAutomaticChallengeNameHint
+import org.example.eighballpatterns.browser.markChallengeNameHintSeen
 import org.example.eighballpatterns.model.DailyChallengeAttempt
 import org.example.eighballpatterns.model.DailyLeaderboard
 import org.example.eighballpatterns.model.formatChallengeTime
@@ -24,8 +33,11 @@ import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Form
 import org.jetbrains.compose.web.dom.H2
 import org.jetbrains.compose.web.dom.Input
+import org.jetbrains.compose.web.dom.Label
 import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.dom.Text
+import org.w3c.dom.HTMLInputElement
+import org.w3c.dom.HTMLElement
 
 
 @Composable
@@ -72,22 +84,56 @@ internal fun EightBallChallengeResults(
     renameBusy: Boolean,
     renameError: String?,
     onRename: (String, () -> Unit) -> Unit,
+    onEditingChanged: (Boolean) -> Unit = {},
 ) {
     var allTime by remember { mutableStateOf(false) }
     var editing by remember { mutableStateOf(false) }
     var draft by remember(alias) { mutableStateOf(alias) }
     var validationError by remember { mutableStateOf<String?>(null) }
+    var submittedName by remember { mutableStateOf<String?>(null) }
+    var nameSaved by remember { mutableStateOf(false) }
+    var showNameHint by remember(playerUid) { mutableStateOf(hasAutomaticChallengeNameHint(playerUid)) }
+    var nameInput by remember { mutableStateOf<HTMLInputElement?>(null) }
+    var changeNameControl by remember { mutableStateOf<HTMLElement?>(null) }
+    var restoreNameFocus by remember { mutableStateOf(false) }
+    val visibleError = validationError ?: renameError?.takeIf { submittedName == normalizePlayerAlias(draft) }
+    DisposableEffect(editing) {
+        onEditingChanged(editing)
+        onDispose { onEditingChanged(false) }
+    }
+    DisposableEffect(playerUid) {
+        if (showNameHint) playerUid?.let { markChallengeNameHintSeen(it) }
+        onDispose { }
+    }
+    LaunchedEffect(editing, nameInput) {
+        if (editing) nameInput?.let { it.focus(); it.select() }
+    }
+    LaunchedEffect(editing, changeNameControl) {
+        if (!editing && restoreNameFocus) changeNameControl?.let { it.focus(); restoreNameFocus = false }
+    }
+    LaunchedEffect(nameSaved) { if (nameSaved) { delay(3500); nameSaved = false } }
     Column(
-        Modifier.attrsModifier { classes("daily-challenge-page", "daily-results", "daily-compact-results"); attr("aria-label", "Challenge results") },
+        Modifier.attrsModifier {
+            classes("daily-challenge-page", "daily-results", "daily-compact-results")
+            if (editing) classes("daily-results-editing")
+            attr("aria-label", "Challenge results")
+        },
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        SpanText(attempt.challenge.date, Modifier.attrsModifier { classes("daily-muted") })
-        H2 { Text("Daily complete") }
-        Row(Modifier.attrsModifier { classes("daily-result-summary") }, verticalAlignment = Alignment.CenterVertically) {
-            SpanText("${attempt.correctCount}/${attempt.answers.size}", Modifier.attrsModifier { classes("daily-result-score") })
-            SpanText("correct · ${formatChallengeTime(attempt.totalElapsedMs)}")
+      Column(Modifier.attrsModifier { classes("daily-results-content") }) {
+        Row(Modifier.attrsModifier { classes("daily-result-hero") }, verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.attrsModifier { classes("daily-result-title") }) {
+                SpanText(attempt.challenge.date, Modifier.attrsModifier { classes("daily-muted") })
+                H2 { Text("Daily complete") }
+            }
+            Column(Modifier.attrsModifier { classes("daily-result-summary") }, horizontalAlignment = Alignment.End) {
+                SpanText("${attempt.correctCount}/${attempt.answers.size}", Modifier.attrsModifier { classes("daily-result-score") })
+                SpanText("correct · ${formatChallengeTime(attempt.totalElapsedMs)}")
+            }
         }
-        if (editing) {
+        Column(Modifier.attrsModifier { classes("daily-player-identity"); attr("aria-label", "Your leaderboard name") }) {
+          if (editing) {
+            // Native form/label semantics preserve Enter-to-save and an explicit input association.
             Form(attrs = {
                 classes("daily-rename-form")
                 addEventListener("submit") { event ->
@@ -95,32 +141,57 @@ internal fun EightBallChallengeResults(
                     if (!renameBusy) {
                         val chosen = normalizePlayerAlias(draft)
                         if (!hasValidPlayerAliasLength(chosen)) validationError = "Use 3 to 20 characters."
-                        else { validationError = null; onRename(chosen) { editing = false } }
+                        else {
+                            validationError = null
+                            submittedName = chosen
+                            onRename(chosen) { editing = false; nameSaved = true; showNameHint = false; restoreNameFocus = true }
+                        }
                     }
                 }
             }) {
+                Label(attrs = { attr("for", "daily-challenger-name"); classes("daily-identity-label") }) { Text("Your leaderboard name") }
                 Input(InputType.Text, attrs = {
+                    id("daily-challenger-name")
                     attr("aria-label", "Your challenger name")
+                    attr("aria-describedby", "daily-name-help")
+                    attr("aria-invalid", (visibleError != null).toString())
                     attr("maxlength", "20"); attr("autocomplete", "nickname")
+                    attr("autocapitalize", "words"); attr("spellcheck", "false")
                     value(draft)
                     if (renameBusy) attr("disabled", "")
                     onInput { draft = it.value; validationError = null }
+                    onKeyDown { if (it.key == "Escape" && !renameBusy) { it.preventDefault(); editing = false; restoreNameFocus = true } }
+                    ref { input -> nameInput = input; onDispose { nameInput = null } }
                 })
-                Button(attrs = { attr("type", "submit"); attr("aria-label", "Save name"); if(renameBusy) attr("disabled", "") }) { Text(if(renameBusy) "Saving…" else "Save") }
-                Button(attrs = { attr("type", "button"); if(renameBusy) attr("disabled", ""); onClick { editing = false } }) { Text("Cancel") }
+                Row(Modifier.attrsModifier { classes("daily-rename-actions") }) {
+                    Button(attrs = { classes("daily-save-name"); attr("type", "submit"); attr("aria-label", "Save name"); if(renameBusy) attr("disabled", "") }) { Text(if(renameBusy) "Saving…" else "Save name") }
+                    Button(attrs = { attr("type", "button"); if(renameBusy) attr("disabled", ""); onClick { editing = false; validationError = null; restoreNameFocus = true } }) { Text("Cancel") }
+                }
+                P(attrs = { id("daily-name-help"); classes("daily-name-help"); if (visibleError != null) attr("role", "alert") }) {
+                    Text(visibleError ?: "3–20 characters · letters, numbers, spaces, _ or -")
+                }
             }
-            (validationError ?: renameError)?.let { message ->
-                P(attrs = { classes("daily-incorrect", "daily-rename-error"); attr("role", "alert") }) { Text(message) }
+          } else {
+            Row(Modifier.attrsModifier { classes("daily-result-name") }, verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.attrsModifier { classes("daily-identity-copy") }) {
+                    SpanText("Your leaderboard name", Modifier.attrsModifier { classes("daily-identity-label") })
+                    SpanText(alias, Modifier.attrsModifier { classes("daily-player-name") })
+                }
+                SilkButton(onClick = { draft = alias; editing = true; validationError = null; submittedName = null; nameSaved = false },
+                    modifier = Modifier.attrsModifier {
+                        classes("daily-change-name"); attr("aria-label", "Change name")
+                        ref { control -> changeNameControl = control as HTMLElement; onDispose { changeNameControl = null } }
+                    }) {
+                    Row(Modifier.attrsModifier { classes("daily-change-name-content") }, verticalAlignment = Alignment.CenterVertically) {
+                        FaPen(); SpanText("Change name")
+                    }
+                }
             }
-        } else {
-            Row(Modifier.attrsModifier {classes("daily-result-name")}, verticalAlignment = Alignment.CenterVertically) {
-                SpanText(alias)
-                Button(attrs = {
-                    classes("daily-back"); attr("aria-label", "Rename")
-                    onClick { draft = alias; editing = true; validationError = null }
-                }) { Text("Rename") }
-            }
+            if (showNameHint) P(attrs = { classes("daily-name-hint") }) { Text("We picked a name for you. Make it yours.") }
+            if (nameSaved) P(attrs = { classes("daily-name-saved"); attr("role", "status") }) { Text("Name updated") }
+          }
         }
+        Column(Modifier.attrsModifier { classes("daily-standings-block") }) {
         Row(Modifier.attrsModifier { classes("daily-leaderboard-tabs"); attr("role", "group"); attr("aria-label", "Standings period") }) {
             for ((value, label) in listOf(false to "Today", true to "All time")) {
                 Button(attrs = {
@@ -135,11 +206,21 @@ internal fun EightBallChallengeResults(
             if(allTime) allTimeError else leaderboardError,
             allTime, if(allTime) onAllTimeRefresh else onRefresh,
         )
-        P(attrs = { classes("daily-tomorrow") }) { Text("New challenge tomorrow · 00:00 UTC") }
-        Button(attrs = {
-            classes("daily-more-shots"); attr("aria-label", "See more shots")
-            onClick { onBrowse() }
-        }) { EightBallReelSwipeHint("See more shots!") }
+        }
+        Row(Modifier.attrsModifier { classes("daily-tomorrow"); attr("aria-label", "Next daily challenge") }, verticalAlignment = Alignment.CenterVertically) {
+            FaCalendarDay()
+            Column {
+                SpanText("New challenge tomorrow", Modifier.attrsModifier { classes("daily-tomorrow-title") })
+                SpanText("Come back at 00:00 UTC", Modifier.attrsModifier { classes("daily-tomorrow-time") })
+            }
+        }
+        Column(Modifier.attrsModifier { classes("daily-practice-actions") }, horizontalAlignment = Alignment.CenterHorizontally) {
+            SilkButton(onClick = { onBrowse() }, enabled = !editing, modifier = Modifier.attrsModifier {
+                classes("daily-more-shots", "reel-primary-button"); attr("aria-label", "See more shots")
+            }) { Row(Modifier.attrsModifier { classes("daily-more-shots-content") }, verticalAlignment = Alignment.CenterVertically) { SpanText("See more shots"); FaArrowRight() } }
+            Row(Modifier.attrsModifier { classes("daily-results-swipe") }, verticalAlignment = Alignment.CenterVertically) { FaAnglesUp(); SpanText("or swipe up to explore") }
+        }
+      }
     }
 }
 
@@ -171,16 +252,37 @@ internal fun EightBallChallengeRequestStatus(busy: Boolean, error: String?, onRe
 }
 
 internal val dailyChallengeStyles = """
-    .daily-results.daily-compact-results { padding: max(68px, calc(64px + env(safe-area-inset-top))) 18px max(8px, env(safe-area-inset-bottom)); gap: 6px; justify-content: center; overflow: hidden; }
+    .daily-results.daily-compact-results { padding: max(72px, calc(68px + env(safe-area-inset-top))) 18px max(12px, env(safe-area-inset-bottom)); gap: 0; justify-content: safe center; overflow-y: auto; }
+    .daily-results-content { width: 100%; max-width: 440px; gap: 12px; flex-shrink: 0; }
+    .daily-result-hero { width: 100%; justify-content: space-between; gap: 12px; }
+    .daily-result-title { gap: 3px; text-align: left; }
+    .daily-result-title .daily-muted { font-size: .68rem; }
     .daily-results.daily-compact-results h2 { font-size: 1.35rem; margin: 0; }
-    .daily-result-summary { gap: 12px; font-size: .8rem; }
-    .daily-result-score { font-size: 2rem; font-weight: 800; color: #ade7cb; }
-    .daily-result-name { gap: 8px; max-width: 100%; font-size: .85rem; }
-    .daily-result-name .daily-back { font-size: .72rem; min-height: 30px; }
-    .daily-rename-form { display: flex; width: 100%; gap: 5px; }
-    .daily-rename-form input { min-width: 0; flex: 1; padding: 7px; border-radius: 6px; border: 1px solid #46534c; color: #edf6f0; background: #101514; font-size: 16px; }
-    .daily-rename-form button, .daily-leaderboard-tabs button { color: #ade7cb; background: #14251e; border: 1px solid #46534c; border-radius: 6px; padding: 7px 9px; }
-    .daily-leaderboard-tabs { gap: 8px; }
+    .daily-result-summary { gap: 3px; font-size: .72rem; white-space: nowrap; }
+    .daily-result-score { font-size: 2.1rem; line-height: 1; font-weight: 800; color: #ade7cb; }
+    .daily-player-identity { width: 100%; box-sizing: border-box; padding: 12px; gap: 6px; text-align: left; background: #13241c; border: 1px solid #ade7cb26; border-radius: 14px; }
+    .daily-result-name { width: 100%; gap: 10px; justify-content: space-between; }
+    .daily-identity-copy { min-width: 0; gap: 3px; }
+    .daily-identity-label { font-size: .65rem; color: #a1baac; line-height: 1.3; }
+    .daily-player-name { font-size: 1rem; font-weight: 700; line-height: 1.25; overflow-wrap: anywhere; }
+    .daily-change-name.daily-change-name { min-height: 44px; flex-shrink: 0; padding: 0 10px; border-radius: 10px; border: 1px solid #ade7cb44; background: #ade7cb09; color: #d1efde; font-size: .72rem; font-weight: 650; }
+    .daily-change-name-content { gap: 7px; }
+    .daily-change-name:hover { background: #ade7cb16; }
+    .daily-compact-results .daily-name-hint, .daily-compact-results .daily-name-saved { font-size: .7rem; line-height: 1.35; color: #b5cabe; }
+    .daily-compact-results .daily-name-saved { color: #ade7cb; }
+    .daily-rename-form { display: flex; flex-direction: column; width: 100%; gap: 8px; }
+    .daily-rename-form input { box-sizing: border-box; width: 100%; min-width: 0; height: 44px; padding: 9px 11px; border-radius: 9px; border: 1px solid #638c73; color: #edf6f0; background: #091710; font-size: 16px; }
+    .daily-rename-form input:focus-visible { outline: 2px solid #ade7cb; outline-offset: 2px; }
+    .daily-rename-form input[aria-invalid=true] { border-color: #f4a4a4; }
+    .daily-rename-actions { gap: 8px; }
+    .daily-rename-actions button { min-height: 44px; padding: 9px 14px; border-radius: 9px; font: inherit; font-size: .78rem; cursor: pointer; border: 1px solid #ade7cb33; color: #c9dfd2; background: transparent; }
+    .daily-rename-actions .daily-save-name { background: #ade7cb; color: #102219; border-color: #ade7cb; font-weight: 700; }
+    .daily-rename-actions button:disabled { opacity: .5; cursor: wait; }
+    .daily-compact-results .daily-name-help { font-size: .65rem; line-height: 1.35; color: #a1baac; }
+    .daily-rename-form:has(input[aria-invalid=true]) .daily-name-help { color: #f4a4a4; }
+    .daily-standings-block { width: 100%; gap: 4px; }
+    .daily-leaderboard-tabs { width: 100%; gap: 6px; padding: 3px; box-sizing: border-box; border-radius: 11px; background: #ffffff05; border: 1px solid #ffffff10; }
+    .daily-leaderboard-tabs button { flex: 1; min-height: 38px; color: #a8c1b2; background: transparent; border: 0; border-radius: 8px; padding: 6px 9px; font: inherit; font-size: .75rem; cursor: pointer; }
     .daily-leaderboard-tabs button[aria-pressed=true] { background: #ade7cb; color: #102219; }
     .daily-compact-standings { width: 100%; min-height: 138px; gap: 2px; }
     .daily-compact-standings-heading { width: 100%; justify-content: space-between; font-size: .73rem; }
@@ -188,14 +290,30 @@ internal val dailyChallengeStyles = """
     .daily-compact-standings .daily-breakdown td { padding: 6px 4px; font-size: .76rem; overflow-wrap: anywhere; }
     .daily-compact-standings .daily-leaderboard td:first-child { width: 32px; }
     .daily-compact-standings .daily-leaderboard td:last-child { width: 46px; }
-    .daily-compact-results .daily-tomorrow { font-size: .72rem; color: #a9b5af; }
-    .daily-more-shots { padding: 0; border: 0; background: transparent; color: #ade7cb; }
-    .daily-more-shots .reel-swipe-hint { display: flex; height: 52px; gap: 3px; }
-    @media (max-height: 600px) {
-      .daily-results.daily-compact-results { gap: 3px; }
-      .daily-compact-results .daily-result-score { font-size: 1.6rem; }
-      .daily-compact-results .daily-compact-standings { min-height: 120px; }
-      .daily-compact-standings .daily-breakdown td { padding-top: 4px; padding-bottom: 4px; }
+    .daily-compact-results .daily-tomorrow { width: 100%; box-sizing: border-box; padding: 12px; gap: 12px; border-radius: 12px; border: 1px solid #e6c97b55; background: linear-gradient(110deg, #e6c97b17, #e6c97b06); color: #eedcae; text-align: left; }
+    .daily-tomorrow > .fas { font-size: 1.2rem; }
+    .daily-tomorrow-title { font-size: .88rem; line-height: 1.3; font-weight: 750; }
+    .daily-tomorrow-time { font-size: .7rem; line-height: 1.5; color: #c2bda9; }
+    .daily-practice-actions { width: 100%; gap: 6px; }
+    .daily-more-shots.daily-more-shots { width: 100%; min-height: 46px; border-radius: 12px; padding: 10px 16px; }
+    .daily-more-shots-content { gap: 9px; }
+    .daily-results-swipe { gap: 6px; font-size: .66rem; color: #9ab2a3; }
+    .daily-results-editing.daily-results-editing { justify-content: flex-start; }
+    @media (max-height: 650px) {
+      .daily-results.daily-compact-results { padding-top: calc(66px + env(safe-area-inset-top)); padding-bottom: max(8px, env(safe-area-inset-bottom)); }
+      .daily-results-content { gap: 6px; }
+      .daily-results.daily-compact-results h2 { font-size: 1.15rem; }
+      .daily-result-score { font-size: 1.8rem; }
+      .daily-player-identity { padding: 8px 10px; gap: 3px; }
+      .daily-compact-results .daily-name-hint { font-size: .65rem; }
+      .daily-leaderboard-tabs button { min-height: 34px; }
+      .daily-compact-results .daily-compact-standings { min-height: 0; }
+      .daily-compact-standings .daily-breakdown td { padding-top: 3px; padding-bottom: 3px; font-size: .72rem; line-height: 1.25; }
+      .daily-compact-results .daily-tomorrow { padding: 8px 10px; gap: 10px; }
+      .daily-tomorrow-title { font-size: .8rem; }
+      .daily-tomorrow-time { font-size: .66rem; }
+      .daily-more-shots.daily-more-shots { min-height: 44px; padding-top: 8px; padding-bottom: 8px; }
+      .daily-practice-actions { gap: 3px; }
     }
     .daily-challenge-page {
       width: 100%; height: 100%; box-sizing: border-box; position: relative;

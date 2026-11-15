@@ -8,6 +8,8 @@ import org.example.eighballpatterns.model.DailyChallenge
 import org.example.eighballpatterns.model.DailyChallengeAttempt
 import org.example.eighballpatterns.model.DailyLeaderboard
 import org.example.eighballpatterns.model.LeaderboardEntry
+import org.example.eighballpatterns.model.withPlayerName
+import org.example.eighballpatterns.browser.markAutomaticChallengeName
 
 internal class FirebaseChallengeRepository {
     var player by mutableStateOf<ChallengePlayer?>(null)
@@ -112,10 +114,12 @@ internal class FirebaseChallengeRepository {
 
     private fun loadAttempt(onReady: (DailyChallengeAttempt) -> Unit) {
         val revision = identityRevision
+        val assigningName = alias == null
         val input = js("({})")
         FirebaseClient.call("startDailyChallenge", input).then<Unit> { data: dynamic ->
             if (revision != identityRevision) return@then
             updateAttempt(data)
+            if (assigningName) player?.uid?.let { markAutomaticChallengeName(it) }
             busy = false
             onReady(attempt!!)
         }.catch { failure ->
@@ -181,6 +185,7 @@ internal class FirebaseChallengeRepository {
         val active = attempt ?: return
         if (!active.complete || (if (allTime) allTimeBusy else leaderboardBusy)) return
         val revision = identityRevision
+        val requestedAlias = alias
         val source = if (allTime) allTimeLeaderboard else leaderboard
         val input = js("({})")
         input.date = active.challenge.date
@@ -190,7 +195,9 @@ internal class FirebaseChallengeRepository {
         FirebaseClient.call(if (allTime) "getAllTimeLeaderboard" else "getDailyLeaderboard", input).then<Unit> { data: dynamic ->
             if (revision != identityRevision) return@then
             fun parse(entry: dynamic): LeaderboardEntry =
-                LeaderboardEntry(entry.uid as String, entry.displayName as String, entry.correctCount as Int,
+                LeaderboardEntry(entry.uid as String,
+                    if (entry.uid == player?.uid && alias != requestedAlias) alias ?: (entry.displayName as String) else entry.displayName as String,
+                    entry.correctCount as Int,
                     entry.shotCount as Int, entry.totalElapsedMs as Int, entry.rank as Int,
                     entry.simulated == true)
             val entries = (data.entries as Array<dynamic>).map { parse(it) }
@@ -222,6 +229,10 @@ internal class FirebaseChallengeRepository {
         FirebaseClient.call("renamePlayer", input).then<Unit> { data: dynamic ->
             if (revision != identityRevision) return@then
             alias = data.alias as String
+            player?.uid?.let { uid ->
+                leaderboard = leaderboard?.withPlayerName(uid, alias!!)
+                allTimeLeaderboard = allTimeLeaderboard?.withPlayerName(uid, alias!!)
+            }
             renameBusy = false
             loadLeaderboard()
             loadLeaderboard(allTime = true)

@@ -342,9 +342,16 @@ or Silent Falcon. All combinations are consumed before adding numbered names.
 Claims are case-insensitive, transactional, and retained after renaming.
 Names remain tied to the user ID, not the device hardware or the alias string.
 
-Results fit on one screen: score/time, name with Rename, Today/All time standings
-(top three plus the user's own row), New challenge tomorrow, and a clickable
-**See more shots!** swipe hint into practice. There is no per-shot breakdown.
+Results fit on one screen: score/time, a labelled **Your leaderboard name** card
+with **Change name**, Today/All time standings (top three plus the user's own row),
+a highlighted **New challenge tomorrow** banner, and a **See more shots** button
+with a swipe cue into practice. Desktop content is capped at 440px. There is no
+per-shot breakdown. Inline name editing focuses/selects the current name, provides
+Save name/Cancel, and prevents accidental reel navigation while editing. A brief
+Name updated confirmation follows a successful save. The first result after this
+browser receives an automatic name explains that it can be personalised; the
+one-time hint is stored per anonymous identity in browser storage. Editing and
+error states may scroll vertically on small screens or with the keyboard open.
 Renaming saves through an authenticated callable and is reflected in both
 leaderboards, including older results, without resetting the attempt or score.
 Names use the existing 3–20-character validation.
