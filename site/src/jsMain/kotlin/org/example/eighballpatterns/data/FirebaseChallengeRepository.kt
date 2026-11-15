@@ -36,6 +36,16 @@ internal class FirebaseChallengeRepository {
         private set
     var leaderboardError by mutableStateOf<String?>(null)
         private set
+    var allTimeLeaderboard by mutableStateOf<DailyLeaderboard?>(null)
+        private set
+    var allTimeBusy by mutableStateOf(false)
+        private set
+    var allTimeError by mutableStateOf<String?>(null)
+        private set
+    var renameBusy by mutableStateOf(false)
+        private set
+    var renameError by mutableStateOf<String?>(null)
+        private set
     private var retry: (() -> Unit)? = null
     private var identityRevision = 0
 
@@ -49,13 +59,16 @@ internal class FirebaseChallengeRepository {
             shotCount = null
             attempt = null
             leaderboard = null
+            allTimeLeaderboard = null
+            allTimeError = null
+            renameError = null
             error = null
             retry = null
             clockStarted = false
         }
         player = next
         authReady = true
-        if (next != null && !busy) refreshStatus()
+        if (!busy) refreshStatus()
     }
 
     fun refreshStatus() {
@@ -78,7 +91,7 @@ internal class FirebaseChallengeRepository {
         }
     }
 
-    fun open(chosenAlias: String, onReady: (DailyChallengeAttempt) -> Unit) {
+    fun open(onReady: (DailyChallengeAttempt) -> Unit) {
         if (busy || !authReady) return
         busy = true
         error = null
@@ -89,18 +102,17 @@ internal class FirebaseChallengeRepository {
                     identityRevision++
                     player = ChallengePlayer(uid)
                 }
-                loadAttempt(chosenAlias, onReady)
+                loadAttempt(onReady)
             }.catch { failure ->
                 busy = false
                 error = firebaseErrorMessage(failure)
             }
-        } else loadAttempt(chosenAlias, onReady)
+        } else loadAttempt(onReady)
     }
 
-    private fun loadAttempt(chosenAlias: String, onReady: (DailyChallengeAttempt) -> Unit) {
+    private fun loadAttempt(onReady: (DailyChallengeAttempt) -> Unit) {
         val revision = identityRevision
         val input = js("({})")
-        input.alias = chosenAlias
         FirebaseClient.call("startDailyChallenge", input).then<Unit> { data: dynamic ->
             if (revision != identityRevision) return@then
             updateAttempt(data)
@@ -165,31 +177,60 @@ internal class FirebaseChallengeRepository {
         clockRevision++
     }
 
-    fun loadLeaderboard(more: Boolean = false) {
+    fun loadLeaderboard(more: Boolean = false, allTime: Boolean = false) {
         val active = attempt ?: return
-        if (!active.complete || leaderboardBusy) return
+        if (!active.complete || (if (allTime) allTimeBusy else leaderboardBusy)) return
+        val revision = identityRevision
+        val source = if (allTime) allTimeLeaderboard else leaderboard
         val input = js("({})")
         input.date = active.challenge.date
-        if (more) input.afterUid = leaderboard?.nextAfterUid ?: return
-        leaderboardBusy = true
-        leaderboardError = null
-        FirebaseClient.call("getDailyLeaderboard", input).then<Unit> { data: dynamic ->
-            val entries = (data.entries as Array<dynamic>).map { entry ->
+        if (more) input.afterUid = source?.nextAfterUid ?: return
+        if (allTime) { allTimeBusy = true; allTimeError = null }
+        else { leaderboardBusy = true; leaderboardError = null }
+        FirebaseClient.call(if (allTime) "getAllTimeLeaderboard" else "getDailyLeaderboard", input).then<Unit> { data: dynamic ->
+            if (revision != identityRevision) return@then
+            fun parse(entry: dynamic): LeaderboardEntry =
                 LeaderboardEntry(entry.uid as String, entry.displayName as String, entry.correctCount as Int,
                     entry.shotCount as Int, entry.totalElapsedMs as Int, entry.rank as Int,
                     entry.simulated == true)
-            }
-            leaderboard = DailyLeaderboard(
-                entries = ((if (more) leaderboard?.entries.orEmpty() else emptyList()) + entries).distinctBy { it.uid },
+            val entries = (data.entries as Array<dynamic>).map { parse(it) }
+            val board = DailyLeaderboard(
+                entries = ((if (more) source?.entries.orEmpty() else emptyList()) + entries).distinctBy { it.uid },
                 total = data.total as Int,
                 simulatedCount = data.simulatedCount as Int,
                 ownRank = data.ownRank as? Int,
                 nextAfterUid = data.nextAfterUid as? String,
+                ownEntry = if (data.ownEntry != null) parse(data.ownEntry) else null,
             )
-            leaderboardBusy = false
+            if (allTime) { allTimeLeaderboard = board; allTimeBusy = false }
+            else { leaderboard = board; leaderboardBusy = false }
         }.catch { failure ->
-            leaderboardBusy = false
-            leaderboardError = firebaseErrorMessage(failure)
+            if (revision == identityRevision) {
+                if (allTime) { allTimeBusy = false; allTimeError = firebaseErrorMessage(failure, "all-time leaderboard") }
+                else { leaderboardBusy = false; leaderboardError = firebaseErrorMessage(failure, "daily leaderboard") }
+            }
+        }
+    }
+
+    fun rename(chosenAlias: String, onSaved: () -> Unit) {
+        if (renameBusy || player == null) return
+        val revision = identityRevision
+        renameBusy = true
+        renameError = null
+        val input = js("({})")
+        input.alias = chosenAlias
+        FirebaseClient.call("renamePlayer", input).then<Unit> { data: dynamic ->
+            if (revision != identityRevision) return@then
+            alias = data.alias as String
+            renameBusy = false
+            loadLeaderboard()
+            loadLeaderboard(allTime = true)
+            onSaved()
+        }.catch { failure ->
+            if (revision == identityRevision) {
+                renameBusy = false
+                renameError = firebaseErrorMessage(failure)
+            }
         }
     }
 }

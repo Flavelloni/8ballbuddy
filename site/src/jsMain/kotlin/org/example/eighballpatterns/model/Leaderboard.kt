@@ -16,4 +16,5 @@ internal data class DailyLeaderboard(
     val simulatedCount: Int = 0,
     val ownRank: Int? = null,
     val nextAfterUid: String? = null,
+    val ownEntry: LeaderboardEntry? = null,
 )

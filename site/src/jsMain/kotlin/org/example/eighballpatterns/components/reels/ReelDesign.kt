@@ -10,10 +10,13 @@ import com.varabyte.kobweb.navigation.BasePath
 import com.varabyte.kobweb.silk.components.forms.Button
 import com.varabyte.kobweb.silk.components.graphics.Image
 import com.varabyte.kobweb.silk.components.text.SpanText
+import com.varabyte.kobweb.silk.components.icons.fa.FaUsers
+import com.varabyte.kobweb.silk.components.icons.fa.FaTrophy
 import org.jetbrains.compose.web.css.px
 
 @Composable
-internal fun ReelBrandHeader(onHome: () -> Unit, enabled: Boolean, showSound: Boolean) {
+internal fun ReelBrandHeader(onHome: () -> Unit, enabled: Boolean, showSound: Boolean,
+    onChoosePlayer: (() -> Unit)? = null, onChallenge: (() -> Unit)? = null, challengeAvailable: Boolean = false) {
     Row(Modifier.fillMaxWidth().attrsModifier { classes("reel-topbar") },
         verticalAlignment=Alignment.CenterVertically) {
         Button(onClick={onHome()},enabled=enabled,modifier=Modifier.attrsModifier {
@@ -24,7 +27,34 @@ internal fun ReelBrandHeader(onHome: () -> Unit, enabled: Boolean, showSound: Bo
                 SpanText("8-Ball Buddy")
             }
         }
-        if(showSound) PredictionSoundToggle()
+        Row(Modifier.attrsModifier { classes("reel-header-actions") }, verticalAlignment=Alignment.CenterVertically) {
+            onChoosePlayer?.let { choose ->
+                Button(onClick={choose()}, enabled=enabled, modifier=Modifier.attrsModifier {
+                    classes("reel-header-action"); attr("aria-label","Choose player"); attr("title","Choose player")
+                }) {
+                    Row(Modifier.gap(8.px), verticalAlignment=Alignment.CenterVertically) {
+                        FaUsers()
+                        SpanText("Choose player", Modifier.attrsModifier {classes("reel-header-label")})
+                    }
+                }
+            }
+            onChallenge?.let { challenge ->
+                Button(onClick={challenge()}, enabled=enabled, modifier=Modifier.attrsModifier {
+                    classes("reel-header-action", "reel-header-challenge")
+                    attr("aria-label",if(challengeAvailable) "Play today's challenge" else "Challenge overview")
+                    attr("title",if(challengeAvailable) "New daily challenge" else "Challenge overview")
+                }) {
+                    Row(Modifier.gap(8.px), verticalAlignment=Alignment.CenterVertically) {
+                        FaTrophy()
+                        SpanText("Daily challenge", Modifier.attrsModifier {classes("reel-header-label")})
+                    }
+                    if(challengeAvailable) SpanText("", Modifier.attrsModifier {
+                        classes("challenge-new-dot"); attr("aria-hidden", "true")
+                    })
+                }
+            }
+            if(showSound) PredictionSoundToggle()
+        }
     }
 }
 
@@ -48,11 +78,41 @@ internal val reelDesignStyles = """
     .reel-page { position: relative; height: 100%; min-height: 100%; scroll-snap-align: start; scroll-snap-stop: always; overflow: hidden; }
     .reel-page-preview { pointer-events: none; }
     .reel-topbar { position: absolute; top: 0; left: 0; z-index: 30; min-height: calc(60px + env(safe-area-inset-top));
-      padding: calc(8px + env(safe-area-inset-top)) 18px 8px; justify-content: space-between; box-sizing: border-box;
+      padding: calc(7px + env(safe-area-inset-top)) 18px 7px; justify-content: space-between; box-sizing: border-box;
       background: #0a1410f2; border-bottom: 1px solid #ffffff0c; backdrop-filter: blur(16px); }
     .reel-brand-home.reel-brand-home { background: transparent; color: #edf6f0; border: 0; border-radius: 10px; padding: 4px 0;
       font-size: .89rem; font-weight: 750; letter-spacing: -.025em; min-height: 36px; }
     .reel-brand-home:hover { color: #ade7cb; }
+    .reel-header-actions { gap: 8px; flex-shrink: 0; }
+    .reel-brand-home.reel-brand-home { flex-shrink: 0; white-space: nowrap; }
+    .reel-header-action.reel-header-action { position: relative; box-sizing: border-box; min-width: 44px; height: 44px;
+      padding: 0 13px; border-radius: 12px; background: #ffffff04; border: 1px solid #ffffff18;
+      color: #c0d2c7; font-size: .74rem; font-weight: 600; line-height: 1; white-space: nowrap; box-shadow: none; }
+    .reel-header-action .fas { font-size: .88rem; flex-shrink: 0; }
+    .reel-header-challenge.reel-header-challenge { background: #ade7cb09; border-color: #ade7cb2b; color: #c0e8d3; }
+    .reel-header-challenge .fa-trophy { color: #dfc78e; }
+    .reel-header-action.reel-header-action:is(:disabled, [aria-disabled=true]) { opacity: .42; }
+    .reel-header-action.reel-header-action:focus-visible { outline-offset: 3px; }
+    .challenge-new-dot { position: absolute; top: -3px; right: -3px; width: 7px; height: 7px; border-radius: 50%;
+      background: #f0d591; border: 2px solid #0a1410; pointer-events: none; }
+    .reel-header-actions .reel-utility-button.reel-utility-button { width: 44px; height: 44px; min-height: 44px;
+      border-radius: 12px; padding: 0; color: #95aea1; }
+    @media (hover: hover) {
+      .reel-header-action.reel-header-action:hover:not(:disabled):not([aria-disabled=true]) { background: #ffffff0b; border-color: #b0d6c044; color: #edf6f0; }
+      .reel-header-challenge.reel-header-challenge:hover:not(:disabled):not([aria-disabled=true]) { background: #ade7cb13; border-color: #ade7cb55; }
+    }
+    @media (max-width: 599px) {
+      .reel-header-label { display: none; }
+      .reel-header-action.reel-header-action { width: 44px; padding: 0; }
+      .reel-topbar { padding-left: 12px; padding-right: 12px; }
+      .reel-header-actions { gap: 6px; }
+    }
+    @media (max-width: 370px) {
+      .reel-brand-home .kobweb-row { gap: 6px; }
+      .reel-brand-home.reel-brand-home { font-size: .8rem; }
+      .reel-topbar { padding-left: 10px; padding-right: 10px; }
+      .reel-header-actions { gap: 4px; }
+    }
     .reel-eyebrow { color: #a6d1bb; text-transform: uppercase; letter-spacing: .18em; font-size: .65rem; font-weight: 750; }
     .reel-primary-button.reel-primary-button { min-height: 50px; padding: 13px 22px; display: inline-flex; align-items: center; justify-content: center; gap: 10px;
       border-radius: 16px; border: 1px solid #c7f6dd55; background: #b0e6ca; color: #0b2618; font-size: .88rem; font-weight: 750;

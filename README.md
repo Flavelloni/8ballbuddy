@@ -20,9 +20,9 @@ Open http://localhost:8080. The server port is configured in `site/.kobweb/conf.
 
 ## Parked YouTube experiment (disabled)
 
-The experiment is disabled and its mode-selection link is commented out. The
-code is retained for later: enable `ENABLE_YOUTUBE_EXPERIMENT` and uncomment the
-link in `ChallengeReels.kt` to resume at `/youtube-test`.
+The experiment is disabled and has no navigation entry. The code is retained
+for later: enable `ENABLE_YOUTUBE_EXPERIMENT` and add a navigation link to
+resume at `/youtube-test`.
 The isolated experiment reuses Rob Hall's player introduction,
 layout image, image zoom and ball picker for `AMDgls4nJhQ/052056`.
 Choosing a ball automatically reveals a muted YouTube player for broadcast
@@ -38,10 +38,10 @@ cropping or hidden/background YouTube playback is used.
 
 The regular shot catalog, daily challenge and existing MP4s are unchanged. YouTube
 is contacted only when a reveal is requested on this route. To disable the test,
-set `ENABLE_YOUTUBE_EXPERIMENT = false` in `model/YouTubeExperiment.kt`; this hides
-the menu link and disables the test route. To remove it completely, delete the
+set `ENABLE_YOUTUBE_EXPERIMENT = false` in `model/YouTubeExperiment.kt`; this
+disables the test route. To remove it completely, delete the
 YouTube experiment's page, model, player bridge, reveal component and tests,
-remove its menu link/import, and make `EightBallReelLayoutOverlay` private again.
+remove any added navigation link/import, and make `EightBallReelLayoutOverlay` private again.
 
 ## Branding
 
@@ -154,7 +154,7 @@ This supersedes the older `browseOrder` priority; no folder prefixes or resource
 reorganization are required. Shared shot IDs are unchanged, and shared links
 still open their exact shot within the page's shuffled order.
 
-After **Just browse**, a player-choice reel offers **Any player** or the shooting
+In practice, **Choose player** in the header opens a selector offering **Any player** or the shooting
 players actually represented by active published shots. The list does not come
 from the complete `players.json` profile directory, and excludes opponent-only
 or archived-only names. The shuffle remains stable during navigation and
@@ -301,48 +301,69 @@ the transformed image bounds so selections remain aligned during the pulse.
 
 ## Daily Challenge
 
-After the welcome reel, choose **Daily challenge** or **Just browse**. Browsing
-does not require an account. The Home button beside Like and Share returns to
-the choice reel. Choosing Daily challenge opens a separate nickname reel where
-you can enter a leaderboard alias and start, or return to the choices. Firebase
-silently creates an anonymous identity; no Google account or password is needed.
-Complete the one-time setup in [FIREBASE.md](FIREBASE.md) before trying a ranked round.
+The main entrance is daily-first. Keep the welcome reel, then go directly to
+the day's player introductions and shots, without mode selection or nickname
+entry. Every unanswered challenge shot retains its player introduction. Saved
+partial rounds resume after the welcome; the final reveal automatically opens
+results. Normal visits always open the welcome reel. A browser that completed
+today's round continues from welcome into practice; unfinished or new UTC rounds
+continue into the challenge. Shared shot links still open their specific shot.
 
-Each UTC date gets a server-defined set of up to three distinct shots, frozen when
-the first participant starts. The shot limit is defined only in the backend.
-Shots are selected independently from the full active catalog using a date-seeded
-shuffle: browsing groups, players, matches, and the browsing player filter do not
-affect selection. Everyone gets the same daily round; there are no player-specific
-daily challenges or separate player leaderboards. Only browsing has a player picker.
-The nickname reel reads the actual shot count from Firebase without creating an
-account or attempt. Every player ID has one attempt per date, resumable in the same browser.
-Duplicate aliases are allowed. Names are remembered and fixed for each started
-daily attempt. A new browser or cleared site data creates a different identity;
-entering the same alias cannot restore the original account or progress.
-Results from the older browser-only prototype are not uploaded or ranked.
+Practice has no mandatory player picker. **Choose player** in its header opens
+the existing selector; Back to shots returns to the same position. The trophy
+opens today's challenge or its saved overview. Challenge mode has no player
+picker. Shared practice-shot links still open their exact shot.
 
-The server starts each shot clock when the layout is ready. Time runs until the
-answer reaches the server, including hidden tabs and interruptions after that
-shot starts. Introductions and reveals between shots do not count. The clock
-cannot be reset by reloading. The displayed clock is approximate; the result
-uses server time. Challenge shots cannot be skipped or answered twice.
-The stopwatch appears only on unanswered daily challenge layouts; browsing has no clock.
+### Reserved challenge shots
 
-Completed rounds are published automatically. The results reel shows your rank,
-all results (50 per page), and an answer breakdown. Ranking uses correct
-answers descending and total answer time ascending; exact ties share a rank.
-Three date-seeded simulated results provide comparison from the first round.
-They use short names from a pool of ten, are labeled **simulated**, count in the
-displayed ranks, never score perfectly, and take at least 60 seconds per shot.
-Chosen aliases are public, with your own row marked **(you)**. There are no tags
-or email addresses in standings. Aliases have 3 to 20 characters, using letters,
-numbers, spaces, underscores, or hyphens.
-Use Refresh standings to update the table as other players finish.
+Every active shot has an explicit boolean `challengeOnly` in `meta.json`.
+The first shot of each existing chronological browsing group is true unless it
+is a break; all break shots and all remaining shots are false. Group boundaries
+are established on the full catalog before removing reserved shots, so removing
+a whole opponent turn cannot merge adjacent runs. Groups left empty are omitted.
 
-The server rejects forged scores and enforces answer order, but public browse
-metadata and video URLs can reveal answers. This is a casual leaderboard, not
-an anti-cheat competition. A competitive release needs separate unrevealed
-challenge assets and controlled access to the reveals.
+The current catalog has **12 challenge-only shots and 52 practice shots**.
+Only tagged non-break shots are eligible for new daily rounds. Practice excludes
+all challenge-only shots, including from its player list. Imported shots need
+explicit tags; the backend catalog build validates them against group boundaries.
+Maintain tags when adding/reviewing earlier shots or changing group metadata.
+
+Each UTC date gets a server-defined set of up to three distinct eligible shots,
+frozen at the first start. Everyone gets the same round. Sets may repeat across
+dates; this release does not promise an unseen daily set forever. Keep original
+media and answer data for existing frozen rounds, including old break/practice
+rounds selected before this feature. Catalog filtering only affects new rounds.
+
+### Names, results and all-time standings
+
+Firebase silently creates a persistent anonymous browser identity. The server
+reserves a unique name drawn from a fixed adjective/noun pool, such as Red Tiger
+or Silent Falcon. All combinations are consumed before adding numbered names.
+Claims are case-insensitive, transactional, and retained after renaming.
+Names remain tied to the user ID, not the device hardware or the alias string.
+
+Results fit on one screen: score/time, name with Rename, Today/All time standings
+(top three plus the user's own row), New challenge tomorrow, and a clickable
+**See more shots!** swipe hint into practice. There is no per-shot breakdown.
+Renaming saves through an authenticated callable and is reflected in both
+leaderboards, including older results, without resetting the attempt or score.
+Names use the existing 3–20-character validation.
+
+Daily standings rank correct answers descending, then answer time ascending.
+All-time standings rank total correct answers across completed challenges;
+equal totals share a rank. Completion and its all-time increment are written
+atomically, and retries cannot score a round twice. Simulated results are no
+longer generated or ranked. An idempotent backfill reserves legacy names and
+credits historical real results; see [FIREBASE.md](FIREBASE.md).
+
+Shot timing remains server-authoritative and starts only when the layout is
+ready. Challenge requests have explicit loading/retry states. Clearing browser
+data or using another browser can lose the anonymous identity; typing the same
+name cannot recover it.
+
+**Rollout:** deploy the new Functions and Firestore index and run the historical
+backfill before publishing this frontend. No production deployment or migration
+is performed by a local build/test.
 
 ## Verification
 

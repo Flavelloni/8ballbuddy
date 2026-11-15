@@ -42,34 +42,6 @@ function shotHash(date, id) {
   return hash >>> 0;
 }
 
-const benchmarkNames = ["Milo", "Ava", "Noah", "Lena", "Kai", "Zoe", "Iris", "Luca", "Nina", "Omar"];
-
-export function createDailyBenchmarks(date, shotCount) {
-  if (!Number.isInteger(shotCount) || shotCount < 1) throw new ChallengeError("invalid-argument", "No challenge shots are available.");
-  let state = shotHash(date, "benchmarks") || 1;
-  const random = () => {
-    state ^= state << 13;
-    state ^= state >>> 17;
-    state ^= state << 5;
-    return (state >>> 0) / 0x100000000;
-  };
-  const names = [...benchmarkNames];
-  for (let index = names.length - 1; index > 0; index--) {
-    const other = Math.floor(random() * (index + 1));
-    [names[index], names[other]] = [names[other], names[index]];
-  }
-  const bestScore = Math.min(shotCount - 1, Math.floor(shotCount * 0.7));
-  const scores = [bestScore, Math.floor(bestScore / 2), 0];
-  return scores.map((correctCount, index) => {
-    const shotElapsedMs = Array.from({ length: shotCount }, () => 60_000 + Math.floor(random() * 91_000));
-    return {
-      uid: `benchmark-${date}-${index}`, displayName: names[index], simulated: true,
-      correctCount, shotCount, shotElapsedMs,
-      totalElapsedMs: shotElapsedMs.reduce((total, elapsed) => total + elapsed, 0),
-      finishedAtMs: Date.parse(`${date}T12:00:00Z`),
-    };
-  });
-}
 
 const DAILY_CHALLENGE_SHOT_LIMIT = 3;
 
@@ -83,7 +55,7 @@ export function requireAvailableChallenge(challenge, publishedShotIds) {
 
 export function createDailyChallenge(date, catalog) {
   const shots = [...new Map(catalog.map(shot => [shot.id, shot])).values()]
-    .filter(shot => shot.archived !== true && answerChoices(shot).includes(shot.correctBall))
+    .filter(shot => shot.archived !== true && shot.challengeOnly === true && shot.isBreak !== true && answerChoices(shot).includes(shot.correctBall))
     .sort((a, b) => shotHash(date, a.id) - shotHash(date, b.id) || (a.id < b.id ? -1 : 1))
     .slice(0, DAILY_CHALLENGE_SHOT_LIMIT);
   if (!shots.length) throw new ChallengeError("failed-precondition", "No challenge shots are available.");
@@ -151,9 +123,9 @@ export function submitAnswer(challenge, attempt, shotId, selectedBall, now, sele
   };
 }
 
-export function publicAttempt(challenge, attempt, now) {
+export function publicAttempt(challenge, attempt, now, displayName = attempt.displayName) {
   return {
-    displayName: attempt.displayName,
+    displayName,
     date: challenge.date, shotIds: challenge.shotIds, answers: attempt.answers,
     currentShotElapsedMs: attempt.currentShotStartedAtMs == null ? 0 : Math.max(0, now - attempt.currentShotStartedAtMs),
     clockStarted: attempt.currentShotStartedAtMs != null,

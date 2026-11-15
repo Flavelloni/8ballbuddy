@@ -24,6 +24,17 @@ class BrowseGroupsTest {
         assertEquals(listOf(run.take(3), run.takeLast(1)), browseShotGroups(run))
     }
 
+    @Test fun practiceRemovesChallengeStartersOnlyAfterDeterminingRunBoundaries() {
+        val a = shot("020000")
+        val b = shot("020010", "Ronny").let { it.copy(meta=it.meta.copy(challengeOnly=true)) }
+        val c = shot("020020")
+        val d = shot("020030")
+        val groups = practiceShotGroups(listOf(d,c,b,a))
+        assertEquals(listOf(listOf(a),listOf(c,d)), groups)
+        assertEquals(setOf(a,c,d), shuffledBrowseShots(listOf(a,b,c,d),null,1).toSet())
+        assertEquals(listOf("Erik"), availableBrowsePlayers(listOf(a,b,c,d)))
+    }
+
     @Test fun allFiveBoundariesCreateGroupsAndExactlyThreeMinutesDoesNot() {
         val a = shot("020000")
         val b = shot("020300")

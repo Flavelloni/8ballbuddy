@@ -3,6 +3,7 @@ import { fileURLToPath } from "node:url";
 import path from "node:path";
 import { answerChoices } from "../src/challenge.js";
 import { shotIdForPath, ignoredShotDirectory } from "./shot-paths.mjs";
+import { readShotGroups } from "./shot-groups.mjs";
 
 const root = fileURLToPath(new URL("../../site/src/jsMain/resources/public/8ball/", import.meta.url));
 const shots = [];
@@ -19,6 +20,8 @@ async function visit(directory) {
     publishedShotIds.push(id);
     // Preserve media/metadata for frozen rounds, but never select archived shots again.
     if (meta.archived === true) return;
+    if (typeof meta.challengeOnly !== "boolean") throw new Error(`Missing boolean challengeOnly: ${directory}`);
+    if (meta.isBreak === true && meta.challengeOnly) throw new Error(`Break shots must be practice-only: ${directory}`);
     // Coordinate-only shots are a browse pilot until daily point scoring is introduced.
     if (meta.target && !Object.hasOwn(meta, "ball") && meta.isBreak !== true) return;
     const correctAnswer = meta.isBreak === true ? meta.ballsPotted : meta.ball === null ? 0 : meta.ball;
@@ -30,6 +33,7 @@ async function visit(directory) {
       group: meta.group,
       correctBall: correctAnswer,
       isBreak: meta.isBreak === true,
+      challengeOnly: meta.challengeOnly === true,
       ...(meta.ballSelection && meta.isBreak !== true ? {
         ballSelection: {
           ids: meta.ballSelection.balls.map(ball => ball.id),
@@ -45,6 +49,11 @@ async function visit(directory) {
   }
 }
 
+for (const group of await readShotGroups(root)) for (const [index, shot] of group.entries()) {
+  if (shot.meta.challengeOnly !== (index === 0 && shot.meta.isBreak !== true)) {
+    throw new Error(`challengeOnly must identify non-break group starters: ${shot.filename}`);
+  }
+}
 await visit(root);
 if (!shots.length) throw new Error("The challenge catalog is empty.");
 shots.sort((a, b) => a.id.localeCompare(b.id, "en"));

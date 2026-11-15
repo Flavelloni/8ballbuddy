@@ -1,8 +1,30 @@
 {
   "indexes": [{
+    "collectionGroup": "challengerTotals",
+    "queryScope": "COLLECTION",
+    "fields": [
+      { "fieldPath": "correctCount", "order": "DESCENDING" },
+      { "fieldPath": "__name__", "order": "ASCENDING" }
+    ]
+  }, {
     "collectionGroup": "results",
     "queryScope": "COLLECTION",
     "fields": [
+      { "fieldPath": "correctCount", "order": "DESCENDING" },
+      { "fieldPath": "totalElapsedMs", "order": "ASCENDING" }
+    ]
+  }, {
+    "collectionGroup": "results",
+    "queryScope": "COLLECTION",
+    "fields": [
+      { "fieldPath": "simulated", "order": "ASCENDING" },
+      { "fieldPath": "correctCount", "order": "ASCENDING" }
+    ]
+  }, {
+    "collectionGroup": "results",
+    "queryScope": "COLLECTION",
+    "fields": [
+      { "fieldPath": "simulated", "order": "ASCENDING" },
       { "fieldPath": "correctCount", "order": "DESCENDING" },
       { "fieldPath": "totalElapsedMs", "order": "ASCENDING" }
     ]

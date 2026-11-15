@@ -1,15 +1,15 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
-  completedResult, createAttempt, createDailyBenchmarks, createDailyChallenge, pickerBalls,
+  completedResult, createAttempt, createDailyChallenge, pickerBalls,
   publicAttempt, startShot, submitAnswer, utcDate, validateAlias, answerChoices, requireAvailableChallenge,
 } from "../src/challenge.js";
 
 const date = "2026-10-16";
-const catalog = Array.from({ length: 30 }, (_, i) => ({ id: `shot-${i + 1}`, group: 1, correctBall: 6 }));
+const catalog = Array.from({ length: 30 }, (_, i) => ({ id: `shot-${i + 1}`, group: 1, correctBall: 6, challengeOnly: true }));
 
 test("annotated daily shots score opaque ball IDs on the server, including wrong picks", () => {
-  const shot={id:'annotated',group:1,correctBall:6,ballSelection:{ids:['cue','six','other'],correctBallId:'six',correctNumber:6}};
+  const shot={id:'annotated',group:1,correctBall:6,challengeOnly:true,ballSelection:{ids:['cue','six','other'],correctBallId:'six',correctNumber:6}};
   const challenge=createDailyChallenge(date,[shot]);
   const attempt=startShot(challenge,createAttempt(challenge,'uid','Player',0),shot.id,100);
   for(const [id,correct] of [['six',true],['cue',false],['other',false]]) {
@@ -26,7 +26,7 @@ test("annotated daily shots score opaque ball IDs on the server, including wrong
 });
 
 test("frozen numbered rounds accept new region answers without resetting progress", () => {
-  const shot={id:'legacy',group:2,correctBall:12};
+  const shot={id:'legacy',group:2,correctBall:12,challengeOnly:true};
   const latest={...shot,ballSelection:{ids:['a','b'],correctBallId:'b',correctNumber:12}};
   const challenge=createDailyChallenge(date,[shot]);
   const attempt=startShot(challenge,createAttempt(challenge,'uid','Player',0),shot.id,100);
@@ -34,7 +34,7 @@ test("frozen numbered rounds accept new region answers without resetting progres
   assert.equal(submitAnswer(challenge,attempt,shot.id,undefined,200,'a',[latest]).answers[0].correct,false);
   assert.throws(()=>submitAnswer(challenge,attempt,shot.id,undefined,200,'b',[{...latest,ballSelection:{...latest.ballSelection,correctNumber:11}}]),error=>error.code==='failed-precondition');
   const breakShot={...shot,isBreak:true,correctBall:1};
-  const breakRound=createDailyChallenge(date,[breakShot]);
+  const breakRound={date,shotIds:[breakShot.id],shots:[breakShot]};
   const breakAttempt=startShot(breakRound,createAttempt(breakRound,'uid','Player',0),shot.id,100);
   assert.throws(()=>submitAnswer(breakRound,breakAttempt,shot.id,1,200,'b',[latest]),error=>error.code==='invalid-argument');
   assert.equal(submitAnswer(challenge,attempt,shot.id,12,200).answers[0].selectedBall,12,'Old clients still work');
@@ -76,8 +76,8 @@ test("archived shots stay playable in frozen rounds but are excluded from new ro
 test("breaks accept counts 0 through 4 and score zero correctly", () => {
   const shot = { id: "break", group: null, isBreak: true, correctBall: 0 };
   assert.deepEqual(answerChoices(shot), [0, 1, 2, 3, 4]);
-  const challenge = createDailyChallenge(date, [shot]);
-  assert.deepEqual(challenge.shotIds, ["break"]);
+  const challenge = {date, shotIds:[shot.id], shots:[shot]};
+  assert.throws(() => createDailyChallenge(date, [shot]), error => error.code === "failed-precondition");
   const attempt = startShot(challenge, createAttempt(challenge, "uid", "Player", 0), "break", 100);
   for (const value of [-1, 5, 8, "0", 0.5, null]) {
     assert.throws(() => submitAnswer(challenge, attempt, "break", value, 200), error => error.code === "invalid-argument");
@@ -90,14 +90,16 @@ test("breaks accept counts 0 through 4 and score zero correctly", () => {
   assert.deepEqual(publicAttempt(challenge, attempt, 200).answers, []);
 });
 
-test("daily selection excludes unsupported break counts and keeps normal shots unchanged", () => {
+test("daily selection only uses explicitly tagged non-break shots", () => {
   const shots = [
-    { id: "zero", isBreak: true, correctBall: 0 },
+    { id: "zero", isBreak: true, correctBall: 0, challengeOnly: true },
     { id: "four", isBreak: true, correctBall: 4 },
     { id: "bad-break", isBreak: true, correctBall: 5 },
-    { id: "normal", group: 1, correctBall: 6 },
+    { id: "normal", group: 1, correctBall: 6, challengeOnly: true },
+    { id: "practice", group: 1, correctBall: 6, challengeOnly: false },
+    { id: "untagged", group: 1, correctBall: 6 },
   ];
-  assert.deepEqual(new Set(createDailyChallenge(date, shots).shotIds), new Set(["zero", "four", "normal"]));
+  assert.deepEqual(createDailyChallenge(date, shots).shotIds, ["normal"]);
   assert.deepEqual(answerChoices(shots[3]), pickerBalls(1));
 });
 
@@ -135,18 +137,6 @@ test("daily selection ignores shooting players and browse groups", () => {
     match: shot.id, browseGroup: shot.id, browseOrder: 100}))).shotIds, untaggedIds);
 });
 
-test("daily simulated scores have distinct names and take at least a minute per shot", () => {
-  const benchmarks = createDailyBenchmarks(date, 10);
-  assert.equal(benchmarks.length, 3);
-  assert.deepEqual(benchmarks, createDailyBenchmarks(date, 10));
-  assert.notDeepEqual(benchmarks, createDailyBenchmarks("2026-10-17", 10));
-  assert.equal(new Set(benchmarks.map(entry => entry.displayName)).size, 3);
-  assert.ok(benchmarks.every(entry => entry.simulated && entry.correctCount < 10));
-  assert.ok(benchmarks.every(entry => entry.shotElapsedMs.length === 10 &&
-    entry.shotElapsedMs.every(elapsed => elapsed >= 60_000)));
-  assert.ok(benchmarks.every(entry => entry.totalElapsedMs ===
-    entry.shotElapsedMs.reduce((total, elapsed) => total + elapsed, 0)));
-});
 
 test("the day changes at midnight UTC", () => {
   assert.equal(utcDate(Date.parse("2026-10-16T23:59:59Z")), date);

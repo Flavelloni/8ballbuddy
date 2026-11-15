@@ -6,9 +6,17 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class DailyChallengeTest {
+    @Test fun onlyTodaysCompletedRoundContinuesToPracticeAfterWelcome() {
+        val completed = DailyChallengeAttempt(DailyChallenge("2026-11-15",listOf("a")),listOf(ChallengeAnswer("a",1,1,100)))
+        assertTrue(shouldContinueInPractice("2026-11-15",completed))
+        assertFalse(shouldContinueInPractice("2026-11-16",completed))
+        assertFalse(shouldContinueInPractice("2026-11-15",completed,true))
+        assertFalse(shouldContinueInPractice("2026-11-15",completed.copy(answers=emptyList())))
+        assertFalse(shouldContinueInPractice("2026-11-15",null))
+    }
     @Test fun groupsAdvanceDirectlyToThePlayerAndRemainReversibleAcrossTheFeedLoop() {
         val firstIntro = ReelPosition(ReelStage.Player)
-        assertEquals(ReelPosition(ReelStage.ModeChoice), firstIntro.previous())
+        assertEquals(firstIntro, firstIntro.previous())
         assertEquals(ReelPosition(ReelStage.Shot), firstIntro.next(3))
         val end = ReelPosition(ReelStage.Shot, 1)
         val intro = end.next(3, nextStartsGroup = true)
@@ -77,10 +85,11 @@ class DailyChallengeTest {
     }
 
     @Test
-    fun welcomeLeadsToChoiceAndBrowsingRemainsReversible() {
-        assertEquals(ReelPosition(ReelStage.ModeChoice), ReelPosition().next(3))
-        assertEquals(ReelPosition(), ReelPosition(ReelStage.ModeChoice).previous())
-        assertEquals(ReelPosition(ReelStage.ModeChoice), ReelPosition(ReelStage.Player).previous())
+    fun welcomeLeadsStraightToThePlayerIntroductionAndResultsLeadToPractice() {
+        assertEquals(ReelPosition(ReelStage.Player), ReelPosition().next(3))
+        assertEquals(ReelPosition(ReelStage.Player, 1), ReelPosition(ReelStage.Welcome, 1).next(3))
+        assertEquals(ReelPosition(ReelStage.Player), ReelPosition(ReelStage.ChallengeResults).next(3))
+        assertEquals(ReelPosition(ReelStage.Player), ReelPosition(ReelStage.Player).previous())
         assertEquals(ReelPosition(ReelStage.Player), ReelPosition(ReelStage.Shot, 2).next(3))
     }
 

@@ -76,6 +76,7 @@ internal fun parseEightBallMeta(text: String): EightBallMeta {
         isBreak = (item.isBreak as? Boolean) ?: false,
         ballsPotted = (item.ballsPotted as? Int),
         archived = (item.archived as? Boolean) ?: false,
+        challengeOnly = item.challengeOnly == true,
         ballColors = parseBallColors(item.ballColors),
         browseOrder = (item.browseOrder as? Int) ?: 0,
         ballInHand = (item.ballInHand as? Boolean) ?: false,

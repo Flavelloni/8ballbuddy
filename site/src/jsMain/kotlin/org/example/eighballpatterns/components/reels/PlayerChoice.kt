@@ -66,7 +66,7 @@ internal fun EightBallPlayerChoice(players: List<String>, profiles: Map<String, 
                 PlayerChoiceCard(name, detail, profile = profile) { onSelected(name) }
             }
         }
-        Button(onClick = { onBack() }, modifier = Modifier.attrsModifier {classes("reel-subtle-button")}) { SpanText("Back to choices") }
+        Button(onClick = { onBack() }, modifier = Modifier.attrsModifier {classes("reel-subtle-button")}) { SpanText("Back to shots") }
     }
 }
 

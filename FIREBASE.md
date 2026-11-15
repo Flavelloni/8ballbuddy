@@ -2,9 +2,9 @@
 
 The website stays on GitHub Pages. Firebase project `ballbuddy-97095` supplies
 anonymous player identities, private challenge progress, callable functions,
-and standings. Players choose an alias; there is no Google sign-in prompt,
-email address, password, or visible account tag. Duplicate aliases are allowed,
-and the leaderboard marks your own row with **(you)**.
+and standings. Players receive a unique automatic name, editable on results;
+there is no Google sign-in prompt, email address or password. The leaderboard
+marks your own row with **(you)**.
 The web app configuration is in `data/FirebaseClient.kt`. Analytics is not
 initialized. There are no service-account credentials in the website.
 
@@ -74,62 +74,82 @@ Deploy the backend before publishing the updated frontend; it now calls
 If you deployed the previous Google-sign-in version, run the deploy command
 again. New player profiles are created automatically; no database reset is needed.
 
-## Player Aliases
+## Player Names and Return Visits
 
-On the choice reel, choose **Daily challenge**. The next reel asks for a
-**Nickname** and lets you start the challenge or return to the two choices.
-The first start silently creates a Firebase anonymous account. Names use 3 to 20
-characters: letters, numbers, spaces, underscores, or hyphens. The server
-normalizes and validates the alias before saving it. There is no name reservation
-or uniqueness check, so two people can both choose `PoolFan42`.
+Welcome leads directly into the daily round, retaining player introductions.
+There is no mode-choice or nickname-entry reel. Anonymous sign-in and a unique
+server-assigned adjective/noun name happen automatically while welcome loads.
+Normal return visits always show welcome. Completed-today identities then continue
+into practice; unfinished or new UTC rounds continue into the challenge. The practice header's trophy opens
+the round/overview and Choose player opens the optional practice selector.
 
-The player ID owns the attempt, not the name. An alias is fixed once that day's
-attempt starts, and the name field becomes read-only for the rest of the round.
-Renaming a request cannot reset an attempt or relabel an existing result.
-Before starting a new day's challenge, the remembered alias can be edited.
+The results page's Rename button validates and reserves a 3–20-character name.
+Reservations are case-insensitive and retained after a rename. The authenticated
+user ID owns names, attempts and totals; a rename never creates another attempt,
+changes an answer or transfers points. Current profile names are joined into
+daily/all-time standings so historical names do not get stuck in snapshots.
 
-Returning in the same browser restores the alias and any started or completed
-attempt. There is no guest sign-out button, since signing out would lose access
-to that anonymous identity. Clearing site data, using another browser/device,
-or closing a private-browsing session can lose the identity. Existing scores
-remain on the leaderboard, but entering the same alias does not recover them.
-There is no account recovery or automatic cross-device sync in this version.
+Clearing browser data, another browser/device or private sessions can lose the
+anonymous identity. No account recovery or automatic cross-device sync is provided.
 
-After deployment, test the website by entering an alias, starting a round, and
-reloading. The same name and progress should return. A separate browser profile
-can choose the same name and should get its own attempt and **(you)** marker.
+## Daily-First Rollout and Historical Backfill
+
+Deploy Functions and the new Firestore indexes before publishing the frontend.
+Wait for all three new indexes to become ready: `results` (simulated, correctCount)
+for rank counts, `results` (simulated, correctCount, totalElapsedMs) for standings,
+and `challengerTotals` (correctCount DESC, __name__ ASC) for all-time standings.
+The last index is explicit because its document-ID ordering differs from the
+descending score direction. Existing index definitions are retained.
+
+Backfill legacy name reservations and real completed scores using Admin SDK
+Application Default Credentials (for example, a local `gcloud auth
+application-default login` with an authorized account). Run explicitly:
+
+```powershell
+npm --prefix functions run backfill:all-time -- ballbuddy-97095
+```
+
+This command is NOT run by builds, deployments or browser requests. It requires
+an explicit project ID. Review the target before running it; local tests only
+use `demo-ballbuddy`. It reserves existing profile names, assigning a new
+automatic name where a legacy duplicate conflicts. It then credits historical
+real result documents, marking each as counted and setting simulated=false.
+Existing simulated results are retained but never ranked or credited.
+
+Backfill and new completions use the same transactional accounting. Repeating
+the backfill does not double-count scores, including if new users finish while
+it runs. Deploy/backend, backfill and then publish/frontend; do not reset
+existing challenges, attempts or totals.
 
 ## Data and Rules
 
-- `dailyChallenges/{UTC-date}` holds the frozen daily shots and answer key.
-- `players/{uid}` holds the player's validated alias for future daily rounds.
-- `dailyChallenges/{UTC-date}/attempts/{uid}` holds each account's progress and
-  server-recorded clock starts and answers.
-- `dailyChallenges/{UTC-date}/results/{uid}` contains completed results with a
-  display name, score, total time, and completion time. Emails are omitted.
-- The first standings request also saves three date-seeded, clearly labeled
-  simulated results. Their names come from a pool of ten; no simulated shot takes
-  less than 60 seconds, and none has a perfect score. A marker prevents duplicates.
+- `dailyChallenges/{UTC-date}`: frozen daily shot IDs and answer keys.
+- `players/{uid}`: current validated name and profile timestamps.
+- `playerNames/{normalized-name}`: permanent UID-owned name reservations.
+- `namePools/default`: remaining fixed combinations and numbered fallback.
+- `dailyChallenges/{UTC-date}/attempts/{uid}`: server-clock starts and answers.
+- `dailyChallenges/{UTC-date}/results/{uid}`: completed score, time,
+  simulated=false and countedInAllTime marker.
+- `challengerTotals/{uid}`: total correct, total questions and completed rounds.
 
-All browser Firestore access is denied. Callable functions handle reads and writes
-through the Admin SDK. The status endpoint returns the UTC date and actual shot
-count before sign-in, without creating a round. Profile and attempt data require
-authentication; starting and answering also require authentication. The backend
-alone defines the three-shot limit. Clients submit shot IDs and chosen balls,
-never scores or answer times. Answer submission and result publication happen in
-one transaction. Repeated requests return the accepted answer without scoring it
-twice. The functions do not send unsubmitted answers to the challenge client.
+All direct browser Firestore access stays denied. Authenticated callables own
+profile changes, answer scoring, totals and standings. The public status
+endpoint reveals only UTC date/count unless authenticated. The server generates
+new rounds exclusively from challengeOnly=true, non-break shots; all active
+answer mappings remain in the private catalog to support old frozen rounds.
 
-Standings sort by correct answers descending, then total shot time ascending.
-Exact ties share a rank, including across page boundaries. Simulated results
-count in these ranks and are labeled in the table. The results reel can load
-every entry, and your own rank is calculated even when your row is on a later page.
+The last accepted answer creates the daily result and credits all-time totals
+in the same transaction. Retries return the accepted answer without crediting
+again. Partial rounds do not contribute to all-time totals.
 
-Public browsing metadata and reveal clips still expose answers to someone who
-inspects the site. One Firebase player ID is one daily entry, not proof of a
-unique person. Resetting browser storage can create another identity and allow
-extra attempts. Server scoring prevents direct score forgery but does not make
-this guest leaderboard suitable for a high-stakes competition.
+Daily ranks use correct answers descending, then server answer time ascending.
+All-time ranks use cumulative correct answers only; equal totals share a rank.
+Both APIs expose real results only and hydrate current names. The compact UI
+shows top three plus your own row; pagination remains supported by the APIs.
+
+This remains a casual anonymous leaderboard: public media/metadata can expose
+answers, and resetting browser data can create another identity. It is not an
+anti-cheat or high-stakes competition system.
 
 ## Local Firebase Emulators
 
@@ -159,7 +179,7 @@ For the backend integration test (with the emulators stopped):
 npx firebase-tools emulators:exec --project demo-ballbuddy --only 'auth,firestore,functions' "npm --prefix functions run test:emulator"
 ```
 
-This verifies anonymous authentication, alias validation and restoration,
-duplicate names with separate identities, immutable daily rounds and aliases,
-server timing, concurrent submission retries, publishing completed attempts,
-pagination and ties, and Firestore rules rejecting direct profile/result writes.
+This verifies automatic/concurrent name reservation, collision rejection,
+rename persistence, reserved non-break eligibility, immutable daily rounds,
+server timing, concurrent answer retries, idempotent lifetime totals/backfill,
+real daily/all-time ranks, pagination/ties and direct-write denial.

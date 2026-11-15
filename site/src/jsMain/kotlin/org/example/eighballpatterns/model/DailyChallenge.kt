@@ -2,6 +2,10 @@ package org.example.eighballpatterns.model
 
 internal data class DailyChallenge(val date: String, val shotIds: List<String>)
 
+/** The welcome reel is always shown; completion only changes where it continues. */
+internal fun shouldContinueInPractice(today: String, attempt: DailyChallengeAttempt?, explicitChallenge: Boolean = false): Boolean =
+    !explicitChallenge && attempt?.complete == true && attempt.challenge.date == today
+
 internal data class ChallengeAnswer(
     val shotId: String,
     val selectedBall: Int,

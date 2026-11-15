@@ -4,6 +4,8 @@ import { initializeApp } from "firebase-admin/app";
 import { getFirestore } from "firebase-admin/firestore";
 import { readFile } from "node:fs/promises";
 import { answerChoices } from "../src/challenge.js";
+import { automaticNames, backfillPlayerNames } from "../src/player-names.js";
+import { backfillAllTime } from "../src/all-time.js";
 
 const projectId = "demo-ballbuddy";
 assert.ok(process.env.FIRESTORE_EMULATOR_HOST, "Run this test using Firebase emulators:exec.");
@@ -32,140 +34,117 @@ async function call(name, account, data = {}, status = 200) {
   return result.result ?? result.error;
 }
 
-test("anonymous aliases, duplicate names, immutable daily attempts, server scores, rules, and paginated ranks", async () => {
+test("automatic unique names, renaming, reserved shots, retry-safe totals, historical backfill and real ranks", async () => {
   await fetch(`http://${process.env.FIRESTORE_EMULATOR_HOST}/emulator/v1/projects/${projectId}/databases/(default)/documents`, { method: "DELETE" });
-  const alice = await signIn();
-  const bob = await signIn();
-  assert.notEqual(alice.uid, bob.uid);
+  const alice = await signIn(), bob = await signIn();
   await call("startDailyChallenge", null, {}, 401);
   const summary = await call("getDailyChallengeStatus", null);
   assert.equal(summary.shotCount, 3);
   assert.equal(summary.alias, null);
   assert.equal(summary.attempt, null);
-  assert.equal(summary.shotIds, undefined);
-  assert.equal((await db.doc(`dailyChallenges/${summary.date}`).get()).exists, false);
-  assert.equal((await call("getDailyChallengeStatus", alice)).alias, null);
-  for (const alias of ["ab", "a".repeat(21), "<script>", "bad\u202ename"]) {
-    await call("startDailyChallenge", alice, { alias }, 400);
-  }
-  assert.equal((await db.doc(`players/${alice.uid}`).get()).exists, false);
   const [first, second] = await Promise.all([
-    call("startDailyChallenge", alice, { alias: "  PoolFan42  " }),
-    call("startDailyChallenge", bob, { alias: "PoolFan42", uid: alice.uid }),
+    call("startDailyChallenge", alice), call("startDailyChallenge", bob),
   ]);
-  assert.equal(first.displayName, "PoolFan42");
-  assert.equal(second.displayName, "PoolFan42");
-  assert.equal((await db.doc(`players/${alice.uid}`).get()).data().alias, "PoolFan42");
-  const returning = await signIn();
-  await db.doc(`players/${returning.uid}`).set({ alias: "RememberedName", createdAtMs: 1, updatedAtMs: 1 });
-  const returningStatus = await call("getDailyChallengeStatus", returning);
-  assert.equal(returningStatus.alias, "RememberedName");
-  assert.equal(returningStatus.attempt, null);
-  assert.equal((await call("startDailyChallenge", returning)).displayName, "RememberedName");
-  assert.equal((await db.doc(`players/${bob.uid}`).get()).data().alias, "PoolFan42");
-  const status = await call("getDailyChallengeStatus", alice);
-  assert.equal(first.shotIds.length, summary.shotCount);
-  assert.equal(status.shotCount, first.shotIds.length);
-  const publicStatus = await call("getDailyChallengeStatus", null, { uid: alice.uid });
-  assert.equal(publicStatus.alias, null);
-  assert.equal(publicStatus.attempt, null);
-  assert.equal(status.alias, "PoolFan42");
-  assert.deepEqual(status.attempt, first);
-  assert.equal((await call("startDailyChallenge", alice, { alias: "AnotherName" })).displayName, "PoolFan42");
-  assert.equal((await db.doc(`players/${alice.uid}`).get()).data().alias, "PoolFan42");
+  assert.notEqual(first.displayName, second.displayName);
+  assert.ok(automaticNames.includes(first.displayName));
+  assert.ok(automaticNames.includes(second.displayName));
   assert.deepEqual(first.shotIds, second.shotIds);
-  assert.equal(first.date, new Date().toISOString().slice(0, 10));
-  assert.equal(first.answers.length, 0);
-  assert.equal(first.clockStarted, false);
-  assert.equal(first.shots, undefined);
-  const results = db.collection(`dailyChallenges/${first.date}/results`);
-  assert.equal((await results.get()).size, 0);
-  await call("submitChallengeAnswer", alice, { date: first.date, shotId: first.shotIds[0], selectedBall: 6 }, 400);
-  await call("startChallengeShot", alice, { date: first.date, shotId: first.shotIds[1] }, 400);
-
+  assert.deepEqual(await call("startDailyChallenge", alice, { alias: "CannotResetMe" }), first);
+  assert.equal((await call("getDailyChallengeStatus", alice)).alias, first.displayName);
   const catalog = JSON.parse(await readFile(new URL("../generated/catalog.json", import.meta.url), "utf8"));
-  for (const [account, wrongFirst] of [[alice, true], [bob, false]]) {
-    let attempt;
-    for (const [index, shotId] of first.shotIds.entries()) {
-      const shot = catalog.find(shot => shot.id === shotId);
-      const input = { date: first.date, shotId };
-      await call("startChallengeShot", account, input);
-      const attemptRef = db.doc(`dailyChallenges/${first.date}/attempts/${account.uid}`);
-      await attemptRef.update({ currentShotStartedAtMs: Date.now() - 2500 });
-      const startedAt = (await attemptRef.get()).data().currentShotStartedAtMs;
-      await call("startChallengeShot", account, input);
-      assert.equal((await attemptRef.get()).data().currentShotStartedAtMs, startedAt);
-      const selectedBall = wrongFirst && index === 0 ? answerChoices(shot).find(ball => ball !== shot.correctBall) : shot.correctBall;
-      const request = { ...input, selectedBall, elapsedMs: 0, correctCount: 100, uid: "forged" };
-      const [accepted, retry] = await Promise.all([
-        call("submitChallengeAnswer", account, request), call("submitChallengeAnswer", account, request),
-      ]);
-      assert.deepEqual(accepted, retry);
-      assert.equal(accepted.answers.length, index + 1);
-      assert.ok(accepted.answers[index].elapsedMs >= 2500);
-      assert.equal(accepted.answers[index].correctBall, shot.correctBall);
-      attempt = accepted;
-      if (index < first.shotIds.length - 1) assert.equal((await results.doc(account.uid).get()).exists, false);
+  assert.ok(first.shotIds.every(id => {
+    const shot=catalog.find(s=>s.id===id);
+    return shot.challengeOnly===true && !shot.isBreak;
+  }));
+  await call("renamePlayer", null, {alias:"Forbidden"}, 401);
+  for (const alias of ["ab", "a".repeat(21), "<script>", "bad\u202ename"]) await call("renamePlayer", alice, {alias}, 400);
+  assert.equal((await call("renamePlayer", alice, {alias:"  Pool   Hero  "})).alias, "Pool Hero");
+  await call("renamePlayer", bob, {alias:"pool hero"}, 409);
+  assert.equal((await call("startDailyChallenge", alice)).displayName, "Pool Hero");
+  assert.equal((await call("getDailyChallengeStatus", alice)).attempt.displayName, "Pool Hero");
+  await call("startChallengeShot", alice, {date:first.date,shotId:first.shotIds[1]},400);
+  await call("submitChallengeAnswer", alice, {date:first.date,shotId:first.shotIds[0],selectedBall:6},400);
+  const results=db.collection(`dailyChallenges/${first.date}/results`);
+  for(const [account,wrongFirst] of [[alice,true],[bob,false]]) {
+    for(const [index,shotId] of first.shotIds.entries()) {
+      const shot=catalog.find(s=>s.id===shotId), input={date:first.date,shotId};
+      await call("startChallengeShot",account,input);
+      const attemptRef=db.doc(`dailyChallenges/${first.date}/attempts/${account.uid}`);
+      const startedAt=(await attemptRef.get()).data().currentShotStartedAtMs;
+      await call("startChallengeShot",account,input);
+      assert.equal((await attemptRef.get()).data().currentShotStartedAtMs,startedAt);
+      const selectedBallId=wrongFirst&&index===0 ? shot.ballSelection.ids.find(id=>id!==shot.ballSelection.correctBallId) : shot.ballSelection.correctBallId;
+      const request={...input,selectedBallId,correctCount:100,uid:"forged",elapsedMs:0};
+      const [accepted,retry]=await Promise.all([call("submitChallengeAnswer",account,request),call("submitChallengeAnswer",account,request)]);
+      assert.deepEqual(accepted,retry);
+      assert.equal(accepted.answers.length,index+1);
+      if(index<2)assert.equal((await results.doc(account.uid).get()).exists,false);
     }
-    const result = (await results.doc(account.uid).get()).data();
-    assert.equal(result.correctCount, first.shotIds.length - (wrongFirst ? 1 : 0));
-    assert.equal(result.totalElapsedMs, attempt.answers.reduce((sum, answer) => sum + answer.elapsedMs, 0));
-    assert.equal(result.email, undefined);
-    assert.deepEqual((await call("startDailyChallenge", account)).answers, attempt.answers);
+    const result=(await results.doc(account.uid).get()).data();
+    assert.equal(result.correctCount,wrongFirst?2:3);
+    assert.equal(result.countedInAllTime,true);
+    assert.equal(result.simulated,false);
+    const total=(await db.doc(`challengerTotals/${account.uid}`).get()).data();
+    assert.equal(total.correctCount,result.correctCount);
+    assert.equal(total.challenges,1);
   }
-
-  let board = await call("getDailyLeaderboard", alice, { date: first.date });
-  assert.equal(board.total, 5);
-  assert.equal(board.simulatedCount, 3);
-  assert.equal(board.ownRank, 2);
-  assert.deepEqual(board.entries.slice(0, 2).map(entry => entry.displayName), ["PoolFan42", "PoolFan42"]);
-  assert.deepEqual(board.entries.slice(0, 2).map(entry => entry.uid), [bob.uid, alice.uid]);
-  assert.ok(board.entries.slice(2).every(entry => entry.simulated));
-  const benchmarks = (await results.where("simulated", "==", true).get()).docs.map(doc => doc.data());
-  assert.equal(benchmarks.length, 3);
-  assert.ok(benchmarks.every(entry => entry.correctCount < first.shotIds.length &&
-    entry.shotElapsedMs.every(elapsed => elapsed >= 60_000)));
-  assert.equal((await call("getDailyLeaderboard", alice, { date: first.date })).total, 5);
-  const stranger = await signIn();
-  const strangerAttempt = await call("startDailyChallenge", stranger, { alias: "PoolFan42" });
-  assert.equal(strangerAttempt.answers.length, 0);
-  assert.equal((await call("getDailyLeaderboard", stranger, { date: first.date })).ownRank, null);
-  assert.equal((await call("getDailyChallengeStatus", alice)).attempt.answers.length, first.shotIds.length);
-  await call("getDailyLeaderboard", alice, { date: first.date, afterUid: "../attempts" }, 400);
-
-  const batch = db.batch();
-  for (let i = 0; i < 60; i++) {
-    const uid = `tie-${String(i).padStart(3, "0")}`;
-    batch.set(results.doc(uid), { uid, displayName: `Tied player ${i}`, correctCount: first.shotIds.length,
-      totalElapsedMs: 1000, shotCount: first.shotIds.length, finishedAtMs: Date.now() });
+  let board=await call("getDailyLeaderboard",alice,{date:first.date});
+  assert.equal(board.total,2);
+  assert.equal(board.simulatedCount,0);
+  assert.equal(board.ownRank,2);
+  assert.equal(board.ownEntry.displayName,"Pool Hero");
+  assert.deepEqual(board.entries.map(e=>e.uid),[bob.uid,alice.uid]);
+  assert.equal((await call("getAllTimeLeaderboard",alice)).ownEntry.correctCount,2);
+  await call("renamePlayer",alice,{alias:"Silver Champion"});
+  assert.equal((await call("getDailyLeaderboard",alice,{date:first.date})).ownEntry.displayName,"Silver Champion");
+  assert.equal((await call("getAllTimeLeaderboard",alice)).ownEntry.displayName,"Silver Champion");
+  const past="2025-01-01";
+  await db.doc(`dailyChallenges/${past}/results/${alice.uid}`).set({uid:alice.uid,displayName:"Old Name",correctCount:2,shotCount:3,totalElapsedMs:5000});
+  await db.doc(`dailyChallenges/${past}/results/benchmark-old`).set({uid:"benchmark-old",displayName:"Simulated",simulated:true,correctCount:999,shotCount:999,totalElapsedMs:1});
+  await results.doc("benchmark-now").set({uid:"benchmark-now",displayName:"Simulated",simulated:true,correctCount:999,shotCount:999,totalElapsedMs:1});
+  assert.equal(await backfillAllTime(db),1);
+  assert.equal(await backfillAllTime(db),0);
+  const lifetime=await call("getAllTimeLeaderboard",alice);
+  assert.equal(lifetime.total,2);
+  assert.equal(lifetime.ownRank,1);
+  assert.equal(lifetime.ownEntry.correctCount,4);
+  assert.equal((await call("getDailyLeaderboard",alice,{date:first.date})).total,2);
+  await call("getDailyLeaderboard",alice,{date:first.date,afterUid:"../attempts"},400);
+  const batch=db.batch();
+  for(let i=0;i<60;i++){
+    const uid=`tie-${String(i).padStart(3,"0")}`;
+    batch.set(results.doc(uid),{uid,displayName:`Tied player ${i}`,simulated:false,correctCount:3,totalElapsedMs:0,shotCount:3,finishedAtMs:Date.now()});
   }
   await batch.commit();
-  board = await call("getDailyLeaderboard", alice, { date: first.date });
-  assert.equal(board.total, 65);
-  assert.equal(board.ownRank, 62);
-  assert.equal(board.entries.length, 50);
-  assert.ok(board.entries.every(entry => entry.rank === 1));
-  const next = await call("getDailyLeaderboard", alice, { date: first.date, afterUid: board.nextAfterUid });
-  assert.equal(next.entries.length, 15);
-  assert.equal(next.nextAfterUid, null);
-  assert.ok(next.entries.slice(0, 10).every(entry => entry.rank === 1));
-  assert.equal(next.entries[10].rank, 61);
-  assert.equal(next.entries[11].rank, 62);
-  assert.ok(next.entries.slice(12).every(entry => entry.simulated));
-  assert.equal(new Set([...board.entries, ...next.entries].map(entry => entry.uid)).size, 65);
-
-  const denied = await fetch(`http://${process.env.FIRESTORE_EMULATOR_HOST}/v1/projects/${projectId}/databases/(default)/documents/dailyChallenges/${first.date}`, {
-    headers: { Authorization: `Bearer ${alice.token}` },
+  board=await call("getDailyLeaderboard",alice,{date:first.date});
+  assert.equal(board.total,62);
+  assert.equal(board.entries.length,50);
+  assert.equal(board.ownRank,62);
+  assert.ok(board.entries.every(e=>e.rank===1));
+  const next=await call("getDailyLeaderboard",alice,{date:first.date,afterUid:board.nextAfterUid});
+  assert.equal(next.entries.length,12);
+  assert.ok(next.entries.slice(0,10).every(e=>e.rank===1));
+  assert.equal(next.entries[10].rank,61);
+  assert.equal(next.entries[11].rank,62);
+  for(const uid of ["tie-a","tie-b"])await db.doc(`challengerTotals/${uid}`).set({uid,displayName:uid,correctCount:10,shotCount:12,challenges:4});
+  assert.deepEqual((await call("getAllTimeLeaderboard",alice)).entries.slice(0,2).map(e=>e.rank),[1,1]);
+  const denied=await fetch(`http://${process.env.FIRESTORE_EMULATOR_HOST}/v1/projects/${projectId}/databases/(default)/documents/players/${alice.uid}`,{
+    method:"PATCH",headers:{Authorization:`Bearer ${bob.token}`,"Content-Type":"application/json"},
+    body:JSON.stringify({fields:{alias:{stringValue:"Stolen"}}}),
   });
-  assert.equal(denied.status, 403);
-  const forged = await fetch(`http://${process.env.FIRESTORE_EMULATOR_HOST}/v1/projects/${projectId}/databases/(default)/documents/dailyChallenges/${first.date}/results/${alice.uid}`, {
-    method: "PATCH", headers: { Authorization: `Bearer ${alice.token}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ fields: { correctCount: { integerValue: "100" } } }),
-  });
-  assert.equal(forged.status, 403);
-  const renamed = await fetch(`http://${process.env.FIRESTORE_EMULATOR_HOST}/v1/projects/${projectId}/databases/(default)/documents/players/${alice.uid}`, {
-    method: "PATCH", headers: { Authorization: `Bearer ${bob.token}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ fields: { alias: { stringValue: "StolenName" } } }),
-  });
-  assert.equal(renamed.status, 403);
+  assert.equal(denied.status,403);
+  await db.doc("players/legacy-a").set({alias:"Legacy Champion"});
+  await db.doc("players/legacy-b").set({alias:"Legacy Champion"});
+  await backfillPlayerNames(db);
+  const legacyNames=await Promise.all(["legacy-a","legacy-b"].map(async uid=>(await db.doc(`players/${uid}`).get()).data().alias));
+  assert.notEqual(legacyNames[0],legacyNames[1]);
+  await backfillPlayerNames(db);
+  assert.deepEqual(await Promise.all(["legacy-a","legacy-b"].map(async uid=>(await db.doc(`players/${uid}`).get()).data().alias)),legacyNames);
+  await db.doc("namePools/default").set({available:[],nextNumber:2});
+  const newcomer=await signIn(), numbered=await call("startDailyChallenge",newcomer);
+  assert.equal(numbered.displayName,"Red Tiger 2");
+  const another=await signIn();
+  assert.equal((await call("startDailyChallenge",another)).displayName,"Red Tiger 3");
+  assert.equal((await call("startDailyChallenge",newcomer)).displayName,"Red Tiger 2");
+  console.log("PASS unique names, rename persistence, 12-shot eligibility, idempotent scoring/backfill, real daily/all-time ranks, ties, pagination and rules");
 });

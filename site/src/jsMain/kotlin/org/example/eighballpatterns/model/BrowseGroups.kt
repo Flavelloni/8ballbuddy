@@ -5,7 +5,7 @@ import kotlin.random.Random
 internal fun playerKey(name: String): String = name.trim().replace(Regex("\\s+"), " ").lowercase()
 
 internal fun availableBrowsePlayers(shots: List<EightBallShot>): List<String> =
-    shots.filterNot { it.meta.archived }.map { it.meta.player.trim() }.filter { it.isNotBlank() }
+    shots.filterNot { it.meta.archived || it.meta.challengeOnly }.map { it.meta.player.trim() }.filter { it.isNotBlank() }
         .distinctBy(::playerKey).sortedBy(::playerKey)
 
 private fun EightBallShot.matchPath(): String =
@@ -43,9 +43,12 @@ internal fun browseShotGroups(shots: List<EightBallShot>): List<List<EightBallSh
 }
 
 /** Prefer the selected player's shuffled runs, then all remaining runs, without repeats. */
+internal fun practiceShotGroups(shots: List<EightBallShot>): List<List<EightBallShot>> =
+    browseShotGroups(shots).map { group -> group.filterNot { it.meta.challengeOnly } }.filter { it.isNotEmpty() }
+
 internal fun shuffledBrowseShots(shots: List<EightBallShot>, selectedPlayer: String?, seed: Int): List<EightBallShot> {
     // A page-load seed keeps navigation/recomposition stable, with a fresh order on reload.
-    val groups = browseShotGroups(shots).shuffled(Random(seed))
+    val groups = practiceShotGroups(shots).shuffled(Random(seed))
     if (selectedPlayer == null) return groups.flatten()
     val (preferred, remaining) = groups.partition {
         playerKey(it.first().meta.player) == playerKey(selectedPlayer)

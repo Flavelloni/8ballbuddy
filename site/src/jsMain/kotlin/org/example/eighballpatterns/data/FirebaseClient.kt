@@ -69,11 +69,3 @@ internal object FirebaseClient {
     fun call(name: String, input: dynamic = js("({})")): Promise<dynamic> =
         FirebaseFunctionsSdk.httpsCallable(functions, name)(input).then<dynamic> { result: dynamic -> result.data }
 }
-
-internal fun firebaseErrorMessage(error: Throwable): String = when (error.asDynamic().code as? String) {
-    "auth/operation-not-allowed", "auth/configuration-not-found" -> "The daily challenge isn't available yet. Please try browsing."
-    "auth/too-many-requests" -> "Too many attempts to connect. Please try again later."
-    "functions/unavailable", "functions/not-found", "functions/internal", "auth/network-request-failed" ->
-        "Could not reach the daily challenge. Please try again."
-    else -> error.message ?: "Could not load the daily challenge. Please try again."
-}

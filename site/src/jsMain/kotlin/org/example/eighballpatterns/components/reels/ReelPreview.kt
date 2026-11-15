@@ -15,7 +15,6 @@ internal fun ReelPreview(position: ReelPosition, shot: EightBallShot?, player: P
     challenge: Boolean, stats: EightBallReelStats) {
     when (position.stage) {
         ReelStage.Welcome -> EightBallReelIntro({}, false)
-        ReelStage.ModeChoice -> EightBallModeChoice({}, {})
         ReelStage.Player -> if (shot != null) EightBallPlayerIntro(shot, player, challenge)
         ReelStage.Shot -> if (shot != null) {
             val clock = remember { AnswerClock({0.0}) }

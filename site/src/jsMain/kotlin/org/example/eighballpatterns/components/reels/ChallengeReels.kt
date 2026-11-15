@@ -10,202 +10,23 @@ import com.varabyte.kobweb.compose.foundation.layout.Row
 import com.varabyte.kobweb.compose.ui.Alignment
 import com.varabyte.kobweb.compose.ui.Modifier
 import com.varabyte.kobweb.compose.ui.attrsModifier
-import com.varabyte.kobweb.compose.ui.toAttrs
-import com.varabyte.kobweb.navigation.BasePath
 import com.varabyte.kobweb.silk.components.icons.fa.FaArrowLeft
 import com.varabyte.kobweb.silk.components.icons.fa.FaArrowRight
-import com.varabyte.kobweb.silk.components.icons.fa.FaCheck
-import com.varabyte.kobweb.silk.components.icons.fa.FaXmark
-import com.varabyte.kobweb.silk.components.icons.fa.FaLayerGroup
 import com.varabyte.kobweb.silk.components.icons.fa.FaRotateRight
-import com.varabyte.kobweb.silk.components.icons.fa.FaTrophy
 import com.varabyte.kobweb.silk.components.text.SpanText
 import org.example.eighballpatterns.model.DailyChallengeAttempt
 import org.example.eighballpatterns.model.DailyLeaderboard
-import org.example.eighballpatterns.model.ENABLE_YOUTUBE_EXPERIMENT
 import org.example.eighballpatterns.model.formatChallengeTime
 import org.example.eighballpatterns.model.hasValidPlayerAliasLength
 import org.example.eighballpatterns.model.normalizePlayerAlias
 import org.jetbrains.compose.web.attributes.InputType
 import org.jetbrains.compose.web.dom.Button
-import org.jetbrains.compose.web.dom.A
 import org.jetbrains.compose.web.dom.Form
 import org.jetbrains.compose.web.dom.H2
-import org.jetbrains.compose.web.dom.H3
-import org.jetbrains.compose.web.dom.Img
 import org.jetbrains.compose.web.dom.Input
-import org.jetbrains.compose.web.dom.Label
 import org.jetbrains.compose.web.dom.P
-import org.jetbrains.compose.web.dom.Tbody
-import org.jetbrains.compose.web.dom.Td
 import org.jetbrains.compose.web.dom.Text
-import org.jetbrains.compose.web.dom.Th
-import org.jetbrains.compose.web.dom.Thead
-import org.jetbrains.compose.web.dom.Tr
-import org.jetbrains.compose.web.dom.Table
 
-@Composable
-internal fun EightBallModeChoice(
-    onDailyChallenge: () -> Unit,
-    onBrowse: () -> Unit,
-) {
-    Column(
-        Modifier.attrsModifier { classes("daily-challenge-page", "daily-choice") },
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Img(src = BasePath.prependTo("/images/pool-ball-icon.svg"), alt = "8-Ball Buddy", attrs = {
-            classes("daily-brand")
-            attr("width", "80")
-            attr("height", "80")
-        })
-        H2 { Text("Your next move") }
-        Column(Modifier.attrsModifier { classes("daily-options") }) {
-
-            Button(attrs = {
-                classes("daily-option", "daily-option-primary")
-                onClick { onBrowse() }
-            }) {
-                FaLayerGroup(Modifier.attrsModifier { classes("daily-option-icon") })
-                Column(Modifier.attrsModifier {classes("daily-option-label")}) {
-                    SpanText("Practice")
-                }
-                FaArrowRight()
-            }
-
-
-
-            Button(attrs = {
-                classes("daily-option", "daily-option-primary")
-                onClick { onDailyChallenge() }
-            }) {
-                FaTrophy(Modifier.attrsModifier { classes("daily-option-icon") })
-                Column(Modifier.attrsModifier {classes("daily-option-label")}) {
-                    SpanText("Daily challenge")
-                }
-                FaArrowRight()
-            }
-            /* Parked YouTube experiment. To resume: uncomment this link and enable
-               ENABLE_YOUTUBE_EXPERIMENT in model/YouTubeExperiment.kt.
-            if (ENABLE_YOUTUBE_EXPERIMENT) {
-                A(href = BasePath.prependTo("/youtube-test"), attrs = { classes("daily-muted") }) {
-                    Text("Try the YouTube embed experiment")
-                }
-            }
-            */
-        }
-    }
-}
-
-@Composable
-internal fun EightBallChallengeEntry(
-    attempt: DailyChallengeAttempt?,
-    date: String?,
-    shotCount: Int?,
-    onDailyChallenge: (String) -> Unit,
-    onBack: () -> Unit,
-    alias: String?,
-    aliasLocked: Boolean,
-    busy: Boolean,
-    error: String?,
-    onRetry: () -> Unit,
-) {
-    var aliasDraft by remember(alias) { mutableStateOf(alias.orEmpty()) }
-    var aliasError by remember(alias) { mutableStateOf<String?>(null) }
-    val visibleError = aliasError ?: error
-    val count = attempt?.challenge?.shotIds?.size ?: shotCount
-    val challengeDate = attempt?.challenge?.date ?: date
-    val dailyLabel = when {
-        attempt?.complete == true && count != 0 -> "View today's results"
-        aliasLocked || attempt?.answers?.isNotEmpty() == true || (attempt?.currentShotElapsedMs ?: 0) > 0 -> "Resume daily challenge"
-        else -> "Start challenge"
-    }
-    Column(
-        Modifier.attrsModifier { classes("daily-challenge-page", "daily-choice") },
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Button(attrs = {
-            classes("daily-back")
-            attr("aria-label", "Back to choices")
-            title("Back to choices")
-            onClick { onBack() }
-        }) { FaArrowLeft() }
-        Img(src = BasePath.prependTo("/images/pool-ball-icon.svg"), alt = "8-Ball Buddy", attrs = {
-            classes("daily-brand")
-            attr("width", "80")
-            attr("height", "80")
-        })
-        H2 { Text("Daily challenge") }
-        P(attrs={classes("daily-muted")}) {Text("Three random shots. Make every read count.")}
-        Column(Modifier.attrsModifier { classes("daily-options") }) {
-            Form(attrs = {
-                classes("daily-alias-form")
-                addEventListener("submit") { event ->
-                    event.preventDefault()
-                    if (!busy && count != null && count > 0) {
-                        val chosenAlias = normalizePlayerAlias(aliasDraft)
-                        if (aliasLocked || hasValidPlayerAliasLength(chosenAlias)) {
-                            aliasError = null
-                            onDailyChallenge(chosenAlias)
-                        } else {
-                            aliasError = "Your nickname must have 3 to 20 characters."
-                        }
-                    }
-                }
-            }) {
-                Column(Modifier.attrsModifier { classes("daily-alias-field") }) {
-                    Label(forId = "daily-player-alias") { Text("Nickname") }
-                    Input(InputType.Text, attrs = {
-                        id("daily-player-alias")
-                        value(aliasDraft)
-                        attr("required", "")
-                        attr("minlength", "3")
-                        attr("maxlength", "20")
-                        attr("autocomplete", "nickname")
-                        attr("autocapitalize", "none")
-                        attr("spellcheck", "false")
-                        if (busy) attr("disabled", "")
-                        if (aliasLocked) {
-                            attr("readonly", "")
-                            title("Name for today's challenge")
-                        }
-                        onInput { aliasDraft = it.value; aliasError = null }
-                    })
-                }
-                Button(attrs = {
-                    classes("daily-option", "daily-option-primary")
-                    attr("type", "submit")
-                    attr("aria-label", dailyLabel)
-                    if (busy || count == null || count == 0) attr("disabled", "")
-                    attr("aria-busy", busy.toString())
-                }) {
-                    FaTrophy(Modifier.attrsModifier { classes("daily-option-icon") })
-                    Column(Modifier.attrsModifier { classes("daily-option-label") }) {
-                        SpanText(if (busy) "Connecting..." else dailyLabel)
-                        SpanText(if (count != null && challengeDate != null) "$count shots · $challengeDate" else "Loading challenge...", Modifier.attrsModifier {
-                            classes("daily-option-detail")
-                        })
-                    }
-                    FaArrowRight()
-                }
-            }
-        }
-        if (visibleError != null) {
-            P(attrs = { classes("daily-incorrect"); attr("role", "alert") }) { Text(visibleError) }
-            if (count == null) {
-                Button(attrs = { classes("daily-command"); if (busy) attr("disabled", ""); onClick { onRetry() } }) {
-                    FaRotateRight()
-                    Text("Try again")
-                }
-            }
-        }
-        if (attempt != null && attempt.answers.isNotEmpty()) {
-            P(attrs = { classes("daily-muted") }) {
-                Text(if (attempt.complete) "${attempt.correctCount}/${attempt.answers.size} correct · ${formatChallengeTime(attempt.totalElapsedMs)}"
-                else "${attempt.answers.size} of ${attempt.challenge.shotIds.size} answered")
-            }
-        }
-    }
-}
 
 @Composable
 internal fun EightBallChallengeHeader(shotNumber: Int, total: Int, onLeave: () -> Unit) {
@@ -238,67 +59,97 @@ internal fun EightBallChallengeNext(lastShot: Boolean, onNext: () -> Unit) {
 internal fun EightBallChallengeResults(
     attempt: DailyChallengeAttempt,
     onBrowse: () -> Unit,
-    onBack: () -> Unit,
     leaderboard: DailyLeaderboard?,
     playerUid: String?,
     leaderboardBusy: Boolean,
     leaderboardError: String?,
     onRefresh: () -> Unit,
-    onLoadMore: () -> Unit,
+    allTimeLeaderboard: DailyLeaderboard?,
+    allTimeBusy: Boolean,
+    allTimeError: String?,
+    onAllTimeRefresh: () -> Unit,
+    alias: String,
+    renameBusy: Boolean,
+    renameError: String?,
+    onRename: (String, () -> Unit) -> Unit,
 ) {
+    var allTime by remember { mutableStateOf(false) }
+    var editing by remember { mutableStateOf(false) }
+    var draft by remember(alias) { mutableStateOf(alias) }
+    var validationError by remember { mutableStateOf<String?>(null) }
     Column(
-        Modifier.attrsModifier { classes("daily-challenge-page", "daily-results") },
+        Modifier.attrsModifier { classes("daily-challenge-page", "daily-results", "daily-compact-results"); attr("aria-label", "Challenge results") },
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Button(attrs = {
-            classes("daily-back")
-            attr("aria-label", "Back to choices")
-            title("Back to choices")
-            onClick { onBack() }
-        }) { FaArrowLeft() }
-        FaTrophy(Modifier.attrsModifier { classes("daily-result-icon") })
         SpanText(attempt.challenge.date, Modifier.attrsModifier { classes("daily-muted") })
         H2 { Text("Daily complete") }
-        Row(Modifier.attrsModifier { classes("daily-metrics") }) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                SpanText("${attempt.correctCount}/${attempt.answers.size}", Modifier.attrsModifier { classes("daily-metric-value") })
-                SpanText("Correct", Modifier.attrsModifier { classes("daily-muted") })
-            }
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                SpanText(formatChallengeTime(attempt.totalElapsedMs), Modifier.attrsModifier { classes("daily-metric-value") })
-                SpanText("Answer time", Modifier.attrsModifier { classes("daily-muted") })
-            }
+        Row(Modifier.attrsModifier { classes("daily-result-summary") }, verticalAlignment = Alignment.CenterVertically) {
+            SpanText("${attempt.correctCount}/${attempt.answers.size}", Modifier.attrsModifier { classes("daily-result-score") })
+            SpanText("correct · ${formatChallengeTime(attempt.totalElapsedMs)}")
         }
-        EightBallLeaderboard(leaderboard, playerUid, leaderboardBusy, leaderboardError, onRefresh, onLoadMore)
-        H3 { Text("Your shots") }
-        Table(attrs = { classes("daily-breakdown"); attr("aria-label", "Challenge answers") }) {
-            Thead {
-                Tr {
-                    listOf("Shot", "Result", "Time").forEach { label ->
-                        Th(attrs = { attr("scope", "col") }) { Text(label) }
+        if (editing) {
+            Form(attrs = {
+                classes("daily-rename-form")
+                addEventListener("submit") { event ->
+                    event.preventDefault()
+                    if (!renameBusy) {
+                        val chosen = normalizePlayerAlias(draft)
+                        if (!hasValidPlayerAliasLength(chosen)) validationError = "Use 3 to 20 characters."
+                        else { validationError = null; onRename(chosen) { editing = false } }
                     }
                 }
+            }) {
+                Input(InputType.Text, attrs = {
+                    attr("aria-label", "Your challenger name")
+                    attr("maxlength", "20"); attr("autocomplete", "nickname")
+                    value(draft)
+                    if (renameBusy) attr("disabled", "")
+                    onInput { draft = it.value; validationError = null }
+                })
+                Button(attrs = { attr("type", "submit"); attr("aria-label", "Save name"); if(renameBusy) attr("disabled", "") }) { Text(if(renameBusy) "Saving…" else "Save") }
+                Button(attrs = { attr("type", "button"); if(renameBusy) attr("disabled", ""); onClick { editing = false } }) { Text("Cancel") }
             }
-            Tbody {
-                attempt.answers.forEachIndexed { index, answer ->
-                    Tr {
-                        Td { Text((index + 1).toString()) }
-                        Td(attrs = { classes(if (answer.correct) "daily-correct" else "daily-incorrect") }) {
-                            Row(Modifier.attrsModifier {classes("daily-shot-outcome")},verticalAlignment=Alignment.CenterVertically) {
-                                if(answer.correct) FaCheck(Modifier.attrsModifier {attr("aria-hidden","true")})
-                                else FaXmark(Modifier.attrsModifier {attr("aria-hidden","true")})
-                                SpanText(if(answer.correct) "Correct" else "Incorrect")
-                            }
-                        }
-                        Td { Text(formatChallengeTime(answer.elapsedMs)) }
-                    }
-                }
+            (validationError ?: renameError)?.let { message ->
+                P(attrs = { classes("daily-incorrect", "daily-rename-error"); attr("role", "alert") }) { Text(message) }
+            }
+        } else {
+            Row(Modifier.attrsModifier {classes("daily-result-name")}, verticalAlignment = Alignment.CenterVertically) {
+                SpanText(alias)
+                Button(attrs = {
+                    classes("daily-back"); attr("aria-label", "Rename")
+                    onClick { draft = alias; editing = true; validationError = null }
+                }) { Text("Rename") }
             }
         }
-        Button(attrs = { classes("daily-command"); onClick { onBrowse() } }) {
-            Text("Keep browsing")
-            FaArrowRight()
+        Row(Modifier.attrsModifier { classes("daily-leaderboard-tabs"); attr("role", "group"); attr("aria-label", "Standings period") }) {
+            for ((value, label) in listOf(false to "Today", true to "All time")) {
+                Button(attrs = {
+                    attr("aria-pressed", (allTime == value).toString())
+                    onClick { allTime = value }
+                }) { Text(label) }
+            }
         }
+        CompactChallengeLeaderboard(
+            if(allTime) allTimeLeaderboard else leaderboard, playerUid,
+            if(allTime) allTimeBusy else leaderboardBusy,
+            if(allTime) allTimeError else leaderboardError,
+            allTime, if(allTime) onAllTimeRefresh else onRefresh,
+        )
+        P(attrs = { classes("daily-tomorrow") }) { Text("New challenge tomorrow · 00:00 UTC") }
+        Button(attrs = {
+            classes("daily-more-shots"); attr("aria-label", "See more shots")
+            onClick { onBrowse() }
+        }) { EightBallReelSwipeHint("See more shots!") }
+    }
+}
+
+@Composable
+internal fun EightBallChallengeStartError(message: String, onRetry: () -> Unit, onBrowse: () -> Unit) {
+    Column(Modifier.attrsModifier { classes("daily-challenge-page", "daily-choice") }, horizontalAlignment=Alignment.CenterHorizontally) {
+        H2 { Text("Could not start the challenge") }
+        P(attrs={attr("role","alert")}) { Text(message) }
+        Button(attrs={classes("daily-command");onClick {onRetry()}}) { Text("Try again") }
+        Button(attrs={classes("daily-command");onClick {onBrowse()}}) { Text("Browse practice shots") }
     }
 }
 
@@ -320,6 +171,32 @@ internal fun EightBallChallengeRequestStatus(busy: Boolean, error: String?, onRe
 }
 
 internal val dailyChallengeStyles = """
+    .daily-results.daily-compact-results { padding: max(68px, calc(64px + env(safe-area-inset-top))) 18px max(8px, env(safe-area-inset-bottom)); gap: 6px; justify-content: center; overflow: hidden; }
+    .daily-results.daily-compact-results h2 { font-size: 1.35rem; margin: 0; }
+    .daily-result-summary { gap: 12px; font-size: .8rem; }
+    .daily-result-score { font-size: 2rem; font-weight: 800; color: #ade7cb; }
+    .daily-result-name { gap: 8px; max-width: 100%; font-size: .85rem; }
+    .daily-result-name .daily-back { font-size: .72rem; min-height: 30px; }
+    .daily-rename-form { display: flex; width: 100%; gap: 5px; }
+    .daily-rename-form input { min-width: 0; flex: 1; padding: 7px; border-radius: 6px; border: 1px solid #46534c; color: #edf6f0; background: #101514; font-size: 16px; }
+    .daily-rename-form button, .daily-leaderboard-tabs button { color: #ade7cb; background: #14251e; border: 1px solid #46534c; border-radius: 6px; padding: 7px 9px; }
+    .daily-leaderboard-tabs { gap: 8px; }
+    .daily-leaderboard-tabs button[aria-pressed=true] { background: #ade7cb; color: #102219; }
+    .daily-compact-standings { width: 100%; min-height: 138px; gap: 2px; }
+    .daily-compact-standings-heading { width: 100%; justify-content: space-between; font-size: .73rem; }
+    .daily-compact-standings-heading .daily-back { min-height: 28px; height: 28px; }
+    .daily-compact-standings .daily-breakdown td { padding: 6px 4px; font-size: .76rem; overflow-wrap: anywhere; }
+    .daily-compact-standings .daily-leaderboard td:first-child { width: 32px; }
+    .daily-compact-standings .daily-leaderboard td:last-child { width: 46px; }
+    .daily-compact-results .daily-tomorrow { font-size: .72rem; color: #a9b5af; }
+    .daily-more-shots { padding: 0; border: 0; background: transparent; color: #ade7cb; }
+    .daily-more-shots .reel-swipe-hint { display: flex; height: 52px; gap: 3px; }
+    @media (max-height: 600px) {
+      .daily-results.daily-compact-results { gap: 3px; }
+      .daily-compact-results .daily-result-score { font-size: 1.6rem; }
+      .daily-compact-results .daily-compact-standings { min-height: 120px; }
+      .daily-compact-standings .daily-breakdown td { padding-top: 4px; padding-bottom: 4px; }
+    }
     .daily-challenge-page {
       width: 100%; height: 100%; box-sizing: border-box; position: relative;
       padding: max(48px, env(safe-area-inset-top)) 24px max(24px, env(safe-area-inset-bottom));
@@ -359,7 +236,7 @@ internal val dailyChallengeStyles = """
     }
     .daily-challenge-page > .daily-back { position: absolute; top: max(8px, env(safe-area-inset-top)); left: 12px; }
     .daily-header {
-      position: absolute; top: max(4px, env(safe-area-inset-top)); left: 12px; right: 12px;
+      position: absolute; top: calc(60px + env(safe-area-inset-top)); left: 12px; right: 12px;
       height: 40px; z-index: 7; gap: 8px; color: #94c9b5; font-size: .78rem; font-weight: 700;
     }
     .daily-command {

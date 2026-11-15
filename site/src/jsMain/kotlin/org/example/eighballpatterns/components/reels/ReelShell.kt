@@ -157,20 +157,6 @@ internal fun EightBallReelIntro(onStart: () -> Unit, canStart: Boolean = true) {
                 Text("8-Ball Buddy")
             }
         }
-        P(
-            attrs = Modifier
-                .margin(0.px)
-                .styleModifier {
-                    property("max-width", "320px")
-                    property("font-size", ".92rem")
-                    property("font-weight", "600")
-                    property("line-height", "1.42")
-                    property("color", "rgba(246,250,246,.68)")
-                }
-                .attrsModifier { classes("reel-hero-copy") }.toAttrs()
-        ) {
-            Text("Real matches. Your prediction. Tap a ball on the table, then watch the shot unfold.")
-        }
 
         SilkButton(onClick={onStart()},enabled=canStart,modifier=Modifier
             .attrsModifier { classes("reel-start-cue");attr("aria-label","Scroll to start") }) {
@@ -198,6 +184,9 @@ internal fun EightBallReelsShell(
     onHome: (() -> Unit)? = null,
     homeEnabled: Boolean = true,
     showSound: Boolean = false,
+    onChoosePlayer: (() -> Unit)? = null,
+    onChallenge: (() -> Unit)? = null,
+    challengeAvailable: Boolean = false,
     content: @Composable () -> Unit,
 ) {
     var viewportScale by remember { mutableStateOf(reelViewportScale()) }
@@ -244,7 +233,7 @@ internal fun EightBallReelsShell(
         ) {
             ReelScrollPages(pager,pageKey,previousKey,nextKey,
                 scrollLocked || isReelViewportZoomed(viewportScale),onSettled,preview,content)
-            onHome?.let { ReelBrandHeader(it,homeEnabled,showSound) }
+            onHome?.let { ReelBrandHeader(it,homeEnabled,showSound,onChoosePlayer,onChallenge,challengeAvailable) }
         }
         if(nextKey != null || previousKey != null) Column(Modifier.attrsModifier { classes("desktop-reel-navigation");attr("aria-label","Reel navigation") }) {
             SilkButton(onClick={onPrevious()},enabled=canPrevious,modifier=Modifier.attrsModifier {attr("aria-label","Previous reel page");attr("title","Previous reel page")}) { FaArrowUp() }
