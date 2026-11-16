@@ -1,0 +1,65 @@
+{
+  "player": "Emil André Gangfløt",
+  "group": 1,
+  "ball": 4,
+  "challengeOnly": true,
+  "ballSelection": {
+    "schemaVersion": 1,
+    "balls": [
+      {
+        "id": "b1",
+        "x": 0.720919,
+        "y": 0.146196,
+        "radius": 0.008818
+      },
+      {
+        "id": "b2",
+        "x": 0.340056,
+        "y": 0.185326,
+        "radius": 0.010319
+      },
+      {
+        "id": "b3",
+        "x": 0.735929,
+        "y": 0.253804,
+        "radius": 0.013227
+      },
+      {
+        "id": "b4",
+        "x": 0.336304,
+        "y": 0.314674,
+        "radius": 0.013227
+      },
+      {
+        "id": "b5",
+        "x": 0.702158,
+        "y": 0.322283,
+        "radius": 0.02345215759849906
+      },
+      {
+        "id": "b6",
+        "x": 0.518293,
+        "y": 0.440761,
+        "radius": 0.015103
+      },
+      {
+        "id": "b7",
+        "x": 0.613039,
+        "y": 0.47337,
+        "radius": 0.015103
+      },
+      {
+        "id": "b8",
+        "x": 0.920732,
+        "y": 0.816848,
+        "radius": 0.021013
+      }
+    ],
+    "correctBallId": "b5",
+    "correctNumber": 4,
+    "imageWidth": 1066,
+    "imageHeight": 920,
+    "imageSha256": "72bc5db77115ce0ea5329d41bd55411aeaecc5f1aa9f2e33f6b5b6a80c7b0f03"
+  },
+  "id": "QymvyRiXJ9A/004515"
+}

@@ -93,7 +93,8 @@ targets require a clearer tap. Unannotated shots keep numbered buttons; breaks
 keep 0–4 counts. The local editor's
 `annotationBalls` preview link tests a draft immediately on the modified local
 website without rebuilding; saved catalog changes need a resource rebuild.
-The current 59 non-break shots are reviewed; the five break shots remain counts.
+Non-break shots with `ballSelection` use annotated regions; break shots remain counts.
+Existing folders suffixed `_review` are pending another editorial review, not disabled.
 
 Double-tap or double-click a layout to enlarge just the image in its existing
 frame. The enlarged image fills the available height (at least 1.5 times the
@@ -316,17 +317,21 @@ picker. Shared practice-shot links still open their exact shot.
 
 ### Reserved challenge shots
 
-Every active shot has an explicit boolean `challengeOnly` in `meta.json`.
-The first shot of each existing chronological browsing group is true unless it
-is a break; all break shots and all remaining shots are false. Group boundaries
+Every active shot has an explicit editorial boolean `challengeOnly` in `meta.json`.
+Any non-break shot may be tagged, regardless of its position in a group. The
+earlier tagging of group starters was a one-time curation, not an import rule.
+All breaks must remain false. Group boundaries
 are established on the full catalog before removing reserved shots, so removing
 a whole opponent turn cannot merge adjacent runs. Groups left empty are omitted.
 
-The current catalog has **12 challenge-only shots and 52 practice shots**.
 Only tagged non-break shots are eligible for new daily rounds. Practice excludes
 all challenge-only shots, including from its player list. Imported shots need
-explicit tags; the backend catalog build validates them against group boundaries.
-Maintain tags when adding/reviewing earlier shots or changing group metadata.
+explicit tags; imports preserve the author's choices without retagging a group.
+The backend validates boolean tags and rejects challenge-only breaks.
+
+Folders may be renamed with `_review` while preserving their original explicit
+`id` in `meta.json`. Rebuild resources to update media paths. Stable IDs preserve
+shared `?shot=` links and frozen daily rounds; the suffix does not hide shots.
 
 Each UTC date gets a server-defined set of up to three distinct eligible shots,
 frozen at the first start. Everyone gets the same round. Sets may repeat across

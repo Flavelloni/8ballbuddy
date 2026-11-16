@@ -1,0 +1,71 @@
+{
+  "player": "Ole Kristian Rudshavn",
+  "group": 1,
+  "ball": 5,
+  "challengeOnly": true,
+  "ballSelection": {
+    "schemaVersion": 1,
+    "balls": [
+      {
+        "id": "b1",
+        "x": 0.678705,
+        "y": 0.261413,
+        "radius": 0.015854
+      },
+      {
+        "id": "b2",
+        "x": 0.765947,
+        "y": 0.300543,
+        "radius": 0.012383
+      },
+      {
+        "id": "b3",
+        "x": 0.476079,
+        "y": 0.378804,
+        "radius": 0.01379
+      },
+      {
+        "id": "b4",
+        "x": 0.542683,
+        "y": 0.378804,
+        "radius": 0.0225140712945591
+      },
+      {
+        "id": "b5",
+        "x": 0.704034,
+        "y": 0.414674,
+        "radius": 0.012383
+      },
+      {
+        "id": "b6",
+        "x": 0.371013,
+        "y": 0.496196,
+        "radius": 0.015103
+      },
+      {
+        "id": "b7",
+        "x": 0.671201,
+        "y": 0.563587,
+        "radius": 0.015291
+      },
+      {
+        "id": "b8",
+        "x": 0.81379,
+        "y": 0.613587,
+        "radius": 0.017167
+      },
+      {
+        "id": "b9",
+        "x": 0.393527,
+        "y": 0.790761,
+        "radius": 0.019981
+      }
+    ],
+    "correctBallId": "b4",
+    "correctNumber": 5,
+    "imageWidth": 1066,
+    "imageHeight": 920,
+    "imageSha256": "c35d86d89ff7eecc90eda060f588bf84b1e20feeb8e46a249966d3c89338d5ca"
+  },
+  "id": "QymvyRiXJ9A/024042"
+}

@@ -1,0 +1,71 @@
+{
+  "player": "Kim Soo Garmark",
+  "group": 2,
+  "ball": 15,
+  "challengeOnly": false,
+  "ballSelection": {
+    "schemaVersion": 1,
+    "balls": [
+      {
+        "id": "b1",
+        "x": 0.579268,
+        "y": 0.163587,
+        "radius": 0.009944
+      },
+      {
+        "id": "b2",
+        "x": 0.379456,
+        "y": 0.253804,
+        "radius": 0.012383
+      },
+      {
+        "id": "b3",
+        "x": 0.42167,
+        "y": 0.341848,
+        "radius": 0.012946
+      },
+      {
+        "id": "b4",
+        "x": 0.411351,
+        "y": 0.386413,
+        "radius": 0.014447
+      },
+      {
+        "id": "b5",
+        "x": 0.748124,
+        "y": 0.408152,
+        "radius": 0.014447
+      },
+      {
+        "id": "b6",
+        "x": 0.400094,
+        "y": 0.522283,
+        "radius": 0.015197
+      },
+      {
+        "id": "b7",
+        "x": 0.463884,
+        "y": 0.567935,
+        "radius": 0.021575984990619138
+      },
+      {
+        "id": "b8",
+        "x": 0.305347,
+        "y": 0.717935,
+        "radius": 0.018949
+      },
+      {
+        "id": "b9",
+        "x": 0.639306,
+        "y": 0.790761,
+        "radius": 0.019794
+      }
+    ],
+    "correctBallId": "b7",
+    "correctNumber": 15,
+    "imageWidth": 1066,
+    "imageHeight": 920,
+    "imageSha256": "51e5b317599e379dede6a08103df6f9edf00cefc2aed3e8f8098f44cfc4b732b"
+  },
+  "id": "2VlZPMaW6UY/094915"
+}

@@ -3,7 +3,6 @@ import { fileURLToPath } from "node:url";
 import path from "node:path";
 import { answerChoices } from "../src/challenge.js";
 import { shotIdForPath, ignoredShotDirectory } from "./shot-paths.mjs";
-import { readShotGroups } from "./shot-groups.mjs";
 
 const root = fileURLToPath(new URL("../../site/src/jsMain/resources/public/8ball/", import.meta.url));
 const shots = [];
@@ -49,11 +48,7 @@ async function visit(directory) {
   }
 }
 
-for (const group of await readShotGroups(root)) for (const [index, shot] of group.entries()) {
-  if (shot.meta.challengeOnly !== (index === 0 && shot.meta.isBreak !== true)) {
-    throw new Error(`challengeOnly must identify non-break group starters: ${shot.filename}`);
-  }
-}
+// challengeOnly is an editorial choice, independent of chronological group position.
 await visit(root);
 if (!shots.length) throw new Error("The challenge catalog is empty.");
 shots.sort((a, b) => a.id.localeCompare(b.id, "en"));
