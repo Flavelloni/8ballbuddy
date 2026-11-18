@@ -61,16 +61,6 @@ internal fun ensureEightBallReelsStyles() {
         @keyframes ballSelectionPulse { from { transform: translate(-50%,-50%) scale(.85); opacity: 1; } to { transform: translate(-50%,-50%) scale(2.5); opacity: 0; } }
         .ball-selection-pulse { animation: ballSelectionPulse .48s ease-out both; }
         .layout-image-frame { width: var(--layout-width); height: var(--layout-height); }
-        .layout-arrival-start { width: var(--layout-arrival-width); height: var(--layout-arrival-height); }
-        @keyframes layoutArrivalPulse {
-          from { transform: translate(-50%, -50%) scale(var(--layout-pulse-scale, 1.5)); }
-          to { transform: translate(-50%, -50%) scale(1); }
-        }
-        .layout-arrival-pulse { animation: layoutArrivalPulse 2s ease-out 1 backwards; }
-        @media (prefers-reduced-motion: reduce) {
-          .layout-arrival-pulse { animation: none; }
-          .layout-arrival-start { width: var(--layout-width); height: var(--layout-height); }
-        }
         @keyframes predictionPop { 0% { transform: scale(.45); opacity: 0; } 45% { transform: scale(1.12); opacity: 1; } 70%,100% { transform: scale(1); opacity: 1; } }
         .prediction-pop { animation: predictionPop .6s cubic-bezier(.2,.8,.2,1) both; }
         .desktop-reel-navigation { display: none; }

@@ -126,7 +126,6 @@ internal fun EightBallReelShot(
             EightBallReelLayoutOverlay(
                 shot = shot,
                 player = player,
-                pulseOnReady = true,
                 onBallSelected = onBallSelected,
                 answerClock = answerClock,
                 inputEnabled = inputEnabled,
@@ -165,8 +164,6 @@ internal fun EightBallReelLayoutOverlay(
     pointSelection: ImagePoint? = null,
     onPointSelected: ((ImagePoint) -> Unit)? = null,
     onPointConfirmed: (() -> Unit)? = null,
-    pulseOnReady: Boolean = false,
-    arrivalPreview: Boolean = false,
 ) {
     val imageTarget=shot.meta.ballSelection?.imageTarget ?: shot.meta.target
     val coordinatePicking = !shot.meta.isBreak && imageTarget != null && onPointSelected != null && onPointConfirmed != null
@@ -281,10 +278,8 @@ internal fun EightBallReelLayoutOverlay(
             ) {
                 if (coordinatePicking) {
                     CoordinateLayout(shot.entry.imagePath, imageTarget!!, pointSelection,
-                        inputEnabled, { onPointSelected?.invoke(it) }, { layoutReady = true }, shot.meta.ballSelection,
-                        pulseOnReady = pulseOnReady, arrivalPreview = arrivalPreview)
-                } else ZoomableLayout(shot.entry.imagePath, onReady = { layoutReady = true },
-                    pulseOnReady = pulseOnReady, arrivalPreview = arrivalPreview)
+                        inputEnabled, { onPointSelected?.invoke(it) }, { layoutReady = true }, shot.meta.ballSelection)
+                } else ZoomableLayout(shot.entry.imagePath, onReady = { layoutReady = true })
             }
         }
 

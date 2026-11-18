@@ -22,6 +22,11 @@ internal fun updateEightBallChallengeUrl(date: String) {
     js("window.history.replaceState(null, '', nextUrl)")
 }
 
+internal fun updateEightBallPlayerChoiceUrl() {
+    val nextUrl = "${window.location.origin}${BasePath.prependTo("/players")}"
+    js("window.history.replaceState(null, '', nextUrl)")
+}
+
 internal fun updateEightBallReelsUrl(shotId: String?, playerIntro: Boolean) {
     val baseUrl = "${window.location.origin}${BasePath.prependTo("/")}"
     val view = if (playerIntro) "&view=player" else ""

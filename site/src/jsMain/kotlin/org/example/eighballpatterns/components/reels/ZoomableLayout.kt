@@ -59,24 +59,15 @@ internal fun ZoomableLayout(
     imageAspect: Double? = null,
     onReady: () -> Unit,
     onTap: ((ImagePoint, Double) -> Unit)? = null,
-    pulseOnReady: Boolean = false,
-    arrivalPreview: Boolean = false,
     content: @Composable () -> Unit = {},
 ) {
     var zoomed by remember(imagePath) { mutableStateOf(false) }
-    var imageReady by remember(imagePath) { mutableStateOf(isLayoutImageLoaded(imagePath)) }
-    var pulsePaused by remember(imagePath) { mutableStateOf(false) }
-    var pulseDismissed by remember(imagePath) { mutableStateOf(false) }
     var dragging by remember(imagePath) { mutableStateOf(false) }
     var viewport by remember(imagePath) { mutableStateOf(ImagePoint(0.0, 0.0)) }
     var aspect by remember(imagePath) { mutableStateOf(imageAspect ?: loadedLayoutAspects[imagePath] ?: 1.0) }
     var pan by remember(imagePath) { mutableStateOf(ImagePoint(0.0, 0.0)) }
     val geometry = layoutImageGeometry(viewport.x, viewport.y, aspect, zoomed)
     val visiblePan = geometry.clampPan(pan)
-    val pulseScale = if (geometry.height > 0) layoutImageGeometry(viewport.x, viewport.y, aspect, true).height / geometry.height else 1.0
-    val pulse = pulseOnReady && imageReady && viewport.x > 0 && viewport.y > 0 && !zoomed && !pulseDismissed
-    val arrivalStart = arrivalPreview || (pulseOnReady && !pulse && !zoomed && !pulseDismissed)
-    val arrivalGeometry = layoutImageGeometry(viewport.x, viewport.y, aspect, true)
     val gesture = remember(imagePath) { LayoutTapGesture() }
     val pointers = remember(imagePath) { mutableSetOf<Int>() }
     var dragStart by remember(imagePath) { mutableStateOf(ImagePoint(0.0, 0.0)) }
@@ -93,7 +84,6 @@ internal fun ZoomableLayout(
     }
     fun toggleZoom() {
         cancelTap()
-        pulseDismissed = true
         zoomed = !zoomed
         pan = ImagePoint(0.0, 0.0)
     }
@@ -105,7 +95,6 @@ internal fun ZoomableLayout(
         attr("tabindex", "0")
         attr("role", "group")
         attr("aria-label", "Pool layout. Double-tap or double-click to zoom. Enter toggles zoom; arrow keys pan; Escape zooms out.")
-        addEventListener("focusin") { pulsePaused = true }
         onKeyDown { e ->
             if (e.target == e.currentTarget) {
                 when (e.key) {
@@ -148,7 +137,6 @@ internal fun ZoomableLayout(
                 onDispose { observer.disconnect() }
             }
             addEventListener("pointerdown") { e ->
-                pulsePaused = true
                 val p = e.nativeEvent.asDynamic()
                 if ((p.button as Int) == 0) {
                     val id = p.pointerId as Int
@@ -191,7 +179,7 @@ internal fun ZoomableLayout(
                         toggleZoom()
                     } else {
                         cancelTap()
-                        // Read the rendered image bounds: CSS pulse, zoom and pan all transform
+                        // Read the rendered image bounds: zoom and pan transform
                         // the photograph and its ball overlays together, including during a tap.
                         val rect = root.querySelector("[data-layout-image]")?.getBoundingClientRect()
                         val point = rect?.takeIf { it.width > 0 && it.height > 0 }?.let {
@@ -237,25 +225,10 @@ internal fun ZoomableLayout(
                 // cached photograph immediately instead of flashing a zero-size image per reel.
                 property("--layout-width", if (viewport.x > 0) "${geometry.width}px" else "min(100cqw, ${aspect * 100}cqh)")
                 property("--layout-height", if (viewport.y > 0) "${geometry.height}px" else "min(100cqh, ${100 / aspect}cqw)")
-                // Inert incoming previews and the first paint before measurement must match
-                // the animation's zoomed start, not flash the fitted image before zooming out.
-                if (arrivalStart) {
-                    property("--layout-arrival-width", if (viewport.x > 0) "${arrivalGeometry.width}px"
-                        else "max(${aspect * 100}cqh, min(${aspect * 150}cqh, 150cqw))")
-                    property("--layout-arrival-height", if (viewport.y > 0) "${arrivalGeometry.height}px"
-                        else "max(100cqh, min(150cqh, ${150 / aspect}cqw))")
-                }
                 property("transform", "translate(calc(-50% + ${visiblePan.x}px), calc(-50% + ${visiblePan.y}px))")
-                if (pulse) {
-                    // Transform-only animation keeps layout, decoded pixels and hit targets intact.
-                    property("--layout-pulse-scale", pulseScale.toString())
-                    property("animation-play-state", if (pulsePaused) "paused" else "running")
-                }
             }.attrsModifier {
                 attr("data-layout-image", "true")
                 classes("layout-image-frame")
-                if (arrivalStart) classes("layout-arrival-start")
-                if (pulse) classes("layout-arrival-pulse")
             }) {
                 Image(src = BasePath.prependTo(imagePath), alt = "8-ball layout",
                     modifier = Modifier.fillMaxSize().position(Position.Absolute).styleModifier {
@@ -268,7 +241,6 @@ internal fun ZoomableLayout(
                             if (image.naturalWidth > 0 && image.naturalHeight > 0) {
                                 aspect = image.naturalWidth.toDouble() / image.naturalHeight
                                 loadedLayoutAspects[imagePath] = aspect
-                                imageReady = true
                                 currentReady()
                             }
                         }

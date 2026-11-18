@@ -18,6 +18,7 @@ import org.example.eighballpatterns.browser.currentEightBallDailyChallenge
 import org.example.eighballpatterns.browser.shareEightBallShotNative
 import org.example.eighballpatterns.browser.updateEightBallReelsUrl
 import org.example.eighballpatterns.browser.updateEightBallChallengeUrl
+import org.example.eighballpatterns.browser.updateEightBallPlayerChoiceUrl
 import org.example.eighballpatterns.components.reels.EightBallChallengeHeader
 import org.example.eighballpatterns.components.reels.EightBallChallengeResults
 import org.example.eighballpatterns.components.reels.EightBallChallengeStartError
@@ -60,13 +61,20 @@ import org.w3c.dom.HTMLVideoElement
 @Page("/")
 @Composable
 fun ShotPredictionPage() {
-    val initialShotId = remember { currentEightBallReelsShotId() }
-    val initialPlayerIntro = remember { currentEightBallReelsPlayerIntro() }
-    val initialChallenge = remember { currentEightBallDailyChallenge() }
+    EightBallReelsPage()
+}
+
+@Composable
+internal fun EightBallReelsPage(startWithPlayerChoice: Boolean = false) {
+    val initialShotId = remember { if (startWithPlayerChoice) null else currentEightBallReelsShotId() }
+    val initialPlayerIntro = remember { !startWithPlayerChoice && currentEightBallReelsPlayerIntro() }
+    val initialChallenge = remember { !startWithPlayerChoice && currentEightBallDailyChallenge() }
     var shots by remember { mutableStateOf<List<EightBallShot>?>(null) }
     var players by remember { mutableStateOf(emptyMap<String, PlayerProfile>()) }
     var loadError by remember { mutableStateOf<String?>(null) }
-    var position by remember { mutableStateOf(ReelPosition()) }
+    var position by remember {
+        mutableStateOf(ReelPosition(if (startWithPlayerChoice) ReelStage.PlayerChoice else ReelStage.Welcome))
+    }
     var selectedBall by remember { mutableStateOf<Int?>(null) }
     var pointSelection by remember { mutableStateOf<ImagePoint?>(null) }
     var coordinateResult by remember { mutableStateOf<Boolean?>(null) }
@@ -125,7 +133,11 @@ fun ShotPredictionPage() {
                 }
                 shots = loaded
                 val requestedIndex = shuffledBrowseShots(loaded, null, browseSeed).indexOfFirst { shot -> shot.entry.id == initialShotId }
-                if (!initialChallenge && requestedIndex >= 0) {
+                if (startWithPlayerChoice) {
+                    // Practice entry must not wait for challenge auth/status or open an attempt.
+                    position = ReelPosition(ReelStage.PlayerChoice)
+                    routeReady = true
+                } else if (!initialChallenge && requestedIndex >= 0) {
                     position = ReelPosition(
                         if (initialPlayerIntro) ReelStage.Player else ReelStage.Shot,
                         requestedIndex,
@@ -170,6 +182,8 @@ fun ShotPredictionPage() {
         if (loadedShots == null) return@LaunchedEffect
         if (challengeMode) {
             attempt?.let { updateEightBallChallengeUrl(it.challenge.date) }
+        } else if (position.stage == ReelStage.PlayerChoice) {
+            updateEightBallPlayerChoiceUrl()
         } else {
             val shot = currentShot?.takeIf { position.stage == ReelStage.Player || position.stage == ReelStage.Shot }
             updateEightBallReelsUrl(shot?.entry?.id, position.stage == ReelStage.Player)
@@ -465,7 +479,7 @@ fun ShotPredictionPage() {
                     challengeError ?: daily.error.orEmpty(),
                     onRetry = { startChallenge(showWelcome = true) }, onBrowse = { browse(selectedPlayer, resume = true) })
                 openingChallenge && routeReady -> PoolLoading("Opening today's challenge…")
-                !routeReady && (daily.error != null || challengeError != null) -> EightBallChallengeStartError(
+                !startWithPlayerChoice && !routeReady && (daily.error != null || challengeError != null) -> EightBallChallengeStartError(
                     challengeError ?: daily.error.orEmpty(),
                     onRetry = { bootstrapRequested=false; daily.refreshStatus() }, onBrowse = { browse(null) })
                 position.stage == ReelStage.Welcome && (initialShotId == null || loadedShots != null) -> EightBallReelIntro(
