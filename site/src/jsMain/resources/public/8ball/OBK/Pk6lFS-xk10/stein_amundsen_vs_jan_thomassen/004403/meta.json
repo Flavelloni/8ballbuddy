@@ -1,0 +1,52 @@
+{
+  "player": "Stein Amundsen",
+  "group": 1,
+  "ball": 6,
+  "challengeOnly": true,
+  "ballSelection": {
+    "schemaVersion": 1,
+    "balls": [
+      {
+        "id": "b1",
+        "x": 0.677402,
+        "y": 0.392202,
+        "radius": 0.01321
+      },
+      {
+        "id": "b2",
+        "x": 0.414301,
+        "y": 0.461009,
+        "radius": 0.012882
+      },
+      {
+        "id": "b3",
+        "x": 0.534389,
+        "y": 0.600153,
+        "radius": 0.014847
+      },
+      {
+        "id": "b4",
+        "x": 0.435044,
+        "y": 0.626147,
+        "radius": 0.016048
+      },
+      {
+        "id": "b5",
+        "x": 0.260371,
+        "y": 0.638379,
+        "radius": 0.015721
+      },
+      {
+        "id": "b6",
+        "x": 0.387941,
+        "y": 0.814294,
+        "radius": 0.018182
+      }
+    ],
+    "correctBallId": "b4",
+    "correctNumber": 6,
+    "imageWidth": 916,
+    "imageHeight": 654,
+    "imageSha256": "056b62da30193b8daa7aeb1048ea82b733c570f29f91d4686be2d078b29c65bd"
+  }
+}

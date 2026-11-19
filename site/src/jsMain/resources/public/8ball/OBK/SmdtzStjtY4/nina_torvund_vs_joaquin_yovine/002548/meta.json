@@ -1,0 +1,64 @@
+{
+  "player": "Nina Torvund",
+  "group": 2,
+  "ball": 15,
+  "challengeOnly": true,
+  "ballSelection": {
+    "schemaVersion": 1,
+    "balls": [
+      {
+        "id": "b1",
+        "x": 0.115201,
+        "y": 0.125321,
+        "radius": 0.011281
+      },
+      {
+        "id": "b2",
+        "x": 0.508126,
+        "y": 0.176735,
+        "radius": 0.012915
+      },
+      {
+        "id": "b3",
+        "x": 0.463193,
+        "y": 0.179949,
+        "radius": 0.009524
+      },
+      {
+        "id": "b4",
+        "x": 0.336042,
+        "y": 0.300129,
+        "radius": 0.01195
+      },
+      {
+        "id": "b5",
+        "x": 0.388623,
+        "y": 0.381105,
+        "radius": 0.012141
+      },
+      {
+        "id": "b6",
+        "x": 0.274857,
+        "y": 0.446658,
+        "radius": 0.014818
+      },
+      {
+        "id": "b7",
+        "x": 0.459369,
+        "y": 0.566195,
+        "radius": 0.017208413001912046
+      },
+      {
+        "id": "b8",
+        "x": 0.411568,
+        "y": 0.638175,
+        "radius": 0.017686
+      }
+    ],
+    "correctBallId": "b7",
+    "correctNumber": 15,
+    "imageWidth": 1046,
+    "imageHeight": 778,
+    "imageSha256": "7f80bd705991a54cae9b2864cd42340d2c598ee00aa4c2776152f2c3eddba813"
+  }
+}
