@@ -4,6 +4,7 @@
   "player": "Emil André Gangfløt",
   "quarter": 4,
   "challengeOnly": false,
+  "dailyEligible": true,
   "tableSelection": {
     "schemaVersion": 1,
     "corners": [

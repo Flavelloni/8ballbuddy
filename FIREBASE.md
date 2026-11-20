@@ -135,7 +135,8 @@ existing challenges, attempts or totals.
 All direct browser Firestore access stays denied. Authenticated callables own
 profile changes, answer scoring, totals and standings. The public status
 endpoint reveals only UTC date/count unless authenticated. The server generates
-new rounds exclusively from challengeOnly=true, non-break shots; all active
+new rounds from non-break shots with `challengeOnly: true` or `dailyEligible: true`;
+the latter keeps a shot in practice when `challengeOnly` is false. All active
 answer mappings remain in the private catalog to support old frozen rounds.
 
 The last accepted answer creates the daily result and credits all-time totals

@@ -351,7 +351,10 @@ All breaks must remain false. Group boundaries
 are established on the full catalog before removing reserved shots, so removing
 a whole opponent turn cannot merge adjacent runs. Groups left empty are omitted.
 
-Only tagged non-break shots are eligible for new daily rounds. Practice excludes
+Non-break shots with `challengeOnly: true` or `dailyEligible: true` are eligible
+for new daily rounds. `dailyEligible` is an optional boolean that adds a shot
+to the daily pool while keeping it in practice when `challengeOnly` is false.
+The five reviewed 9-ball shots use this shared eligibility setting. Practice excludes
 all challenge-only shots, including from its player list. Imported shots need
 explicit tags; imports preserve the author's choices without retagging a group.
 The backend validates boolean tags and rejects challenge-only breaks.

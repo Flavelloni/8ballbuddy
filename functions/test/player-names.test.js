@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import { automaticNames, nextAutomaticName, aliasKey } from "../src/player-names.js";
 import { readShotGroups } from "../scripts/shot-groups.mjs";
 import { validateAlias, createDailyChallenge } from "../src/challenge.js";
+import { readFile } from 'node:fs/promises';
 
 test("all adjective/noun combinations are unique and exhausted before adding numbers", () => {
   let state = {};
@@ -39,4 +40,20 @@ test("daily selection honors a tagged later shot without tagging the group start
   ];
   assert.deepEqual(createDailyChallenge('2026-11-16', catalog).shotIds, ['QymvyRiXJ9A/030318']);
   assert.equal(catalog[0].challengeOnly, false);
+});
+
+test("the five reviewed 9-ball shots are eligible for daily rounds and remain in practice", async () => {
+  const date='2026-11-21';
+  const catalog=JSON.parse(await readFile(new URL('../generated/catalog.json',import.meta.url),'utf8'));
+  const nine=catalog.filter(s=>s.id.startsWith('Wqc5orC1jvs/'));
+  assert.equal(nine.length,5);
+  for (const shot of nine) {
+    assert.equal(shot.discipline,9);
+    assert.equal(shot.dailyEligible,true);
+    assert.equal(shot.challengeOnly,false);
+    assert.deepEqual(createDailyChallenge(date,[shot]).shotIds,[shot.id]);
+  }
+  const round=createDailyChallenge(date,catalog);
+  assert.equal(round.shotIds.length,3);
+  assert.deepEqual(round.shotIds,createDailyChallenge(date,[...catalog].reverse()).shotIds);
 });
