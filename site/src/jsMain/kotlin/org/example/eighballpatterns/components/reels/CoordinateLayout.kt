@@ -109,9 +109,11 @@ internal fun CoordinateLayout(imagePath: String, target: BallTarget, selection: 
 }
 
 @Composable
-internal fun CoordinateConfirm(selection: ImagePoint?, enabled: Boolean, ballMode: Boolean = false, onConfirm: () -> Unit) {
+internal fun CoordinateConfirm(selection: ImagePoint?, enabled: Boolean, ballMode: Boolean = false, quarterMode: Boolean = false, onConfirm: () -> Unit) {
     Column(Modifier.fillMaxWidth().padding(leftRight=14.px,topBottom=10.px).gap(8.px).attrsModifier {classes("coordinate-confirm")}, horizontalAlignment=Alignment.CenterHorizontally) {
-        SpanText(if (selection == null) "Tap the ball you think goes in." else if (ballMode) "Ball selected. Tap another to change your pick." else "Tap again to adjust your scoring circle.")
+        SpanText(if (quarterMode) {
+            if (selection == null) "Where will the cue ball finish? Tap a quarter." else "Quarter selected. Tap another to change your pick."
+        } else if (selection == null) "Tap the ball you think goes in." else if (ballMode) "Ball selected. Tap another to change your pick." else "Tap again to adjust your scoring circle.")
         Button(onClick={onConfirm()}, enabled=enabled && selection != null,
             modifier=Modifier.fillMaxWidth().attrsModifier {classes("reel-primary-button");attr("aria-label","Reveal shot")}) {
             FaPlay()

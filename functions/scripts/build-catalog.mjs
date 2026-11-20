@@ -1,6 +1,7 @@
 import { readdir, readFile, mkdir, writeFile, access } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
+import { createHash } from "node:crypto";
 import { answerChoices } from "../src/challenge.js";
 import { shotIdForPath, ignoredShotDirectory } from "./shot-paths.mjs";
 
@@ -22,18 +23,25 @@ async function visit(directory) {
     if (typeof meta.challengeOnly !== "boolean") throw new Error(`Missing boolean challengeOnly: ${directory}`);
     if (meta.isBreak === true && meta.challengeOnly) throw new Error(`Break shots must be practice-only: ${directory}`);
     // Coordinate-only shots are a browse pilot until daily point scoring is introduced.
-    if (meta.target && !Object.hasOwn(meta, "ball") && meta.isBreak !== true) return;
-    const correctAnswer = meta.isBreak === true ? meta.ballsPotted : meta.ball === null ? 0 : meta.ball;
+    if (meta.discipline !== 9 && meta.target && !Object.hasOwn(meta, "ball") && meta.isBreak !== true) return;
+    if (meta.discipline != null && ![8,9].includes(meta.discipline)) throw new Error(`Invalid discipline: ${directory}`);
+    if (meta.discipline === 9) {
+      const { validateTableSelection } = await import("../src/table-selection.js");
+      validateTableSelection(meta.tableSelection);
+      const hash=createHash("sha256").update(await readFile(path.join(directory,"layout.jpg"))).digest("hex");
+      if (meta.tableSelection.imageSha256 !== hash) throw new Error(`Stale table annotation: ${directory}`);
+    }
+    const correctAnswer = meta.discipline === 9 ? meta.quarter : meta.isBreak === true ? meta.ballsPotted : meta.ball === null ? 0 : meta.ball;
     if (!Number.isInteger(correctAnswer) || !answerChoices(meta).includes(correctAnswer)) {
       throw new Error(`Invalid answer or group: ${directory}`);
     }
     shots.push({
       id,
-      group: meta.group,
+      ...(meta.discipline === 9 ? { discipline: 9 } : { group: meta.group }),
       correctBall: correctAnswer,
       isBreak: meta.isBreak === true,
       challengeOnly: meta.challengeOnly === true,
-      ...(meta.ballSelection && meta.isBreak !== true ? {
+      ...(meta.discipline !== 9 && meta.ballSelection && meta.isBreak !== true ? {
         ballSelection: {
           ids: meta.ballSelection.balls.map(ball => ball.id),
           correctBallId: meta.ballSelection.correctBallId,

@@ -28,6 +28,7 @@ export function pickerBalls(group) {
 }
 
 export function answerChoices(shot) {
+  if (shot.discipline === 9) return [1, 2, 3, 4];
   const balls = pickerBalls(shot.group);
   return shot.isBreak === true ? [0, 1, 2, 3, 4] : balls;
 }
@@ -90,6 +91,7 @@ export function submitAnswer(challenge, attempt, shotId, selectedBall, now, sele
   }
   let regionAnswer = null;
   if (selectedBallId != null) {
+    if (shot.discipline === 9) throw new ChallengeError("invalid-argument", "Choose a table quarter from 1 to 4.");
     // Existing frozen rounds predate ball regions. Use today's reviewed region
     // mapping only when its answer number still matches that frozen answer.
     const selection = shot.ballSelection ?? currentCatalog.find(item => item.id === shotId)?.ballSelection;
@@ -106,7 +108,7 @@ export function submitAnswer(challenge, attempt, shotId, selectedBall, now, sele
   } else if (!Number.isInteger(selectedBall)) {
     throw new ChallengeError("invalid-argument", "Choose a valid ball.");
   } else if (!answerChoices(shot).includes(selectedBall)) {
-    throw new ChallengeError("invalid-argument", shot.isBreak === true
+    throw new ChallengeError("invalid-argument", shot.discipline === 9 ? "Choose a table quarter from 1 to 4." : shot.isBreak === true
       ? "Choose a break count from 0 to 4." : "Choose a ball from this player's group.");
   }
   if (attempt.currentShotStartedAtMs == null) {

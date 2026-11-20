@@ -166,7 +166,8 @@ internal fun EightBallReelLayoutOverlay(
     onPointConfirmed: (() -> Unit)? = null,
 ) {
     val imageTarget=shot.meta.ballSelection?.imageTarget ?: shot.meta.target
-    val coordinatePicking = !shot.meta.isBreak && imageTarget != null && onPointSelected != null && onPointConfirmed != null
+    val quarterPicking = shot.meta.discipline == 9 && shot.meta.tableSelection != null
+    val coordinatePicking = (quarterPicking || (!shot.meta.isBreak && imageTarget != null)) && onPointSelected != null && onPointConfirmed != null
     var layoutReady by remember(shot.entry.id) { mutableStateOf(isLayoutImageLoaded(shot.entry.imagePath)) }
     LaunchedEffect(layoutReady) {
         if (layoutReady) onLayoutReady()
@@ -226,6 +227,7 @@ internal fun EightBallReelLayoutOverlay(
                 }
                 SpanText(org.example.eighballpatterns.model.eightBallPlayerStatus(shot.meta),
                     Modifier.fontSize(.74.cssRem).color(Color.rgb(0x9FBEAA)))
+                if (shot.meta.discipline == 9) PoolBall(9, Modifier.width(24.px).height(24.px))
                 if (shot.meta.ballInHand) {
                     SpanText("Ball in hand", Modifier.fontSize(0.9.cssRem).fontWeight(FontWeight.Bold)
                         .color(Color.rgb(0x94C9B5)))
@@ -276,7 +278,10 @@ internal fun EightBallReelLayoutOverlay(
                         property("justify-content", "center")
                     }
             ) {
-                if (coordinatePicking) {
+                if (quarterPicking) {
+                    QuarterLayout(shot.entry.imagePath, shot.meta.tableSelection!!, pointSelection,
+                        inputEnabled, { onPointSelected?.invoke(it) }, { layoutReady = true })
+                } else if (coordinatePicking) {
                     CoordinateLayout(shot.entry.imagePath, imageTarget!!, pointSelection,
                         inputEnabled, { onPointSelected?.invoke(it) }, { layoutReady = true }, shot.meta.ballSelection)
                 } else ZoomableLayout(shot.entry.imagePath, onReady = { layoutReady = true })
@@ -284,7 +289,10 @@ internal fun EightBallReelLayoutOverlay(
         }
 
         if (coordinatePicking) {
-            CoordinateConfirm(pointSelection, layoutReady && inputEnabled, ballMode=shot.meta.ballSelection!=null) { onPointConfirmed?.invoke() }
+            CoordinateConfirm(pointSelection, layoutReady && inputEnabled, ballMode=shot.meta.ballSelection!=null,
+                quarterMode=quarterPicking) { onPointConfirmed?.invoke() }
+        } else if (shot.meta.discipline == 9) {
+            SpanText("This table needs quarter annotation before it can be played.", Modifier.padding(14.px))
         } else EightBallReelBallTray(
             balls = eightBallReelPickerBalls(shot),
             isBreak = shot.meta.isBreak,

@@ -60,7 +60,7 @@ internal fun EightBallPlayerIntro(shot: EightBallShot, player: PlayerProfile?, c
     var imageReady by remember(imageUrl) { mutableStateOf(imageUrl != null && imageUrl in loadedPlayerPortraits) }
     var imageFailed by remember(imageUrl) { mutableStateOf(false) }
     var detailsOpen by remember(shot.entry.id) { mutableStateOf(false) }
-    val balls = if (shot.meta.isBreak) emptyList() else when (shot.meta.group) {
+    val balls = if (shot.meta.discipline == 9) listOf(9) else if (shot.meta.isBreak) emptyList() else when (shot.meta.group) {
         0 -> (1..15).filter { it != 8 }
         1 -> (1..7).toList()
         2 -> (9..15).toList()
@@ -168,7 +168,9 @@ internal fun EightBallPlayerIntro(shot: EightBallShot, player: PlayerProfile?, c
                                 .padding(leftRight=14.px,topBottom=7.px)
                                 .styleModifier {property("background","#173323");property("border-radius","999px")},
                         )
-                        if (shot.meta.isBreak) {
+                        if (shot.meta.discipline == 9) {
+                            SpanText("Where will the cue ball finish?", Modifier.color(Colors.White))
+                        } else if (shot.meta.isBreak) {
                             P(Modifier.margin(0.px).color(Colors.White).toAttrs()) {
                                 Text("How many balls will drop?")
                             }

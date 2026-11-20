@@ -7,6 +7,8 @@ import org.example.eighballpatterns.model.EightBallShot
 import org.example.eighballpatterns.model.BallTarget
 import org.example.eighballpatterns.model.BallSelection
 import org.example.eighballpatterns.model.LayoutBall
+import org.example.eighballpatterns.model.TableSelection
+import org.example.eighballpatterns.model.ImagePoint
 
 internal fun loadEightBallShots(onLoaded: (List<EightBallShot>) -> Unit, onError: (String) -> Unit) {
     fetchResourceText(
@@ -83,7 +85,30 @@ internal fun parseEightBallMeta(text: String): EightBallMeta {
         matchYear = (item.matchYear as? Int)?.takeIf { it in 1900..2100 },
         target = parseBallTarget(item.target),
         ballSelection = parseBallSelection(item.ballSelection),
+        discipline = if (item.discipline == 9) 9 else 8,
+        quarter = (item.quarter as? Int)?.takeIf { it in 1..4 },
+        tableSelection = parseTableSelection(item.tableSelection),
     )
+}
+
+internal fun parseTableSelection(value: dynamic): TableSelection? {
+    if (value == null || value.schemaVersion != 1 || !(js("Array.isArray(value.corners)") as Boolean) || value.corners.length != 4) return null
+    val width=value.imageWidth as? Int ?: return null
+    val height=value.imageHeight as? Int ?: return null
+    val hash=value.imageSha256 as? String ?: return null
+    if (width !in 1..20000 || height !in 1..20000 || !Regex("[0-9a-f]{64}").matches(hash)) return null
+    val corners=(0..3).map { i ->
+        val x=value.corners[i]?.x as? Double ?: return null
+        val y=value.corners[i]?.y as? Double ?: return null
+        if (!x.isFinite() || !y.isFinite() || x !in 0.0..1.0 || y !in 0.0..1.0) return null
+        ImagePoint(x,y)
+    }
+    for (i in 0..3) {
+        val a=corners[i]; val b=corners[(i+1)%4]; val c=corners[(i+2)%4]
+        if ((b.x-a.x)*(c.y-b.y)-(b.y-a.y)*(c.x-b.x) <= .0001) return null
+    }
+    if (corners[0].y+corners[1].y >= corners[2].y+corners[3].y || corners[0].x+corners[3].x >= corners[1].x+corners[2].x) return null
+    return TableSelection(corners,width,height,hash)
 }
 
 internal fun parseBallSelection(value: dynamic): BallSelection? {

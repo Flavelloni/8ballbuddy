@@ -60,6 +60,7 @@ internal fun ensureEightBallReelsStyles() {
         .layout-ball-button:focus-visible { outline: 2px solid #b7ffe0; outline-offset: 2px; }
         @keyframes ballSelectionPulse { from { transform: translate(-50%,-50%) scale(.85); opacity: 1; } to { transform: translate(-50%,-50%) scale(2.5); opacity: 0; } }
         .ball-selection-pulse { animation: ballSelectionPulse .48s ease-out both; }
+        .table-quarter-button:focus-visible { background: rgba(148,201,181,.18) !important; }
         .layout-image-frame { width: var(--layout-width); height: var(--layout-height); }
         @keyframes predictionPop { 0% { transform: scale(.45); opacity: 0; } 45% { transform: scale(1.12); opacity: 1; } 70%,100% { transform: scale(1); opacity: 1; } }
         .prediction-pop { animation: predictionPop .6s cubic-bezier(.2,.8,.2,1) both; }

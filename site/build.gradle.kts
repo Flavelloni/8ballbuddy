@@ -51,10 +51,31 @@ val generateEightBallManifest = tasks.register("generateEightBallManifest") {
                 val parts = path.split('/')
                 @Suppress("UNCHECKED_CAST")
                 val meta = (JsonSlurper().parse(shotDir.resolve("meta.json")) as Map<String, Any?>).toMutableMap()
-                require(meta["isBreak"] == true || !(meta.containsKey("ball") && meta["ball"] == null)) {
+                require(meta["discipline"] == 9 || meta["isBreak"] == true || !(meta.containsKey("ball") && meta["ball"] == null)) {
                     "Non-break ball:null shots must be removed from the website: $path"
                 }
-                ((meta["ballSelection"] ?: meta["target"]) as? Map<*, *>)?.let { target ->
+                require(meta["discipline"] == null || meta["discipline"] in listOf(8,9)) { "Invalid discipline: $path" }
+                if (meta["discipline"] == 9) {
+                    require(meta["quarter"] is Number && (meta["quarter"] as Number).toDouble() in listOf(1.0,2.0,3.0,4.0)) { "Annotate the cue ball quarter before publishing: $path" }
+                    val table=meta["tableSelection"] as? Map<*, *> ?: error("Missing table corners: $path")
+                    val image=javax.imageio.ImageIO.read(shotDir.resolve("layout.jpg")) ?: error("Invalid layout image: $path")
+                    require(table["imageWidth"] == image.width && table["imageHeight"] == image.height) { "Table annotation dimensions differ from layout image: $path" }
+                    val corners=table["corners"] as? List<*> ?: error("Missing table corners: $path")
+                    require(table["schemaVersion"] == 1 && corners.size == 4) { "Invalid table annotation: $path" }
+                    val points=corners.map { corner ->
+                        val p=corner as? Map<*, *> ?: error("Invalid corner: $path")
+                        val x=(p["x"] as? Number)?.toDouble() ?: error("Invalid corner: $path")
+                        val y=(p["y"] as? Number)?.toDouble() ?: error("Invalid corner: $path")
+                        require(x.isFinite() && y.isFinite() && x in 0.0..1.0 && y in 0.0..1.0) { "Invalid corner: $path" }
+                        x to y
+                    }
+                    for (i in 0..3) {
+                        val a=points[i]; val b=points[(i+1)%4]; val c=points[(i+2)%4]
+                        require((b.first-a.first)*(c.second-b.second)-(b.second-a.second)*(c.first-b.first) > .0001) { "Invalid table corner order: $path" }
+                    }
+                    require(points[0].second+points[1].second < points[2].second+points[3].second && points[0].first+points[3].first < points[1].first+points[2].first) { "Invalid table corner order: $path" }
+                }
+                ((meta["tableSelection"] ?: meta["ballSelection"] ?: meta["target"]) as? Map<*, *>)?.let { target ->
                     val hash = MessageDigest.getInstance("SHA-256").digest(shotDir.resolve("layout.jpg").readBytes())
                     require(target["imageSha256"] == HexFormat.of().formatHex(hash)) {
                         "Annotation belongs to a different crop/image. Re-annotate: $path"
@@ -132,7 +153,7 @@ tasks.configureEach {
 kobweb {
     app {
         index {
-            description.set("Predict the next 8-ball shot from real match layouts, then watch the reveal.")
+            description.set("Predict the next ball in 8-ball or the cue ball's landing quarter in 9-ball, then watch the reveal.")
             faviconPath.set("/images/pool-ball-icon.svg")
         }
     }

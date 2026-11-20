@@ -55,6 +55,11 @@ internal fun eightBallReelResultText(selectedBall: Int?, actualBall: Int): Strin
 }
 
 internal fun eightBallReelResultText(selectedAnswer: Int?, meta: EightBallMeta): String {
+    if (meta.discipline == 9) {
+        val actual=quarterLabel(meta.quarter)
+        return if (selectedAnswer == meta.quarter) "Correct: cue ball finishes $actual."
+        else "You picked ${quarterLabel(selectedAnswer)}. Cue ball finishes $actual."
+    }
     if (!meta.isBreak) return eightBallReelResultText(selectedAnswer, meta.ball)
     val actual = "${meta.correctAnswer} ${if (meta.correctAnswer == 1) "ball" else "balls"} potted on the break"
     return if (selectedAnswer == meta.correctAnswer) "Correct: $actual"
@@ -62,6 +67,7 @@ internal fun eightBallReelResultText(selectedAnswer: Int?, meta: EightBallMeta):
 }
 
 internal fun eightBallReelPickerBalls(shot: EightBallShot): List<Int> {
+    if (shot.meta.discipline == 9) return emptyList()
     if (shot.meta.isBreak) return (0..4).toList()
     return when (shot.meta.group) {
         1 -> (1..7).toList()
@@ -72,6 +78,7 @@ internal fun eightBallReelPickerBalls(shot: EightBallShot): List<Int> {
 }
 
 internal fun eightBallReelTitle(meta: EightBallMeta): String {
+    if (meta.discipline == 9) return "${meta.player} is playing 9-ball"
     if (meta.isBreak) return "${meta.player} is breaking"
     return when (meta.group) {
         0 -> "${meta.player} has an open table"
@@ -82,6 +89,7 @@ internal fun eightBallReelTitle(meta: EightBallMeta): String {
 }
 
 internal fun eightBallPlayerStatus(meta: EightBallMeta): String {
+    if (meta.discipline == 9) return "9-ball"
     if (meta.isBreak) return "Is breaking"
     return when (meta.group) {
         0 -> "Open table"

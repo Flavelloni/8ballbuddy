@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
+import { validateTableSelection } from "../src/table-selection.js";
 import {
   completedResult, createAttempt, createDailyChallenge, pickerBalls,
   publicAttempt, startShot, submitAnswer, utcDate, validateAlias, answerChoices, requireAvailableChallenge,
@@ -7,6 +8,31 @@ import {
 
 const date = "2026-10-16";
 const catalog = Array.from({ length: 30 }, (_, i) => ({ id: `shot-${i + 1}`, group: 1, correctBall: 6, challengeOnly: true }));
+
+test("9-ball publication requires valid table geometry and image metadata", () => {
+  const table={schemaVersion:1,corners:[{x:.2,y:.1},{x:.8,y:.1},{x:.95,y:.9},{x:.05,y:.9}],imageWidth:1000,imageHeight:750,imageSha256:'a'.repeat(64)};
+  assert.doesNotThrow(()=>validateTableSelection(table));
+  for (const bad of [null,{...table,schemaVersion:2},{...table,imageWidth:0},{...table,imageSha256:'stale'},
+    {...table,corners:[]},{...table,corners:[table.corners[0],table.corners[2],table.corners[1],table.corners[3]]},
+    {...table,corners:[{x:NaN,y:.1},...table.corners.slice(1)]},
+    {...table,corners:[{x:true,y:.1},...table.corners.slice(1)]}]) assert.throws(()=>validateTableSelection(bad));
+});
+
+test("9-ball daily shots score quarters without a ball group or region ID", () => {
+  const shot={id:'nineball',discipline:9,correctBall:3,challengeOnly:true};
+  assert.deepEqual(answerChoices(shot),[1,2,3,4]);
+  const challenge=createDailyChallenge(date,[shot]);
+  const attempt=startShot(challenge,createAttempt(challenge,'uid','Player',0),shot.id,100);
+  for (const quarter of [1,2,3,4]) {
+    const result=submitAnswer(challenge,attempt,shot.id,quarter,200);
+    assert.equal(completedResult(challenge,result).correctCount,quarter===3?1:0);
+    assert.equal(publicAttempt(challenge,result,200).answers[0].correctBall,3);
+    assert.equal(submitAnswer(challenge,result,shot.id,quarter,300),result);
+  }
+  for (const invalid of [0,5,true,'3',null])
+    assert.throws(()=>submitAnswer(challenge,attempt,shot.id,invalid,200),error=>error.code==='invalid-argument');
+  assert.throws(()=>submitAnswer(challenge,attempt,shot.id,3,200,'b1'),error=>error.code==='invalid-argument');
+});
 
 test("annotated daily shots score opaque ball IDs on the server, including wrong picks", () => {
   const shot={id:'annotated',group:1,correctBall:6,challengeOnly:true,ballSelection:{ids:['cue','six','other'],correctBallId:'six',correctNumber:6}};

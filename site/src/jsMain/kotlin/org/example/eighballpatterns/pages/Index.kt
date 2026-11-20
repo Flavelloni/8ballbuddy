@@ -48,6 +48,7 @@ import org.example.eighballpatterns.model.PlayerProfile
 import org.example.eighballpatterns.model.ImagePoint
 import org.example.eighballpatterns.data.parseBallTarget
 import org.example.eighballpatterns.data.parseBallSelection
+import org.example.eighballpatterns.data.parseTableSelection
 import org.example.eighballpatterns.model.ReelPosition
 import org.example.eighballpatterns.model.ReelStage
 import org.example.eighballpatterns.model.buildEightBallReelFeedback
@@ -91,7 +92,16 @@ internal fun EightBallReelsPage(startWithPlayerChoice: Boolean = false) {
         val raw=js("new URLSearchParams(window.location.search).get('annotationBalls')") as? String
         try { if (raw!=null) parseBallSelection(js("JSON.parse(raw)")) else null } catch (_: Throwable) { null }
     }
-    val localAnnotationPreview = window.location.hostname in listOf("localhost", "127.0.0.1") && (previewBalls != null || previewTarget != null)
+    val previewTable = remember {
+        val raw=js("new URLSearchParams(window.location.search).get('annotationTable')") as? String
+        try { if (raw!=null) parseTableSelection(js("JSON.parse(raw)")) else null } catch (_: Throwable) { null }
+    }
+    val previewQuarter = remember {
+        try { val raw=js("new URLSearchParams(window.location.search).get('annotationTable')") as? String
+            if (raw!=null) (js("JSON.parse(raw).quarter") as? Int)?.takeIf { it in 1..4 } else null
+        } catch (_: Throwable) { null }
+    }
+    val localAnnotationPreview = window.location.hostname in listOf("localhost", "127.0.0.1") && (previewBalls != null || previewTarget != null || previewTable != null)
     var feedback by remember { mutableStateOf<String?>(null) }
     var videoEnded by remember { mutableStateOf(false) }
     var videoPaused by remember { mutableStateOf(false) }
@@ -125,7 +135,10 @@ internal fun EightBallReelsPage(startWithPlayerChoice: Boolean = false) {
         loadEightBallShots(
             onLoaded = {
                 val loaded = it.map { shot ->
-                    if (previewBalls != null && shot.entry.id == initialShotId && !shot.meta.isBreak)
+                    if (previewTable != null && previewQuarter != null && shot.entry.id == initialShotId && localAnnotationPreview)
+                        shot.copy(meta=shot.meta.copy(discipline=9,quarter=previewQuarter,tableSelection=previewTable,
+                            challengeOnly=false))
+                    else if (previewBalls != null && shot.entry.id == initialShotId && !shot.meta.isBreak)
                         shot.copy(meta=shot.meta.copy(ballSelection=previewBalls,ball=previewBalls.correctNumber,
                             challengeOnly=shot.meta.challengeOnly && !localAnnotationPreview))
                     else if (previewTarget != null && shot.entry.id == initialShotId && !shot.meta.isBreak)
@@ -170,6 +183,7 @@ internal fun EightBallReelsPage(startWithPlayerChoice: Boolean = false) {
         rawShot.copy(meta = rawShot.meta.copy(
             ball = if (rawShot.meta.isBreak) -1 else answer?.correctBall ?: -1,
             ballsPotted = if (rawShot.meta.isBreak) answer?.correctBall else rawShot.meta.ballsPotted,
+            quarter = if (rawShot.meta.discipline == 9) answer?.correctBall else rawShot.meta.quarter,
         ))
     } else rawShot
     val answerClock = remember(challengeMode, currentShot?.entry?.id, attempt?.challenge?.date, daily.clockRevision) {
@@ -399,6 +413,18 @@ internal fun EightBallReelsPage(startWithPlayerChoice: Boolean = false) {
 
     fun confirmPoint() {
         if (selectedBall != null || resultFlash!=null || (challengeMode && (!daily.clockStarted || daily.busy))) return
+        if (currentShot?.meta?.discipline == 9) {
+            val shot=currentShot ?: return
+            val table=shot.meta.tableSelection ?: return
+            val quarter=pointSelection?.let(table::quarterAt) ?: return
+            primePredictionAudio()
+            if (challengeMode) {
+                daily.answer(shot.entry.id,quarter) {
+                    daily.attempt?.answers?.find { it.shotId==shot.entry.id }?.let { showAnswer(it.correct,it.selectedBall) }
+                }
+            } else showAnswer(quarter==shot.meta.quarter,quarter)
+            return
+        }
         val ballSelection=currentShot?.meta?.ballSelection
         val target = ballSelection?.imageTarget ?: currentShot?.meta?.target ?: return
         val point = pointSelection ?: return

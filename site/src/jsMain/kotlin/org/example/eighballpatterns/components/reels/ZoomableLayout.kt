@@ -230,7 +230,7 @@ internal fun ZoomableLayout(
                 attr("data-layout-image", "true")
                 classes("layout-image-frame")
             }) {
-                Image(src = BasePath.prependTo(imagePath), alt = "8-ball layout",
+                Image(src = BasePath.prependTo(imagePath), alt = "Pool table layout",
                     modifier = Modifier.fillMaxSize().position(Position.Absolute).styleModifier {
                         property("inset", "0")
                         property("pointer-events", "none")

@@ -1,0 +1,31 @@
+{
+  "id": "Wqc5orC1jvs/000840",
+  "discipline": 9,
+  "player": "Emil André Gangfløt",
+  "quarter": 1,
+  "challengeOnly": false,
+  "tableSelection": {
+    "schemaVersion": 1,
+    "corners": [
+      {
+        "x": 0.05849056603773585,
+        "y": 0.07123287671232877
+      },
+      {
+        "x": 0.5028301886792453,
+        "y": 0.04657534246575343
+      },
+      {
+        "x": 0.9386792452830188,
+        "y": 0.7657534246575343
+      },
+      {
+        "x": 0.20754716981132076,
+        "y": 0.8945205479452055
+      }
+    ],
+    "imageWidth": 1060,
+    "imageHeight": 730,
+    "imageSha256": "58f83eaa7288c0274f4cc5af93fa95d8086c90234f2928e341ada905219c1d58"
+  }
+}

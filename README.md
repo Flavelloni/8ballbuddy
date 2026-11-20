@@ -52,6 +52,33 @@ so it stays sharp without external fonts or image services.
 
 ## Shot Data
 
+### 9-ball support
+
+The catalog also supports `"discipline": 9` shots. Omitted discipline means
+8-ball, preserving existing data and links. A 9-ball answer is `"quarter": 1`
+(top-left), `2` (top-right), `3` (bottom-left), or `4` (bottom-right), independent
+of `group` and `ball`. Metadata must include a reviewed `tableSelection` with
+`schemaVersion: 1`, four normalized `corners` ordered top-left, top-right,
+bottom-right, bottom-left, and the final image's width, height and SHA-256.
+
+The tools workspace's annotation editor supports this discipline without ball
+detection. It shows perspective-correct quarters and saves the selected landing
+quarter. See `tools/shot_annotation/README.md` in that workspace. Import reviewed
+shots only. Five reviewed Gangfløt–Nordby shots are included under
+`public/8ball/OBK/Wqc5orC1jvs/emil_andre_gangflot_vs_jack_nordby/`, with their
+saved quarter answers and practice flags preserved.
+Scratches/off-table finishes have no valid quarter and must not be imported.
+
+In practice and daily challenges, players select a quarter on the photograph,
+then reveal. Dotted dividers and a light highlight stay aligned during zoom.
+Player descriptions show a 9-ball and “9-ball”; feedback uses the existing
+thumbs-up/down and names the landing quarter. Daily answers use the existing
+numeric answer transport, validated as quarters 1–4 server-side. Rebuild and
+deploy the function catalog with the frontend when publishing reviewed shots.
+The existing brand and `/8ball` asset paths are retained.
+
+### Shared shot storage
+
 Shots live under
 `site/src/jsMain/resources/public/8ball/<broadcaster>/<video-id>/<matchup>/<shot>/`.
 Each shot directory contains `meta.json`, `layout.jpg`, and `clip.mp4`.
