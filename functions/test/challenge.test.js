@@ -129,26 +129,18 @@ test("daily selection only uses explicitly eligible non-break shots", () => {
   assert.deepEqual(answerChoices(shots[3]), pickerBalls(1));
 });
 
-test("daily eligibility allows shared practice shots without making them challenge-only", () => {
-  const nine={id:'nine-both',discipline:9,correctBall:3,challengeOnly:false,dailyEligible:true};
-  const eight={id:'eight-daily',group:1,correctBall:6,challengeOnly:true};
-  const excluded=[
-    {...nine,id:'not-eligible',dailyEligible:false},
-    {...nine,id:'string-flag',dailyEligible:'true'},
-    {...nine,id:'archived',archived:true},
-    {...nine,id:'break',isBreak:true},
-    {...nine,id:'invalid-quarter',correctBall:5},
-  ];
-  const source=[eight,nine,...excluded],snapshot=JSON.stringify(source);
-  const challenge=createDailyChallenge(date,source);
-  assert.deepEqual(new Set(challenge.shotIds),new Set([nine.id,eight.id]));
-  assert.equal(challenge.shots.find(s=>s.id===nine.id).challengeOnly,false);
-  assert.equal(JSON.stringify(source),snapshot,'Selection must not retag practice shots');
-  const attempt=startShot(challenge,createAttempt(challenge,'uid','Player',0),challenge.shotIds[0],100);
-  const frozen=JSON.stringify(challenge);
-  createDailyChallenge('2026-10-17',source.map(s=>({...s,dailyEligible:false})));
-  assert.equal(JSON.stringify(challenge),frozen,'Later eligibility changes must not mutate a saved round');
-  assert.equal(attempt.answers.length,0);
+test("8-ball and 9-ball require challengeOnly to be exactly true", () => {
+  for (const discipline of [8,9]) {
+    const tagged={id:'tagged',discipline,group:1,correctBall:3,challengeOnly:true};
+    const excluded=[false,undefined,'true',1,null].map((flag,index)=>({
+      ...tagged,id:`excluded-${index}`,challengeOnly:flag,dailyEligible:true,
+    }));
+    const source=[tagged,...excluded,{...tagged,id:'archived',archived:true},{...tagged,id:'break',isBreak:true}];
+    const snapshot=JSON.stringify(source);
+    assert.deepEqual(createDailyChallenge(date,source).shotIds,[tagged.id]);
+    assert.equal(JSON.stringify(source),snapshot,'Selection must preserve editorial flags');
+    assert.throws(()=>createDailyChallenge(date,excluded),error=>error.code==='failed-precondition');
+  }
 });
 
 test("aliases are normalized and allow international letters and duplicate display names", () => {

@@ -42,16 +42,17 @@ test("daily selection honors a tagged later shot without tagging the group start
   assert.equal(catalog[0].challengeOnly, false);
 });
 
-test("the five reviewed 9-ball shots are eligible for daily rounds and remain in practice", async () => {
+test("reviewed 9-ball shots enter daily rounds only when challengeOnly is true", async () => {
   const date='2026-11-21';
   const catalog=JSON.parse(await readFile(new URL('../generated/catalog.json',import.meta.url),'utf8'));
   const nine=catalog.filter(s=>s.id.startsWith('Wqc5orC1jvs/'));
   assert.equal(nine.length,5);
   for (const shot of nine) {
     assert.equal(shot.discipline,9);
-    assert.equal(shot.dailyEligible,true);
-    assert.equal(shot.challengeOnly,false);
-    assert.deepEqual(createDailyChallenge(date,[shot]).shotIds,[shot.id]);
+    assert.equal(Object.hasOwn(shot,'dailyEligible'),false);
+    assert.equal(typeof shot.challengeOnly,'boolean');
+    if (shot.challengeOnly) assert.deepEqual(createDailyChallenge(date,[shot]).shotIds,[shot.id]);
+    else assert.throws(()=>createDailyChallenge(date,[shot]),error=>error.code==='failed-precondition');
   }
   const round=createDailyChallenge(date,catalog);
   assert.equal(round.shotIds.length,3);

@@ -21,7 +21,6 @@ async function visit(directory) {
     // Preserve media/metadata for frozen rounds, but never select archived shots again.
     if (meta.archived === true) return;
     if (typeof meta.challengeOnly !== "boolean") throw new Error(`Missing boolean challengeOnly: ${directory}`);
-    if (Object.hasOwn(meta, "dailyEligible") && typeof meta.dailyEligible !== "boolean") throw new Error(`Invalid dailyEligible: ${directory}`);
     if (meta.isBreak === true && meta.challengeOnly) throw new Error(`Break shots must be practice-only: ${directory}`);
     // Coordinate-only shots are a browse pilot until daily point scoring is introduced.
     if (meta.discipline !== 9 && meta.target && !Object.hasOwn(meta, "ball") && meta.isBreak !== true) return;
@@ -42,7 +41,6 @@ async function visit(directory) {
       correctBall: correctAnswer,
       isBreak: meta.isBreak === true,
       challengeOnly: meta.challengeOnly === true,
-      ...(meta.dailyEligible === true ? { dailyEligible: true } : {}),
       ...(meta.discipline !== 9 && meta.ballSelection && meta.isBreak !== true ? {
         ballSelection: {
           ids: meta.ballSelection.balls.map(ball => ball.id),
