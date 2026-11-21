@@ -1,0 +1,30 @@
+{
+  "discipline": 9,
+  "player": "Nina Torvund",
+  "challengeOnly": false,
+  "tableSelection": {
+    "schemaVersion": 1,
+    "corners": [
+      {
+        "x": 0.3208791208791209,
+        "y": 0.0765625
+      },
+      {
+        "x": 0.7516483516483516,
+        "y": 0.09375
+      },
+      {
+        "x": 0.9296703296703297,
+        "y": 0.8828125
+      },
+      {
+        "x": 0.07362637362637363,
+        "y": 0.8578125
+      }
+    ],
+    "imageWidth": 910,
+    "imageHeight": 640,
+    "imageSha256": "ac98bc751e67f116ce1dca25832bfc815d33a35cf48bc832c63cb6f427ebd298"
+  },
+  "quarter": 3
+}

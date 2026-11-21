@@ -1,0 +1,30 @@
+{
+  "discipline": 9,
+  "player": "Erik Gårdelöf",
+  "challengeOnly": false,
+  "tableSelection": {
+    "schemaVersion": 1,
+    "corners": [
+      {
+        "x": 0.3208791208791209,
+        "y": 0.0765625
+      },
+      {
+        "x": 0.7516483516483516,
+        "y": 0.09375
+      },
+      {
+        "x": 0.9296703296703297,
+        "y": 0.8828125
+      },
+      {
+        "x": 0.07362637362637363,
+        "y": 0.8578125
+      }
+    ],
+    "imageWidth": 910,
+    "imageHeight": 640,
+    "imageSha256": "cb1bc2f59fad6a9ae3f048761535104ad590917d67cb846950362aacea1dbade"
+  },
+  "quarter": 2
+}
