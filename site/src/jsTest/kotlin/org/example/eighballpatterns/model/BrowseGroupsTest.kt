@@ -71,6 +71,16 @@ class BrowseGroupsTest {
         assertEquals(shuffledBrowseShots(shots, null, 1), shuffledBrowseShots(shots, "Not available", 1))
     }
 
+    @Test fun temporarilyArchivedBreaksStayOutOfEveryPracticeEntryPoint() {
+        val normal = shot("020000", "Erik")
+        val pausedBreak = shot("020030", "Break-only player", breakShot = true, archived = true)
+        val shots = listOf(normal, pausedBreak)
+        assertEquals(listOf("Erik"), availableBrowsePlayers(shots))
+        assertEquals(listOf(listOf(normal)), browseShotGroups(shots))
+        assertEquals(listOf(normal), shuffledBrowseShots(shots, null, 1))
+        assertEquals(listOf(normal), shuffledBrowseShots(shots, pausedBreak.meta.player, 1))
+    }
+
     @Test fun preferredPlayerThenOtherPlayersStayGroupedRandomAndDoNotRepeat() {
         val shots = listOf(shot("020000"), shot("020010"), shot("020020", "Ronny"),
             shot("020030", "Ronny"), shot("020040"), shot("020050", "Lance"), shot("020100", "Lance"))
