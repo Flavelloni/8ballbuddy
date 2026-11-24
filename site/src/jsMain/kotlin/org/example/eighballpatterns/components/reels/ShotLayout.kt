@@ -209,14 +209,14 @@ internal fun EightBallReelLayoutOverlay(
                     Modifier.attrsModifier { addEventListener("error") { failed=true } })
             }
             Column(
-                Modifier.gap(3.px).styleModifier {property("min-width","0")}.attrsModifier {classes("shot-heading")},
+                Modifier.gap(5.px).styleModifier {property("min-width","0")}.attrsModifier {classes("shot-heading")},
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 P(
                     attrs = Modifier.margin(0.px)
                         .styleModifier {
                             property("color", "#e8f2ea")
-                            property("font-size", ".92rem")
+                            property("font-size", "1rem")
                             property("font-weight", "700")
                             property("line-height", "1.25")
                             property("text-align", "center")
@@ -226,7 +226,8 @@ internal fun EightBallReelLayoutOverlay(
                     Text(shot.meta.player)
                 }
                 SpanText(org.example.eighballpatterns.model.eightBallPlayerStatus(shot.meta),
-                    Modifier.fontSize(.74.cssRem).color(Color.rgb(0x9FBEAA)))
+                    Modifier.fontSize(1.cssRem).fontWeight(FontWeight.Bold).lineHeight(1.35)
+                        .color(Color.rgb(0xC8EDD8)).attrsModifier { classes("shooting-status") })
                 if (shot.meta.discipline == 9) PoolBall(9, Modifier.width(24.px).height(24.px))
                 if (shot.meta.ballInHand) {
                     SpanText("Ball in hand", Modifier.fontSize(0.9.cssRem).fontWeight(FontWeight.Bold)

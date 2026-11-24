@@ -164,8 +164,9 @@ internal fun EightBallPlayerIntro(shot: EightBallShot, player: PlayerProfile?, c
                     Column(Modifier.gap(6.px), horizontalAlignment = Alignment.CenterHorizontally) {
                         SpanText(
                             eightBallPlayerStatus(shot.meta),
-                            Modifier.fontSize(.85.cssRem).color(Color.rgb(0xB8DCC6))
+                            Modifier.fontSize(1.1.cssRem).fontWeight(FontWeight.Bold).color(Color.rgb(0xC8EDD8))
                                 .padding(leftRight=14.px,topBottom=7.px)
+                                .attrsModifier { classes("shooting-status") }
                                 .styleModifier {property("background","#173323");property("border-radius","999px")},
                         )
                         if (shot.meta.discipline == 9) {

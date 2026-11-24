@@ -9,6 +9,9 @@ import com.varabyte.kobweb.compose.ui.modifiers.*
 import com.varabyte.kobweb.compose.ui.styleModifier
 import com.varabyte.kobweb.navigation.BasePath
 import com.varabyte.kobweb.silk.components.graphics.Image
+import com.varabyte.kobweb.silk.components.forms.Button
+import com.varabyte.kobweb.silk.components.icons.fa.FaMagnifyingGlassMinus
+import com.varabyte.kobweb.silk.components.icons.fa.FaMagnifyingGlassPlus
 import com.varabyte.kobweb.silk.components.text.SpanText
 import kotlinx.browser.window
 import kotlinx.browser.document
@@ -22,9 +25,6 @@ import org.jetbrains.compose.web.css.px
 import org.w3c.dom.Element
 import org.w3c.dom.HTMLElement
 import org.w3c.dom.HTMLImageElement
-import kotlin.math.hypot
-
-private data class PendingLayoutTap(val time: Double, val client: ImagePoint)
 private val loadedLayoutAspects = mutableMapOf<String, Double>()
 internal fun isLayoutImageLoaded(path: String): Boolean = path in loadedLayoutAspects
 private val pendingLayoutImages = mutableMapOf<String, Promise<Boolean>>()
@@ -61,7 +61,7 @@ internal fun ZoomableLayout(
     onTap: ((ImagePoint, Double) -> Unit)? = null,
     content: @Composable () -> Unit = {},
 ) {
-    var zoomed by remember(imagePath) { mutableStateOf(false) }
+    var zoomed by remember(imagePath) { mutableStateOf(true) }
     var dragging by remember(imagePath) { mutableStateOf(false) }
     var viewport by remember(imagePath) { mutableStateOf(ImagePoint(0.0, 0.0)) }
     var aspect by remember(imagePath) { mutableStateOf(imageAspect ?: loadedLayoutAspects[imagePath] ?: 1.0) }
@@ -72,29 +72,21 @@ internal fun ZoomableLayout(
     val pointers = remember(imagePath) { mutableSetOf<Int>() }
     var dragStart by remember(imagePath) { mutableStateOf(ImagePoint(0.0, 0.0)) }
     var panStart by remember(imagePath) { mutableStateOf(ImagePoint(0.0, 0.0)) }
-    var pendingTap by remember(imagePath) { mutableStateOf<PendingLayoutTap?>(null) }
-    var tapTimer by remember(imagePath) { mutableStateOf<Int?>(null) }
     val currentTap by rememberUpdatedState(onTap)
     val currentReady by rememberUpdatedState(onReady)
 
-    fun cancelTap() {
-        tapTimer?.let { window.clearTimeout(it) }
-        tapTimer = null
-        pendingTap = null
-    }
     fun toggleZoom() {
-        cancelTap()
+        gesture.cancel()
+        pointers.clear()
+        dragging = false
         zoomed = !zoomed
         pan = ImagePoint(0.0, 0.0)
     }
-    DisposableEffect(imagePath) {
-        onDispose { tapTimer?.let { window.clearTimeout(it) } }
-    }
-    Column(Modifier.fillMaxSize().minHeight(0.px).attrsModifier {
+    Column(Modifier.fillMaxSize().minHeight(0.px).position(Position.Relative).attrsModifier {
         classes("layout-image-viewer")
         attr("tabindex", "0")
         attr("role", "group")
-        attr("aria-label", "Pool layout. Double-tap or double-click to zoom. Enter toggles zoom; arrow keys pan; Escape zooms out.")
+        attr("aria-label", "Pool layout. Enter toggles zoom; arrow keys pan; Escape zooms out.")
         onKeyDown { e ->
             if (e.target == e.currentTarget) {
                 when (e.key) {
@@ -117,7 +109,7 @@ internal fun ZoomableLayout(
             property("touch-action", if (zoomed) "none" else "pan-y")
             property("user-select", "none")
             property("-webkit-user-select", "none")
-            property("cursor", if (zoomed) { if (dragging) "grabbing" else "zoom-out" } else "zoom-in")
+            property("cursor", if (zoomed) { if (dragging) "grabbing" else "grab" } else "default")
         }.attrsModifier {
             classes("layout-image-viewport")
             attr("data-layout-zoomed", zoomed.toString())
@@ -147,7 +139,6 @@ internal fun ZoomableLayout(
                         panStart = visiblePan
                         dragging = zoomed
                     } else {
-                        cancelTap()
                         dragging = false
                     }
                     if (zoomed) (p.currentTarget as Element).setPointerCapture(id)
@@ -173,58 +164,41 @@ internal fun ZoomableLayout(
                 if (root.hasPointerCapture(id)) root.releasePointerCapture(id)
                 if (tap) {
                     val client = ImagePoint(p.clientX as Double, p.clientY as Double)
-                    val previous = pendingTap
-                    if (previous != null && e.nativeEvent.timeStamp.toDouble() - previous.time <= 320 &&
-                        hypot(client.x - previous.client.x, client.y - previous.client.y) <= 24) {
-                        toggleZoom()
-                    } else {
-                        cancelTap()
-                        // Read the rendered image bounds: zoom and pan transform
-                        // the photograph and its ball overlays together, including during a tap.
-                        val rect = root.querySelector("[data-layout-image]")?.getBoundingClientRect()
-                        val point = rect?.takeIf { it.width > 0 && it.height > 0 }?.let {
-                            ImagePoint((client.x - it.left) / it.width, (client.y - it.top) / it.height)
-                                .takeIf { p -> p.x in 0.0..1.0 && p.y in 0.0..1.0 }
-                        }
-                        if (point != null) {
-                            pendingTap = PendingLayoutTap(e.nativeEvent.timeStamp.toDouble(), client)
-                            // Wait for a possible second tap so zooming never also selects a ball.
-                            tapTimer = window.setTimeout({
-                                pendingTap = null
-                                tapTimer = null
-                                currentTap?.invoke(point, rect.width)
-                            }, 320)
-                        }
+                    // Read rendered bounds so zoomed/panned image and answer overlays stay aligned.
+                    val rect = root.querySelector("[data-layout-image]")?.getBoundingClientRect()
+                    val point = rect?.takeIf { it.width > 0 && it.height > 0 }?.let {
+                        ImagePoint((client.x - it.left) / it.width, (client.y - it.top) / it.height)
+                            .takeIf { p -> p.x in 0.0..1.0 && p.y in 0.0..1.0 }
                     }
-                } else cancelTap()
+                    if (point != null) currentTap?.invoke(point, rect.width)
+                }
             }
             addEventListener("pointercancel") {
                 gesture.cancel()
                 pointers.clear()
                 dragging = false
-                cancelTap()
             }
             addEventListener("lostpointercapture") {
                 if (pointers.isNotEmpty()) {
                     gesture.cancel()
                     pointers.clear()
                     dragging = false
-                    cancelTap()
                 }
             }
             addEventListener("pointerleave") {
-                // Touch pointers leave after every release; preserve the pending tap in that case.
-                if (!dragging && pointers.isNotEmpty()) { gesture.cancel(); pointers.clear(); cancelTap() }
+                if (!dragging && pointers.isNotEmpty()) { gesture.cancel(); pointers.clear() }
             }
-            onWheel { if (zoomed) { it.preventDefault(); it.stopPropagation() } }
+            // Wheel scrolling still navigates reels; image panning uses dragging or arrow keys.
         }) {
             Box(Modifier.position(Position.Absolute).styleModifier {
                 property("left", "50%")
                 property("top", "50%")
                 // The container has a size before ResizeObserver's first callback. Render the
                 // cached photograph immediately instead of flashing a zero-size image per reel.
-                property("--layout-width", if (viewport.x > 0) "${geometry.width}px" else "min(100cqw, ${aspect * 100}cqh)")
-                property("--layout-height", if (viewport.y > 0) "${geometry.height}px" else "min(100cqh, ${100 / aspect}cqw)")
+                property("--layout-width", if (viewport.x > 0) "${geometry.width}px" else
+                    if (zoomed) "max(${aspect * 100}cqh, min(${aspect * 150}cqh, 150cqw))" else "min(100cqw, ${aspect * 100}cqh)")
+                property("--layout-height", if (viewport.y > 0) "${geometry.height}px" else
+                    if (zoomed) "max(100cqh, min(150cqh, ${150 / aspect}cqw))" else "min(100cqh, ${100 / aspect}cqw)")
                 property("transform", "translate(calc(-50% + ${visiblePan.x}px), calc(-50% + ${visiblePan.y}px))")
             }.attrsModifier {
                 attr("data-layout-image", "true")
@@ -254,9 +228,16 @@ internal fun ZoomableLayout(
                 content()
             }
         }
-        SpanText(if (zoomed) "Drag to pan · Double-tap / double-click to zoom out"
-            else "Double-tap / double-click the image to zoom in",
-            Modifier.fillMaxWidth().padding(leftRight = 8.px, topBottom = 5.px)
-                .attrsModifier { classes("layout-zoom-hint"); attr("aria-live", "polite") })
+        // A sibling of the pan surface, so operating this control can never pick a ball or quarter.
+        Button(onClick = { toggleZoom() }, modifier = Modifier.position(Position.Absolute)
+            .top(10.px).right(10.px).attrsModifier {
+                classes("layout-zoom-toggle")
+                attr("data-layout-zoom-toggle", "true")
+                attr("aria-label", if (zoomed) "Zoom out" else "Zoom in")
+                attr("aria-pressed", zoomed.toString())
+            }) {
+            if (zoomed) FaMagnifyingGlassMinus() else FaMagnifyingGlassPlus()
+            SpanText(if (zoomed) "Zoom out" else "Zoom in")
+        }
     }
 }

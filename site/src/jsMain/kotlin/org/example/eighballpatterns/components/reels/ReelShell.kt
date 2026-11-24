@@ -106,7 +106,7 @@ internal fun EightBallReelIntro(onStart: () -> Unit, canStart: Boolean = true) {
                 property("color", "rgba(246,250,246,.9)")
                 property("text-align", "center")
             }
-            .attrsModifier { classes("eight-ball-reel-intro") },
+            .attrsModifier { classes("eight-ball-reel-intro"); attr("aria-busy", (!canStart).toString()) },
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         P(
@@ -149,11 +149,14 @@ internal fun EightBallReelIntro(onStart: () -> Unit, canStart: Boolean = true) {
             }
         }
 
-        SilkButton(onClick={onStart()},enabled=canStart,modifier=Modifier
-            .attrsModifier { classes("reel-start-cue");attr("aria-label","Scroll to start") }) {
-            com.varabyte.kobweb.silk.components.text.SpanText("Scroll to start",Modifier.attrsModifier {classes("reel-scroll-label")})
-            com.varabyte.kobweb.silk.components.text.SpanText("Swipe up to start",Modifier.attrsModifier {classes("reel-touch-label")})
-            FaChevronDown()
+        Box(Modifier.height(52.px), contentAlignment = Alignment.Center) {
+            if (!canStart) PoolLoading("Loading…")
+            else SilkButton(onClick={onStart()},modifier=Modifier
+                .attrsModifier { classes("reel-start-cue");attr("aria-label","Scroll to start") }) {
+                com.varabyte.kobweb.silk.components.text.SpanText("Scroll to start",Modifier.attrsModifier {classes("reel-scroll-label")})
+                com.varabyte.kobweb.silk.components.text.SpanText("Swipe up to start",Modifier.attrsModifier {classes("reel-touch-label")})
+                FaChevronDown()
+            }
         }
         InstallAppButton()
     }

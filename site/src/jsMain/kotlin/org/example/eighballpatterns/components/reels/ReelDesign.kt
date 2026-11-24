@@ -154,7 +154,12 @@ internal val reelDesignStyles = """
     .shot-heading { text-align: center; }
     .shot-heading p { text-wrap: balance; }
     .coordinate-confirm { box-sizing: border-box; }
-    .layout-zoom-hint { box-sizing: border-box; color: #95aea1; font-size: .68rem; line-height: 1.4; text-align: center; flex-shrink: 0; }
+    .layout-zoom-toggle.layout-zoom-toggle { z-index: 4; min-height: 44px; padding: 9px 13px;
+      border: 1px solid #c8edd870; border-radius: 12px; background: #0b1d16ed; color: #f1fff7;
+      box-shadow: 0 2px 10px #0005; font-size: .8rem; font-weight: 700; cursor: pointer; }
+    .layout-zoom-toggle > .kobweb-row { gap: 7px; }
+    .layout-zoom-toggle.layout-zoom-toggle:hover { background: #193e2b; }
+    .layout-zoom-toggle.layout-zoom-toggle:focus-visible { outline: 2px solid #ade7cb; outline-offset: 2px; }
     .layout-image-viewer:focus-visible { outline: none; }
     .layout-image-viewer:focus-visible .layout-image-viewport { outline: 2px solid #ade7cb; outline-offset: -2px; }
     .coordinate-confirm > span { color: #9eb6a7; font-size: .76rem; text-align: center; line-height: 1.5; max-width: 300px; }
